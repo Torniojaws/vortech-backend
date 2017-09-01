@@ -1,11 +1,12 @@
 from flask import Flask
+import sys
 
 app = Flask(__name__)
 
 
 @app.route("/")
 def index():
-    return "Land ahoy!"
+    return "Land ahoy! Using Python: {}".format(sys.version_info)
 
 
 if __name__ == "__main__":

@@ -45,6 +45,7 @@ sudo add-apt-repository 'deb [arch=amd64,i386,ppc64el] http://mirror.jmu.edu/pub
 
 1. Python is pre-installed in Ubuntu, so no need to install it
 1. Git: ``sudo apt-get install git``
+1. uWSGI: ``sudo apt-get install uwsgi``
 
 # Prepare the project
 
@@ -98,8 +99,6 @@ Denied and virtualenv cannot be installed without sudo): ``sudo pip3 install -r 
 
 ## Setup uWSGI
 
-uWSGI is installed along with the other Python dependencies above, so we are ready to configure it.
-
 1. First, install the Python 3 plugin: ``sudo apt-get install uwsgi-plugin-python3``
 1. Create the config file to our server:
 ```
@@ -112,8 +111,6 @@ sudo vim vortech-backend.ini
 project = vortech-backend
 base = /var/www
 chdir = %(base)/%(project)
-
-plugins = python34
 
 home = %(base)/%(project)/venv
 module = wsgi:application
@@ -131,5 +128,7 @@ chmod-socket = 666
 vacuum = true
 ```
 1. Save and close.
+1. You can confirm that uWSGI works with: ``uwsgi --socket 0.0.0.0:5000 --protocol=http -w wsgi``
+1. And then ``curl localhost:5000``
 1. Then run uwsgi again, using the config file we just made: ``uwsgi --ini vortech-backend.ini``
 1. Now, open again the URL from earlier that gave a 502. It should work now: http://127.0.0.1:8000

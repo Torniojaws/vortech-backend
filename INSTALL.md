@@ -81,7 +81,7 @@ server {
 1. You should get a ``502 Bad Gateway`` which means the config is OK. It is an error code 502 because
 we have not yet setup uWSGI to handle the request, but it means the request did get handled by nginx
 
-## Setup uWSGI
+## Install Python dependencies
 
 We are now ready to setup all the things related to the actual Python app, so let's install all
 dependencies and related tools.
@@ -93,4 +93,43 @@ dependencies and related tools.
 ``virtualenv venv --always-copy``
 1. And activate it: ``source venv/bin/activate``
 1. Then go to the subdir for the app: ``cd /var/www/vortech-backend/html``
-1. Now, install all the project dependencies: ``pip3 install -r requirements/prod.txt``
+1. Now, install all the project dependencies (TODO: should not use sudo, but there's Permission
+Denied and virtualenv cannot be installed without sudo): ``sudo pip3 install -r requirements/prod.txt``
+
+## Setup uWSGI
+
+uWSGI is installed along with the other Python dependencies above, so we are ready to configure it.
+
+1. First, install the Python 3 plugin: ``sudo apt-get install uwsgi-plugin-python3``
+1. Create the config file to our server:
+```
+cd /var/www/vortech-backend
+sudo vim vortech-backend.ini
+```
+1. Make the contents of that file as follows:
+```
+[uwsgi]
+project = vortech-backend
+base = /var/www
+chdir = %(base)/%(project)
+
+plugins = python34
+
+home = %(base)/%(project)/venv
+module = wsgi:application
+master = true
+processes = 10
+
+cheaper = 2
+cheaper-initial = 5
+cheaper-step = 1
+cheaper-algo = spare
+cheaper-overload = 5
+
+socket = %(base)/%(project)/%(project).sock
+chmod-socket = 666
+vacuum = true
+```
+1. Save and close.
+1. Then run uwsgi again, using the config file we just made: ``uwsgi --ini vortech-backend.ini``
+1. Now, open again the URL from earlier that gave a 502. It should work now: http://127.0.0.1:8000

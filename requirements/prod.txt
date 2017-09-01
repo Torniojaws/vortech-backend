@@ -4,9 +4,6 @@ Flask-Autodoc==0.1.2
 Flask-Migrate==2.1.1
 Flask-SQLAlchemy==2.2
 
-# Gateway
-uWSGI==2.0.15
-
 # Database things
 PyMySQL==0.7.11
 SQLAlchemy==1.1.13

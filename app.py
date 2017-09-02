@@ -1,12 +1,21 @@
 from flask import Flask
-import sys
+from flask_autodoc import Autodoc
 
 app = Flask(__name__)
+auto = Autodoc(app)
 
 
 @app.route("/")
+@auto.doc()
 def index():
-    return "Land ahoy! Using Python: {}".format(sys.version_info)
+    """This is the main entry point, ye landlubbers!"""
+    return "Land ahoy!"
+
+
+@app.route('/apidoc')
+def documentation():
+    """All routes will be documented automatically here"""
+    return auto.html()
 
 
 if __name__ == "__main__":

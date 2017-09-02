@@ -6,7 +6,7 @@ separate repository, most likely using Vue.js due to the recent React licensing 
 
 # Stack
 
-- **Platform:** Linux, Ubuntu 14.04 64-bit
+- **Platform:** Linux, Ubuntu 16.04 64-bit
 - **Web server:** Nginx
 - **Gateway:** uWSGI
 - **Database:** MariaDB
@@ -20,3 +20,10 @@ See the [Install Instructions](INSTALL.md)
 # Tests
 
 You can run the tests with ``py.test tests/``
+
+# Versioning
+
+The common ``major.minor.micro`` format is followed. ``major`` releases will be huge updates with
+potential breaking features. ``minor`` releases add new features that don't break anything.
+``micro`` releases are usually small tweaks and little additions. Until the first production release,
+the project stays as ``0.x.x``. The first production release will be ``1.0.0``.

@@ -29,7 +29,7 @@ class UsersAccessMapping(db.Model):
     UsersAccessLevelID = db.Column(db.Integer, nullable=False)
     __table_args__ = (
         db.ForeignKeyConstraint(
-            ["user_id", "access_id"],
+            ["fk_useraccess", "fk_useraccess_level"],
             ["Users.UserID", "UsersAccessLevels.UsersAccessLevelID"],
             ondelete="CASCADE"
         )

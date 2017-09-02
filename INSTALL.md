@@ -258,9 +258,12 @@ built by Flask Migrate.
 1. Creat the database: ``CREATE DATABASE vortech;``
 1. Create the user: ``CREATE USER vortech@'localhost' IDENTIFIED BY 'somepassword';``
 1. And give it grants: ``GRANT ALL ON vortech.* TO vortech@'localhost';``
-1. And then we will build the structure with Flask Migrate. Run the below:
+1. And then we will build the structure with Flask Migrate. First, let's create the config file:
+1. Run ``cd /srv/vortech-backend/html`` and then ``sudo cp settings/secret.sample settings/secret.cfg``
+1. And then edit the ``secret.cfg`` to the settings you defined for the database
+1. Then activate the virtualenv, if it's not active: ``source /srv/vortech-backend/venv/bin/activate``
+1. Now we can build the database structure:
 ```
-cd /srv/vortech-backend/html
-sudo python manage.py db init
-sudo python manage.py db upgrade
+python manage.py db init
+python manage.py db upgrade
 ```

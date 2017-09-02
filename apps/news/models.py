@@ -28,9 +28,9 @@ class NewsCategoriesMapping(db.Model):
     __table_args__ = (
         db.ForeignKeyConstraint(
             ["fk_news_id"],
-            ["News.NewsID"],
-            {"ondelete": "CASCADE"}
-        )
+            ["News.NewsID"]
+        ),
+        {"ondelete": "CASCADE"}
     )
 
 

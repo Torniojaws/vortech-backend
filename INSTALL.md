@@ -5,7 +5,7 @@ Ubuntu 16.04 (Xenial) 64-bit. If you use Vagrant, note that there is bug in the 
 "ubuntu/xenial64" in Windows. You cannot login with ``vagrant:vagrant`` like normal. The username is
 ``ubuntu`` and the password is a random string visible in
 ``~\Users\<Name>\.vagrant.d\...\Vagrantfile``. The unofficial recommendation is to use the box
-called ``v0rtex\xenial64``
+called ``v0rtex\xenial64`` (how fitting!)
 
 # Preparation
 
@@ -115,7 +115,7 @@ server {
     ssl_stapling on;
     ssl_stapling_verify on;
     ssl_trusted_certificate /etc/letsencrypt/live/vortechmusic.com/fullchain.pem;
-    resolvedr 8.8.8.8 8.8.4.4;
+    resolver 8.8.8.8 8.8.4.4;
 
     # Root location
     root /srv/vortech-backend/html;
@@ -158,6 +158,7 @@ server {
 
 # Redirect all HTTP traffic to HTTPS
 # Always redirect to www.<domain_name>, not bare-domain (without "www") according to SEO best-practices
+# If you are in Vagrant, comment this out if you use "localhost". Otherwise there's an infinite loop
 server {
     listen 80;
     listen [::]:80;
@@ -166,6 +167,7 @@ server {
 }
 
 # Redirect bare-domain HTTPS to https://www.vortechmusic.com
+# If you are in Vagrant, comment this out if you use "localhost". Otherwise there's an infinite loop
 server {
     listen 443 ssl http2;
     listen [::]:443 ssl http2;
@@ -187,8 +189,13 @@ It will take about 2 minutes to finish.
 1. Update: ``sudo apt-get update``
 1. Install: ``sudo apt-get install python-certbot-nginx``
 1. And generate the certs: ``sudo certbot --nginx -d vortechmusic.com -d www.vortechmusic.com``
-1. FIXME: The above cannot be done until the site is changed for real, but what it does create are
-the files used in these two lines:
+    1. In Vagrant, the easiest way is to run:
+    ``sudo certbot run -a manual -i nginx -d vortechmusic.com -d www.vortechmusic.com``
+    1. Note that it will require you to create files manually in the real host. After you run the
+    command, it will tell you how to do it. Basically a random string in
+    ``../public_html/.well-known/acme-challenge/<some_string>`` with a second random string as its
+    contents
+1. There will be two files generated, which you should use as follows:
 ```
 ssl_certificate /etc/letsencrypt/live/vortechmusic.com/fullchain.pem;
 ssl_certificate_key /etc/letsencrypt/live/vortechmusic.com/privkey.pem;

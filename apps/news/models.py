@@ -4,7 +4,9 @@ from app import db
 class News(db.Model):
     """The basic data for news items"""
     __tablename__ = "News"
-    NewsID = db.Column(db.Integer, primary_key=True)
+    NewsID = db.Column(
+        db.Integer, db.ForeignKey("News.NewsID", ondelete="CASCADE"), primary_key=True
+    )
     Title = db.Column(db.String(255), nullable=False)
     Contents = db.Column(db.Text, nullable=False)
     Author = db.Column(db.String(255), nullable=False)
@@ -28,9 +30,9 @@ class NewsCategoriesMapping(db.Model):
     __table_args__ = (
         db.ForeignKeyConstraint(
             ["fk_news_id"],
-            ["News.NewsID"]
-        ),
-        {"ondelete": "CASCADE"}
+            ["News.NewsID"],
+            ondelete="CASCADE"
+        )
     )
 
 
@@ -47,6 +49,6 @@ class NewsComments(db.Model):
         db.ForeignKeyConstraint(
             ["newscomment_user_id", "newscomment_news_id"],
             ["Users.UserID", "News.NewsID"],
-            {"ondelete": "CASCADE"}
+            ondelete="CASCADE"
         )
     )

@@ -31,12 +31,11 @@ class UsersAccessMapping(db.Model):
     """Each users' access level is defined here"""
     __tablename__ = "UsersAccessMapping"
     UsersAccessMappingID = db.Column(db.Integer, primary_key=True)
-    UserID = db.Column(db.Integer, nullable=False)
-    UsersAccessLevelID = db.Column(db.Integer, nullable=False)
-    __table_args__ = (
-        db.ForeignKeyConstraint(
-            ["fk_useraccess", "fk_useraccess_level"],
-            ["Users.UserID", "UsersAccessLevels.UsersAccessLevelID"],
-            ondelete="CASCADE"
-        )
+    UserID = db.Column(
+        db.Integer, db.ForeignKey("Users.UserID", ondelete="CASCADE"), nullable=False
+    )
+    UsersAccessLevelID = db.Column(
+        db.Integer,
+        db.ForeignKey("UsersAccessLevels.UsersAccessLevelID", ondelete="CASCADE"),
+        nullable=False
     )

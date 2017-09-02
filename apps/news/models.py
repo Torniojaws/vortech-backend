@@ -25,30 +25,20 @@ class NewsCategoriesMapping(db.Model):
     """The mapping between News items and NewsCategories"""
     __tablename__ = "NewsCategoriesMapping"
     NewsCategoriesMappingID = db.Column(db.Integer, primary_key=True)
-    NewsID = db.Column(db.Integer, nullable=False)
-    NewsCategoryID = db.Column(db.Integer, nullable=False)
-    __table_args__ = (
-        db.ForeignKeyConstraint(
-            ["fk_news_id"],
-            ["News.NewsID"],
-            ondelete="CASCADE"
-        )
+    NewsID = db.Column(
+        db.Integer, db.ForeignKey("News.NewsID", ondelete="CASCADE"), nullable=False
     )
+    NewsCategoryID = db.Column(db.Integer, nullable=False)
 
 
 class NewsComments(db.Model):
     """When users comment on news items, they are added here"""
     __tablename__ = "NewsComments"
     NewsCommentID = db.Column(db.Integer, primary_key=True)
-    NewsID = db.Column(db.Integer, nullable=False)
-    UserID = db.Column(db.Integer, nullable=False)
+    NewsID = db.Column(db.Integer, db.ForeignKey("News.NewsID", ondelete="CASCADE"), nullable=False)
+    UserID = db.Column(
+        db.Integer, db.ForeignKey("Users.UserID", ondelete="CASCADE"), nullable=False
+    )
     Comment = db.Column(db.String(1000), nullable=False)
     Created = db.Column(db.DateTime, nullable=False)
     Updated = db.Column(db.DateTime)
-    __table_args__ = (
-        db.ForeignKeyConstraint(
-            ["newscomment_user_id", "newscomment_news_id"],
-            ["Users.UserID", "News.NewsID"],
-            ondelete="CASCADE"
-        )
-    )

@@ -262,8 +262,5 @@ built by Flask Migrate.
 1. Run ``cd /srv/vortech-backend/html`` and then ``sudo cp settings/secret.sample settings/secret.cfg``
 1. And then edit the ``secret.cfg`` to the settings you defined for the database
 1. Then activate the virtualenv, if it's not active: ``source /srv/vortech-backend/venv/bin/activate``
-1. Now we can build the database structure:
-```
-python manage.py db init
-python manage.py db upgrade
-```
+1. Now we can build the database structure. You might need to temporarily ``chown`` the entire html/
+directory to ``vagrant:vagrant``. Run: ``python manage.py db upgrade``

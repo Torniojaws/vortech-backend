@@ -4,9 +4,7 @@ from app import db
 class Users(db.Model):
     """All users' information is stored here"""
     __tablename__ = "Users"
-    UserID = db.Column(
-        db.Integer(), db.ForeignKey("Users.UserID", ondelete="CASCADE"), primary_key=True
-    )
+    UserID = db.Column(db.Integer(), primary_key=True)
     Name = db.Column(db.String(200), nullable=False)
     Email = db.Column(db.String(200))
     Username = db.Column(db.String(200), nullable=False)
@@ -18,11 +16,7 @@ class Users(db.Model):
 class UsersAccessLevels(db.Model):
     """This defines the various access levels users can have"""
     __tablename__ = "UsersAccessLevels"
-    UsersAccessLevelID = db.Column(
-        db.Integer,
-        db.ForeignKey("UsersAccessLevels.UsersAccessLevelID", ondelete="CASCADE"),
-        primary_key=True
-    )
+    UsersAccessLevelID = db.Column(db.Integer, primary_key=True)
     LevelName = db.Column(db.String(100), nullable=False)
     AccessDescription = db.Column(db.Text)
 

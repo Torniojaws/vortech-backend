@@ -1,6 +1,6 @@
 from flask import Flask
 from flask_autodoc import Autodoc
-from sqlalchemy import SQLAlchemy
+from flask_sqlalchemy import SQLAlchemy
 from settings.config import CONFIG
 
 import importlib

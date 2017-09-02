@@ -29,6 +29,9 @@ These are the mandatory programs needed to get started.
 be deleted
 1. Then install the first pieces:
 ``sudo apt install virtualenv python3 uwsgi uwsgi-emperor uwsgi-plugin-python3 nginx-full git``
+1. And the database of course: ``sudo apt install mariadb-server``
+    1. Note that the install process is different in Ubuntu 16.04 than in previous versions. The
+    installer will not prompt for root password. Instead, you access it using ``sudo mysql -u root``
 
 ## Setup the app
 
@@ -41,6 +44,7 @@ be deleted
 in the virtualenv directly. These must be installed manually as ``sudo``:
 1. uWSGI: ``sudo /srv/vortech-backend/venv/bin/pip install uwsgi``
 1. PyMySQL: ``sudo /srv/vortech-backend/venv/bin/pip install pymysql``
+1. Flask-Script: ``sudo /srv/vortech-backend/venv/bin/pip install flask_script``
 1. With these installed, we can now install the rest. First, activate the virtualenv:
 ``source /srv/vortech-backend/venv/bin/activate``
 1. Change to the project dir: ``cd /srv/vortech-backend/html``
@@ -244,3 +248,19 @@ sudo systemctl reload nginx
 sudo systemctl start emperor.uwsgi
 ```
 1. Check that it is running: ``sudo systemctl status emperor.uwsgi``
+
+## Configure the database
+
+As mentioned in the beginning, you will now access the root user with ``sudo mysql -u root``. Run
+that now and let's create our database user and an empty database. The database structure will be
+built by Flask Migrate.
+
+1. Creat the database: ``CREATE DATABASE vortech;``
+1. Create the user: ``CREATE USER vortech@'localhost' IDENTIFIED BY 'somepassword';``
+1. And give it grants: ``GRANT ALL ON vortech.* TO vortech@'localhost';``
+1. And then we will build the structure with Flask Migrate. Run the below:
+```
+cd /srv/vortech-backend/html
+sudo python manage.py db init
+sudo python manage.py db upgrade
+```

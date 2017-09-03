@@ -29,6 +29,9 @@ These are the mandatory programs needed to get started.
 be deleted
 1. Then install the first pieces:
 ``sudo apt install virtualenv python3 uwsgi uwsgi-emperor uwsgi-plugin-python3 nginx-full git``
+1. And the database of course: ``sudo apt install mariadb-server``
+    1. Note that the install process is different in Ubuntu 16.04 than in previous versions. The
+    installer will not prompt for root password. Instead, you access it using ``sudo mysql -u root``
 
 ## Setup the app
 
@@ -41,6 +44,7 @@ be deleted
 in the virtualenv directly. These must be installed manually as ``sudo``:
 1. uWSGI: ``sudo /srv/vortech-backend/venv/bin/pip install uwsgi``
 1. PyMySQL: ``sudo /srv/vortech-backend/venv/bin/pip install pymysql``
+1. Flask-Script: ``sudo /srv/vortech-backend/venv/bin/pip install flask_script``
 1. With these installed, we can now install the rest. First, activate the virtualenv:
 ``source /srv/vortech-backend/venv/bin/activate``
 1. Change to the project dir: ``cd /srv/vortech-backend/html``
@@ -244,3 +248,25 @@ sudo systemctl reload nginx
 sudo systemctl start emperor.uwsgi
 ```
 1. Check that it is running: ``sudo systemctl status emperor.uwsgi``
+
+## Configure the database
+
+As mentioned in the beginning, you will now access the root user with ``sudo mysql -u root``. Run
+that now and let's create our database user and an empty database. The database structure will be
+built by Flask Migrate.
+
+1. Create the database: ``CREATE DATABASE vortech;``
+1. Create the user: ``CREATE USER vortech@'localhost' IDENTIFIED BY 'somepassword';``
+1. And give it grants: ``GRANT ALL ON vortech.* TO vortech@'localhost';``
+1. And then we will build the structure with Flask Migrate. First, let's create the config file:
+1. Run ``cd /srv/vortech-backend/html`` and then ``sudo cp settings/secret.sample settings/secret.cfg``
+1. And then edit the ``secret.cfg`` to the settings you defined for the database
+1. Then activate the virtualenv, if it's not active: ``source /srv/vortech-backend/venv/bin/activate``
+1. Now we can build the database structure. You might need to temporarily ``chown`` the entire html/
+directory to ``vagrant:vagrant``. Run: ``python manage.py db upgrade``
+
+## Final words for production
+
+Whenever you make changes to the app, you might need to "refresh" uWSGI to update the page that it
+serves. Otherwise you will see the old page.
+Run ``sudo touch --no-deference /etc/uwsgi-emperor/vassals/vortech-backend.ini``

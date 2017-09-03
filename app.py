@@ -1,8 +1,20 @@
 from flask import Flask
 from flask_autodoc import Autodoc
+from flask_sqlalchemy import SQLAlchemy
+
+from apps.utils.register import register_views, register_models
+from settings.config import CONFIG
 
 app = Flask(__name__)
 auto = Autodoc(app)
+app.config.from_object(CONFIG)
+db = SQLAlchemy(app)
+
+# Register all database models for Flask-Migrate
+register_models(app)
+
+# Register all views for Flask
+register_views(app)
 
 
 @app.route("/")
@@ -12,7 +24,7 @@ def index():
     return "Land ahoy!"
 
 
-@app.route('/apidoc')
+@app.route("/apidoc")
 def documentation():
     """All routes will be documented automatically here"""
     return auto.html()

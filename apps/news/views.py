@@ -1,4 +1,4 @@
-from flask_classy import FlaskView
+from flask_classful import FlaskView
 
 
 class NewsView(FlaskView):
@@ -8,13 +8,10 @@ class NewsView(FlaskView):
         return "News!"
 
     def get(self):
-        """This handles requests to GET /news"""
-        return "Get news"
+        return "This is GET /news"
 
     def post(self):
-        """POST /news"""
-        # db stuff
-        return "things"
+        return "This is POST /news"
 
 
 """
@@ -26,7 +23,7 @@ NewsView():
     def something():
 
 
-# SOmething like this in https://pythonhosted.org/Flask-Classy/
+# SOmething like this in https://pythonhosted.org/Flask-Classful/
 class AnotherView(FlaskView):
     route_base = "home"
 

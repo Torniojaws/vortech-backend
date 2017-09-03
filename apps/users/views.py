@@ -1,8 +1,10 @@
-from flask_classy import FlaskView, route
+from flask_classful import FlaskView
 
 
 class UsersView(FlaskView):
     """All things related to Users are handled here"""
-    @route("/", methods=["GET", "POST"])
     def index(self):
-        return "Users!"
+        return "This is GET /users"
+
+    def post(self):
+        return "This is POST /users"

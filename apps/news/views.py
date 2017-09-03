@@ -2,13 +2,14 @@ from flask_classful import FlaskView
 
 
 class NewsView(FlaskView):
-    """All things related to News are handled here"""
-
     def index(self):
-        return "News!"
+        return "News index"
 
-    def get(self):
-        return "This is GET /news"
+    def get(self, news_id):
+        if news_id:
+            return "This is GET /news/{}".format(news_id)
+        else:
+            return "This is GET /news"
 
     def post(self):
         return "This is POST /news"

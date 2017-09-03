@@ -255,7 +255,7 @@ As mentioned in the beginning, you will now access the root user with ``sudo mys
 that now and let's create our database user and an empty database. The database structure will be
 built by Flask Migrate.
 
-1. Creat the database: ``CREATE DATABASE vortech;``
+1. Create the database: ``CREATE DATABASE vortech;``
 1. Create the user: ``CREATE USER vortech@'localhost' IDENTIFIED BY 'somepassword';``
 1. And give it grants: ``GRANT ALL ON vortech.* TO vortech@'localhost';``
 1. And then we will build the structure with Flask Migrate. First, let's create the config file:
@@ -264,3 +264,9 @@ built by Flask Migrate.
 1. Then activate the virtualenv, if it's not active: ``source /srv/vortech-backend/venv/bin/activate``
 1. Now we can build the database structure. You might need to temporarily ``chown`` the entire html/
 directory to ``vagrant:vagrant``. Run: ``python manage.py db upgrade``
+
+## Final words for production
+
+Whenever you make changes to the app, you might need to "refresh" uWSGI to update the page that it
+serves. Otherwise you will see the old page.
+Run ``sudo touch --no-deference /etc/uwsgi-emperor/vassals/vortech-backend.ini``

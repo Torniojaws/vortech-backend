@@ -1,24 +1,20 @@
 from flask import Flask
 from flask_autodoc import Autodoc
 from flask_sqlalchemy import SQLAlchemy
-from settings.config import CONFIG
 
-import importlib
+from apps.utils.register import register_views, register_models
+from settings.config import CONFIG
 
 app = Flask(__name__)
 auto = Autodoc(app)
 app.config.from_object(CONFIG)
 db = SQLAlchemy(app)
 
-
 # Register all database models for Flask-Migrate
-for model in [
-    "news",
-    "users",
-]:
-    mod = importlib.import_module(
-        "apps.{}.models".format(model)
-    )
+register_models(app)
+
+# Register all views for Flask
+register_views(app)
 
 
 @app.route("/")

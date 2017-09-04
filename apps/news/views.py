@@ -1,5 +1,5 @@
-from flask import jsonify, make_response, request
-from flask_classful import FlaskView, route, url_for
+from flask import jsonify, make_response, request, url_for
+from flask_classful import FlaskView, route
 from sqlalchemy import desc
 import time
 

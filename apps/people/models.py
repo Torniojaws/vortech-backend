@@ -5,7 +5,7 @@ class People(db.Model):
     """The people related to the band. Both members and guest artists."""
     __tablename__ = "People"
     PersonID = db.Column(db.Integer, primary_key=True)
-    Name = db.Column(db.String(300), nullable=False, unique=True)
+    Name = db.Column(db.String(200), nullable=False, unique=True)
 
 
 class ReleasesPeopleMapping(db.Model):

@@ -5,7 +5,9 @@ class People(db.Model):
     """The people related to the band. Both members and guest artists."""
     __tablename__ = "People"
     PersonID = db.Column(db.Integer, primary_key=True)
-    Name = db.Column(db.String(200), nullable=False, unique=True)
+    # Since we use utf8mb4, each character takes 4 bytes.
+    # The max in InnoDB is 767 / 4 = 191 with rounding down.
+    Name = db.Column(db.String(190), nullable=False, unique=True)
 
 
 class ReleasesPeopleMapping(db.Model):

@@ -295,4 +295,4 @@ python manage.py db upgrade
 
 Whenever you make changes to the app, you might need to "refresh" uWSGI to update the page that it
 serves. Otherwise you will see the old page.
-Run ``sudo touch --no-deference /etc/uwsgi-emperor/vassals/vortech-backend.ini``
+Run ``sudo touch --no-dereference /etc/uwsgi-emperor/vassals/vortech-backend.ini``

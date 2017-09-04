@@ -5,7 +5,9 @@ class Songs(db.Model):
     """All the songs the band has written"""
     __tablename__ = "Songs"
     SongID = db.Column(db.Integer, primary_key=True)
-    Title = db.Column(db.String(255), nullable=False, unique=True)
+    # Since we use utf8mb4, each character takes 4 bytes.
+    # The max for unique=True in InnoDB is then 767 / 4 = 191 with rounding down.
+    Title = db.Column(db.String(190), nullable=False, unique=True)
     Duration = db.Column(db.Integer, nullable=False)
 
 

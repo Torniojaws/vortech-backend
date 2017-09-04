@@ -16,6 +16,7 @@ def register_models(app):
     """All database models need to be registered for Flask-Migrate to see them"""
     for model in [
         "news",
+        "releases",
         "users",
     ]:
         mod = importlib.import_module(

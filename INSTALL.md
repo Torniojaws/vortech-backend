@@ -40,17 +40,12 @@ be deleted
 1. And add a virtualenv there: ``sudo virtualenv -p /usr/bin/python3 venv``
 1. Then clone the project there:
 ``sudo git clone https://github.com/Torniojaws/vortech-backend.git html/``
-1. Then we will install the project requirements. There are a few packages that cannot be installed
-in the virtualenv directly. These must be installed manually as ``sudo``:
-1. uWSGI: ``sudo /srv/vortech-backend/venv/bin/pip install uwsgi``
-1. PyMySQL: ``sudo /srv/vortech-backend/venv/bin/pip install pymysql``
-1. Flask-Script: ``sudo /srv/vortech-backend/venv/bin/pip install flask_script``
-1. With these installed, we can now install the rest. First, activate the virtualenv:
-``source /srv/vortech-backend/venv/bin/activate``
+1. Then we will install the project requirements, but first you need to install the essential tools:
+``sudo apt-get install build-essential python3-dev``
+1. Activate the virtualenv: ``source /srv/vortech-backend/venv/bin/activate``
 1. Change to the project dir: ``cd /srv/vortech-backend/html``
-1. And then install the requirements: ``pip install -r requirements/prod.txt``
-1. Note: If there are some issues installing some packages, they probably need to be installed as
-``sudo``, just like in the two cases above (uWSGI and PyMySQL)
+1. And then install the requirements:
+``sudo /srv/vortech-backend/venv/bin/pip install -r requirements/prod.txt``
 1. And finally, change the owner of the app dir:
 ``sudo chown -R www-data:www-data /srv/vortech-backend``
 
@@ -84,8 +79,6 @@ plugins = python3, logfile
 logger = file:/srv/%(project)/uwsgi.log
 vacuum = true
 ```
-1. All is well! You can try it out manually with:
-``sudo uwsgi --ini /etc/uwsgi-emperor/vassals/vortech-backend.ini``
 
 ## Setup Nginx
 
@@ -96,8 +89,11 @@ server {
     listen 443 ssl http2;
     listen [::]:443 ssl http2;
 
-    ssl_certificate /etc/letsencrypt/live/vortechmusic.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/vortechmusic.com/privkey.pem;
+    # These are commented out until we have run the certbot for the first time. Otherwise it will
+    # fail with a Nginx config error. It comes because these two *.pem files do not exist until
+    # we have run certbot :)
+    # ssl_certificate /etc/letsencrypt/live/vortechmusic.com/fullchain.pem;
+    # ssl_certificate_key /etc/letsencrypt/live/vortechmusic.com/privkey.pem;
     ssl_session_cache shared:SSL:20m;
     ssl_session_timeout 180m;
     ssl_session_tickets off;
@@ -118,7 +114,8 @@ server {
     # OCSP stapling
     ssl_stapling on;
     ssl_stapling_verify on;
-    ssl_trusted_certificate /etc/letsencrypt/live/vortechmusic.com/fullchain.pem;
+    # This is also commented out until we run certbot for the first time
+    # ssl_trusted_certificate /etc/letsencrypt/live/vortechmusic.com/fullchain.pem;
     resolver 8.8.8.8 8.8.4.4;
 
     # Root location
@@ -192,19 +189,40 @@ It will take about 2 minutes to finish.
 1. Setup the repository: ``sudo add-apt-repository ppa:certbot/certbot``
 1. Update: ``sudo apt-get update``
 1. Install: ``sudo apt-get install python-certbot-nginx``
-1. And generate the certs: ``sudo certbot --nginx -d vortechmusic.com -d www.vortechmusic.com``
+1. When you run Certbot for the first time, we need to do some special steps (as follows).
+1. Create a new config: ``sudo vim /etc/nginx/sites-enabled/vortechmusic.conf``
+1. Make the contents of that file like this:
+```
+server {
+    listen 8080;
+    server_name vortechmusic.com www.vortechmusic.com;
+    location / {
+        try_files $uri $uri/ =404;
+    }
+}
+```
+1. Save and close.
+1. Then generate the certs: ``sudo certbot --nginx -d vortechmusic.com -d www.vortechmusic.com``
     1. In Vagrant, the easiest way is to run:
     ``sudo certbot run -a manual -i nginx -d vortechmusic.com -d www.vortechmusic.com``
     1. Note that it will require you to create files manually in the real host. After you run the
     command, it will tell you how to do it. Basically a random string in
     ``../public_html/.well-known/acme-challenge/<some_string>`` with a second random string as its
     contents
-1. There will be two files generated, which you should use as follows:
+1. There will be two files generated, which you should use as follows. Make sure the path is the
+same that the actual file. It has sometimes appeared in
+**/etc/letsencrypt/live/vortechmusic.com-0001/privkey.pem** instead of the below. In that case, use
+the -0001 one.
 ```
 ssl_certificate /etc/letsencrypt/live/vortechmusic.com/fullchain.pem;
 ssl_certificate_key /etc/letsencrypt/live/vortechmusic.com/privkey.pem;
 ssl_trusted_certificate /etc/letsencrypt/live/vortechmusic.com/fullchain.pem;
 ```
+1. So let's uncomment those rows from the config:
+``sudo vim /etc/nginx/sites-enabled/vortech-backend.conf``
+1. Find the above three rows and uncomment them. Then save and close.
+1. Remove the unneeded config: ``sudo rm /etc/nginx/sites-enabled/vortechmusic.conf``
+1. At this point, you might make sure the Nginx config is OK: ``sudo nginx -t``
 1. Let's also setup the automatic renewal of the certificates: ``sudo crontab -e``
 1. Add this line to it: ``0 8 1 */2 * /usr/bin/certbot renew --quiet``. It will renew the
 certificates on Day 1 of every second month at 08:00, eg. 1 September at 08:00, 1 November at 08:00
@@ -262,8 +280,16 @@ built by Flask Migrate.
 1. Run ``cd /srv/vortech-backend/html`` and then ``sudo cp settings/secret.sample settings/secret.cfg``
 1. And then edit the ``secret.cfg`` to the settings you defined for the database
 1. Then activate the virtualenv, if it's not active: ``source /srv/vortech-backend/venv/bin/activate``
-1. Now we can build the database structure. You might need to temporarily ``chown`` the entire html/
-directory to ``vagrant:vagrant``. Run: ``python manage.py db upgrade``
+1. Now we can build the database structure.
+1. In production, run ``python manage.py db upgrade`` to make the database up-to-date with the code.
+1. In Vagrant, if you start from scratch, you need to temporarily
+``sudo chown vagrant:vagrant html/``.
+1. Then in Vagrant, run:
+```
+python manage.py db init
+python manage.py db migrate -m "Creating all tables"
+python manage.py db upgrade
+```
 
 ## Final words for production
 

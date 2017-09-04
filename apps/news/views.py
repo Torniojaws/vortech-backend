@@ -1,4 +1,4 @@
-from flask import request, status
+from flask import jsonify, make_response, request
 from flask_classful import FlaskView, route, url_for
 from sqlalchemy import desc
 import time
@@ -11,12 +11,14 @@ class NewsView(FlaskView):
     @auto.doc()
     def index(self):
         """Return all News items in reverse chronological order (newest first)"""
-        return News.query.order_by(desc(News.Created)).all()
+        content = News.query.order_by(desc(News.Created)).all()
+        return make_response(jsonify(content), 200)
 
     @auto.doc()
     def get(self, news_id):
         """Get a specific News item"""
-        return News.query.filter_by(NewsID=news_id).first()
+        content = News.query.filter_by(NewsID=news_id).first_or_404()
+        return make_response(jsonify(content), 200)
 
     @auto.doc()
     def post(self):
@@ -34,7 +36,7 @@ class NewsView(FlaskView):
             url_for("NewsView:index"),
             db.session.inserted_primary_key  # TODO: Does this work?
         )
-        return content, status.HTTP_201_CREATED
+        return make_response(jsonify(content), 201)
 
     @auto.doc()
     def put(self, news_id):
@@ -49,6 +51,7 @@ class NewsView(FlaskView):
     @auto.doc()
     def delete(self, news_id):
         """Delete a News item"""
+        News.delete
         return "This is DELETE /news/{}\n".format(news_id)
 
     @auto.doc()

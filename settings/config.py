@@ -41,7 +41,7 @@ class ProdConfig(Config):
 
 
 class DevConfig(Config):
-    SQLALCHEMY_ECHO = True
+    SQLALCHEMY_ECHO = False
 
 
 ENV = configfile.get("env", "env")

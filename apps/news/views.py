@@ -11,14 +11,33 @@ class NewsView(FlaskView):
     @auto.doc()
     def index(self):
         """Return all News items in reverse chronological order (newest first)"""
-        content = News.query.order_by(desc(News.Created)).all()
-        return make_response(jsonify(content), 200)
+        contents = jsonify({
+            "news": [{
+                "id": news.NewsID,
+                "title": news.Title,
+                "contents": news.Contents,
+                "author": news.Author,
+                "created": news.Created,
+                "updated": news.Updated,
+            } for news in News.query.order_by(desc(News.Created)).all()]
+        })
+        return make_response(contents, 200)
 
     @auto.doc()
     def get(self, news_id):
         """Get a specific News item"""
-        content = News.query.filter_by(NewsID=news_id).first_or_404()
-        return make_response(jsonify(content), 200)
+        news = News.query.filter_by(NewsID=news_id).first_or_404()
+        contents = jsonify({
+            "news": [{
+                "id": news.NewsID,
+                "title": news.Title,
+                "contents": news.Contents,
+                "author": news.Author,
+                "created": news.Created,
+                "updated": news.Updated,
+            }]
+        })
+        return make_response(contents, 200)
 
     @auto.doc()
     def post(self):

@@ -16,7 +16,7 @@ before_install:
 - mysql -e 'FLUSH PRIVILEGES;'
 
 script:
-- python -m py.test --cov-report= --cov=backend tests/
+- python -m py.test --cov-report= --cov=apps tests/
 
 after_success:
 - coveralls

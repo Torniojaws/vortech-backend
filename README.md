@@ -24,7 +24,7 @@ See the [Install Instructions](INSTALL.md)
 ## Tests
 
 You can run the tests with ``python3 -m pytest tests/``. If you want the coverage report too, run
-it with: ``python3 -m py.test --cov-report= --cov=apps tests/``
+it with: ``python3 -m pytest --cov-report= --cov=apps tests/``
 
 ## Versioning
 

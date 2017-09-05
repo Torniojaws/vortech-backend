@@ -15,9 +15,9 @@ before_install:
 - mysql -e 'GRANT ALL ON test_vortech.* TO tester@localhost WITH GRANT OPTION;'
 - mysql -e 'FLUSH PRIVILEGES;'
 
-install: "pip install -r requirements/dev.txt"
-
-after_install: "python manage.py db upgrade"
+install:
+- pip install -r requirements/dev.txt
+- python manage.py db upgrade
 
 script:
 - python -m pytest --cov-report= --cov=apps tests/

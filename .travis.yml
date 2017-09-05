@@ -17,7 +17,7 @@ before_install:
 install: "pip install -r requirements/dev.txt"
 
 script:
-- python -m py.test --cov-report= --cov=apps tests/
+- python -m pytest --cov-report= --cov=apps tests/
 
 after_success:
 - coveralls

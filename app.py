@@ -1,22 +1,20 @@
 from flask import Flask
 from flask_autodoc import Autodoc
+from flask_sqlalchemy import SQLAlchemy
+
+from apps.utils.register import register_views, register_models
+from settings.config import CONFIG
 
 app = Flask(__name__)
 auto = Autodoc(app)
+app.config.from_object(CONFIG)
+db = SQLAlchemy(app)
 
+# Register all database models for Flask-Migrate
+register_models(app)
 
-@app.route("/")
-@auto.doc()
-def index():
-    """This is the main entry point, ye landlubbers!"""
-    return "Land ahoy!"
-
-
-@app.route('/apidoc')
-def documentation():
-    """All routes will be documented automatically here"""
-    return auto.html()
-
+# Register all views for Flask
+register_views(app)
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0')

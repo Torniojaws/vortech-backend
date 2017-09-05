@@ -1,7 +1,9 @@
 # Flask
 Flask==0.12.2
 Flask-Autodoc==0.1.2
+Flask-Classful==0.13.1
 Flask-Migrate==2.1.1
+Flask-Script==2.0.5
 Flask-SQLAlchemy==2.2
 
 # Gateway

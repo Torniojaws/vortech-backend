@@ -17,6 +17,8 @@ before_install:
 
 install: "pip install -r requirements/dev.txt"
 
+after_install: "python manage.py db upgrade"
+
 script:
 - python -m pytest --cov-report= --cov=apps tests/
 

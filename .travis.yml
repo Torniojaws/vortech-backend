@@ -7,11 +7,12 @@ service:
 - mysql
 
 before_install:
+- cp settings/secret.sample settings/secret.cfg
 - mysql -e 'DROP DATABASE IF EXISTS test_vortech;'
 - mysql -e 'CREATE DATABASE IF NOT EXISTS test_vortech;'
 - mysql -e 'USE test_vortech;'
-- mysql -e "CREATE USER 'vortest'@'localhost' IDENTIFIED BY 'tester';"
-- mysql -e 'GRANT ALL ON test_vortech.* TO vortest@localhost WITH GRANT OPTION;'
+- mysql -e "CREATE USER 'tester'@'localhost' IDENTIFIED BY 'tester';"
+- mysql -e 'GRANT ALL ON test_vortech.* TO tester@localhost WITH GRANT OPTION;'
 - mysql -e 'FLUSH PRIVILEGES;'
 
 install: "pip install -r requirements/dev.txt"

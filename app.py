@@ -1,12 +1,10 @@
 from flask import Flask
-from flask_autodoc import Autodoc
 from flask_sqlalchemy import SQLAlchemy
 
 from apps.utils.register import register_views, register_models
 from settings.config import CONFIG
 
 app = Flask(__name__)
-auto = Autodoc(app)
 app.config.from_object(CONFIG)
 db = SQLAlchemy(app)
 

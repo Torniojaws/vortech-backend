@@ -5,9 +5,6 @@ def register_views(app):
     """All route views must be registered before the can be used"""
     api_path = "/api/1.0"
 
-    from apps.apidoc.views import ApidocView
-    ApidocView.register(app, route_base="{}/".format(api_path))
-
     from apps.news.views import NewsView
     NewsView.register(app, route_base="{}/news/".format(api_path))
 

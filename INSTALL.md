@@ -53,136 +53,136 @@ be deleted
 
 1. Let's create the config: ``sudo vim /etc/uwsgi-emperor/vassals/vortech-backend.ini``
 1. Make the contents as follows:
-```
-[uwsgi]
-project = vortech-backend
-socket = /srv/%(project)/uwsgi.sock
-chmod-socket = 666
+    ```
+    [uwsgi]
+    project = vortech-backend
+    socket = /srv/%(project)/uwsgi.sock
+    chmod-socket = 666
 
-chdir = /srv/%(project)/html
-master = true
-virtualenv = /srv/%(project)/venv
-binary-path = %(virtualenv)/bin/uwsgi
+    chdir = /srv/%(project)/html
+    master = true
+    virtualenv = /srv/%(project)/venv
+    binary-path = %(virtualenv)/bin/uwsgi
 
-module = wsgi:application
-uid = www-data
-gid = www-data
+    module = wsgi:application
+    uid = www-data
+    gid = www-data
 
-processes = 10
-cheaper = 2
-cheaper-initial = 5
-cheaper-step = 1
-cheaper-algo = spare
-cheaper-overload = 5
+    processes = 10
+    cheaper = 2
+    cheaper-initial = 5
+    cheaper-step = 1
+    cheaper-algo = spare
+    cheaper-overload = 5
 
-plugins = python3, logfile
-logger = file:/srv/%(project)/uwsgi.log
-vacuum = true
-```
+    plugins = python3, logfile
+    logger = file:/srv/%(project)/uwsgi.log
+    vacuum = true
+    ```
 
 ## Setup Nginx
 
 1. Let's create our config: ``sudo vim /etc/nginx/sites-enabled/vortech-backend.conf``
 1. Make the contents of the file as follows:
-```
-server {
-    listen 443 ssl http2;
-    listen [::]:443 ssl http2;
+    ```
+    server {
+        listen 443 ssl http2;
+        listen [::]:443 ssl http2;
 
-    # These are commented out until we have run the certbot for the first time. Otherwise it will
-    # fail with a Nginx config error. It comes because these two *.pem files do not exist until
-    # we have run certbot :)
-    # ssl_certificate /etc/letsencrypt/live/vortechmusic.com/fullchain.pem;
-    # ssl_certificate_key /etc/letsencrypt/live/vortechmusic.com/privkey.pem;
-    ssl_session_cache shared:SSL:20m;
-    ssl_session_timeout 180m;
-    ssl_session_tickets off;
-    ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
-    ssl_prefer_server_ciphers on;
-    ssl_ciphers ECDH+AESGCM:ECDH+AES256:ECDH+AES128:DHE+AES128:!ADH:!AECDH:!MD5;
-    ssl_dhparam /etc/nginx/cert/dhparam.pem;
+        # These are commented out until we have run the certbot for the first time. Otherwise it will
+        # fail with a Nginx config error. It comes because these two *.pem files do not exist until
+        # we have run certbot :)
+        # ssl_certificate /etc/letsencrypt/live/vortechmusic.com/fullchain.pem;
+        # ssl_certificate_key /etc/letsencrypt/live/vortechmusic.com/privkey.pem;
+        ssl_session_cache shared:SSL:20m;
+        ssl_session_timeout 180m;
+        ssl_session_tickets off;
+        ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+        ssl_prefer_server_ciphers on;
+        ssl_ciphers ECDH+AESGCM:ECDH+AES256:ECDH+AES128:DHE+AES128:!ADH:!AECDH:!MD5;
+        ssl_dhparam /etc/nginx/cert/dhparam.pem;
 
-    # HSTS
-    add_header Strict-Transport-Security "max-age=63072000; includeSubdomains; preload";
+        # HSTS
+        add_header Strict-Transport-Security "max-age=63072000; includeSubdomains; preload";
 
-    # Deters click-jacking
-    add_header X-Frame-Options SAMEORIGIN;
+        # Deters click-jacking
+        add_header X-Frame-Options SAMEORIGIN;
 
-    # Deters MIME-type confusion attacks
-    add_header X-Content-Type-Options nosniff;
+        # Deters MIME-type confusion attacks
+        add_header X-Content-Type-Options nosniff;
 
-    # OCSP stapling
-    ssl_stapling on;
-    ssl_stapling_verify on;
-    # This is also commented out until we run certbot for the first time
-    # ssl_trusted_certificate /etc/letsencrypt/live/vortechmusic.com/fullchain.pem;
-    resolver 8.8.8.8 8.8.4.4;
+        # OCSP stapling
+        ssl_stapling on;
+        ssl_stapling_verify on;
+        # This is also commented out until we run certbot for the first time
+        # ssl_trusted_certificate /etc/letsencrypt/live/vortechmusic.com/fullchain.pem;
+        resolver 8.8.8.8 8.8.4.4;
 
-    # Root location
-    root /srv/vortech-backend/html;
-    index index.html index.htm;
+        # Root location
+        root /srv/vortech-backend/html;
+        index index.html index.htm;
 
-    access_log /srv/vortech-backend/logs/access.log;
-    error_log /srv/vortech-backend/logs/error.log;
+        access_log /srv/vortech-backend/logs/access.log;
+        error_log /srv/vortech-backend/logs/error.log;
 
-    location / {
-        include uwsgi_params;
-        uwsgi_pass unix:/srv/vortech-backend/uwsgi.sock;
+        location / {
+            include uwsgi_params;
+            uwsgi_pass unix:/srv/vortech-backend/uwsgi.sock;
+        }
+
+        # Prevent serving files beginning with a “.”
+        # Do not log attempt
+        location ~ /\. {
+            access_log off;
+            log_not_found off;
+            deny all;
+        }
+
+        # Prevent serving files beginning with a “$”
+        # Do not log attempt
+        location ~ ~$ {
+            access_log off;
+            log_not_found off;
+            deny all;
+        }
+
+        # Prevent logging whenever favicon & robots.txt files are accessed
+        location = /robots.txt {
+            log_not_found off;
+        }
+
+        location = /favicon.ico {
+            access_log off;
+            log_not_found off;
+        }
     }
 
-    # Prevent serving files beginning with a “.”
-    # Do not log attempt
-    location ~ /\. {
-        access_log off;
-        log_not_found off;
-        deny all;
+    # Redirect all HTTP traffic to HTTPS
+    # Always redirect to www.<domain_name>, not bare-domain (without "www") according to SEO best-practices
+    # If you are in Vagrant, comment this out if you use "localhost". Otherwise there's an infinite loop
+    server {
+        listen 80;
+        listen [::]:80;
+
+        return 301 https://www.vortechmusic.com$request_uri;
     }
 
-    # Prevent serving files beginning with a “$”
-    # Do not log attempt
-    location ~ ~$ {
-        access_log off;
-        log_not_found off;
-        deny all;
+    # Redirect bare-domain HTTPS to https://www.vortechmusic.com
+    # If you are in Vagrant, comment this out if you use "localhost". Otherwise there's an infinite loop
+    server {
+        listen 443 ssl http2;
+        listen [::]:443 ssl http2;
+
+        server_name vortechmusic.com www.vortechmusic.com;
+        return 301 https://www.vortechmusic.com$request_uri;
     }
-
-    # Prevent logging whenever favicon & robots.txt files are accessed
-    location = /robots.txt {
-        log_not_found off;
-    }
-
-    location = /favicon.ico {
-        access_log off;
-        log_not_found off;
-    }
-}
-
-# Redirect all HTTP traffic to HTTPS
-# Always redirect to www.<domain_name>, not bare-domain (without "www") according to SEO best-practices
-# If you are in Vagrant, comment this out if you use "localhost". Otherwise there's an infinite loop
-server {
-    listen 80;
-    listen [::]:80;
-
-    return 301 https://www.vortechmusic.com$request_uri;
-}
-
-# Redirect bare-domain HTTPS to https://www.vortechmusic.com
-# If you are in Vagrant, comment this out if you use "localhost". Otherwise there's an infinite loop
-server {
-    listen 443 ssl http2;
-    listen [::]:443 ssl http2;
-
-    server_name vortechmusic.com www.vortechmusic.com;
-    return 301 https://www.vortechmusic.com$request_uri;
-}
-```
+    ```
 1. There are a lot of special files in /etc/nginx/cert/ and some other things. So, let's do them.
 1. First, create a DH parameters file. Before it starts, we need to create the dir and file with:
-```
-sudo mkdir -p /etc/nginx/cert
-sudo touch /etc/nginx/cert/dhparam.pem
-```
+    ```
+    sudo mkdir -p /etc/nginx/cert
+    sudo touch /etc/nginx/cert/dhparam.pem
+    ```
 1. Then create the file contents: ``sudo openssl dhparam 2048 -out /etc/nginx/cert/dhparam.pem``
 It will take about 2 minutes to finish.
 1. Then, for the below steps we will need Certbot from Let's Encrypt.
@@ -192,15 +192,15 @@ It will take about 2 minutes to finish.
 1. When you run Certbot for the first time, we need to do some special steps (as follows).
 1. Create a new config: ``sudo vim /etc/nginx/sites-enabled/vortechmusic.conf``
 1. Make the contents of that file like this:
-```
-server {
-    listen 8080;
-    server_name vortechmusic.com www.vortechmusic.com;
-    location / {
-        try_files $uri $uri/ =404;
+    ```
+    server {
+        listen 8080;
+        server_name vortechmusic.com www.vortechmusic.com;
+        location / {
+            try_files $uri $uri/ =404;
+        }
     }
-}
-```
+    ```
 1. Save and close.
 1. Then generate the certs: ``sudo certbot --nginx -d vortechmusic.com -d www.vortechmusic.com``
     1. In Vagrant, the easiest way is to run:
@@ -213,11 +213,11 @@ server {
 same that the actual file. It has sometimes appeared in
 **/etc/letsencrypt/live/vortechmusic.com-0001/privkey.pem** instead of the below. In that case, use
 the -0001 one.
-```
-ssl_certificate /etc/letsencrypt/live/vortechmusic.com/fullchain.pem;
-ssl_certificate_key /etc/letsencrypt/live/vortechmusic.com/privkey.pem;
-ssl_trusted_certificate /etc/letsencrypt/live/vortechmusic.com/fullchain.pem;
-```
+    ```
+    ssl_certificate /etc/letsencrypt/live/vortechmusic.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/vortechmusic.com/privkey.pem;
+    ssl_trusted_certificate /etc/letsencrypt/live/vortechmusic.com/fullchain.pem;
+    ```
 1. So let's uncomment those rows from the config:
 ``sudo vim /etc/nginx/sites-enabled/vortech-backend.conf``
 1. Find the above three rows and uncomment them. Then save and close.
@@ -233,38 +233,38 @@ Emperor is used to manage multiple sites, but it also has some nice features tha
 server benefits from. For example automatic restarting of hung sites.
 
 1. Let's create by destroying. We want to use systemd instead of LSB:
-```
-sudo systemctl stop uwsgi-emperor
-sudo systemctl disable uwsgi-emperor
-```
+    ```
+    sudo systemctl stop uwsgi-emperor
+    sudo systemctl disable uwsgi-emperor
+    ```
 1. Then create the new config: ``sudo vim /etc/systemd/system/emperor.uwsgi.service`` and make the
 contents of the file as follows:
-```
-[Unit]
-Description=uWSGI Emperor
-After=syslog.target
+    ```
+    [Unit]
+    Description=uWSGI Emperor
+    After=syslog.target
 
-[Service]
-ExecStart=/usr/bin/uwsgi --ini /etc/uwsgi-emperor/emperor.ini
-# Requires systemd version 211 or newer
-RuntimeDirectory=uwsgi
-Restart=always
-KillSignal=SIGQUIT
-Type=notify
-StandardError=syslog
-NotifyAccess=all
+    [Service]
+    ExecStart=/usr/bin/uwsgi --ini /etc/uwsgi-emperor/emperor.ini
+    # Requires systemd version 211 or newer
+    RuntimeDirectory=uwsgi
+    Restart=always
+    KillSignal=SIGQUIT
+    Type=notify
+    StandardError=syslog
+    NotifyAccess=all
 
-[Install]
-WantedBy=multi-user.target
-```
+    [Install]
+    WantedBy=multi-user.target
+    ```
 1. Save and close.
 1. Then start the brand new emperor:
-```
-sudo systemctl daemon-reload
-sudo systemctl enable nginx emperor.uwsgi
-sudo systemctl reload nginx
-sudo systemctl start emperor.uwsgi
-```
+    ```
+    sudo systemctl daemon-reload
+    sudo systemctl enable nginx emperor.uwsgi
+    sudo systemctl reload nginx
+    sudo systemctl start emperor.uwsgi
+    ```
 1. Check that it is running: ``sudo systemctl status emperor.uwsgi``
 
 ## Configure the database
@@ -285,11 +285,17 @@ built by Flask Migrate.
 1. In Vagrant, if you start from scratch, you need to temporarily
 ``sudo chown vagrant:vagrant html/``.
 1. Then in Vagrant, run:
-```
-python manage.py db init
-python manage.py db migrate -m "Creating all tables"
-python manage.py db upgrade
-```
+    ```
+    # This reads the registered DB models and initializes the migration
+    python manage.py db init
+
+    # This builds the migration files, which will be added to the repo.
+    # They are used to build the DB structure in other computers where the repo is cloned to
+    python manage.py db migrate -m "Creating all tables"
+
+    # This builds the database tables based on the migration files
+    python manage.py db upgrade
+    ```
 
 ## Final words for production
 

@@ -48,11 +48,29 @@ class TestNewsView(unittest.TestCase):
         self.assertEquals("UnitTest", news["news"][0]["title"])
 
     def test_getting_one_news(self):
-        print("Type is: {}".format(type(self.news_ids[1])))
-        print("Using value: {}".format(self.news_ids[1]))
         response = self.app.get("/api/1.0/news/{}".format(int(self.news_ids[1])))
         news = json.loads(
             response.get_data().decode()
         )
         self.assertEquals(200, response.status_code)
         self.assertEquals("UnitTest2", news["news"][0]["title"])
+
+    def test_adding_news(self):
+        response = self.app.post(
+            "/api/1.0/news/",
+            data=json.dumps(
+                dict(
+                    title="UnitTest Post",
+                    contents="UnitTest",
+                    author="UnitTester"
+                )
+            ),
+            content_type='application/json'
+        )
+        self.assertEquals(201, response.status_code)
+        self.assertTrue("Location" in response.get_data().decode())
+
+    def test_deleting_news(self):
+        response = self.app.delete("/api/1.0/news/{}".format(int(self.news_ids[0])))
+        self.assertEquals(204, response.status_code)
+        self.assertEquals("", response.data.decode())

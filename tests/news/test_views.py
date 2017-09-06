@@ -72,5 +72,8 @@ class TestNewsView(unittest.TestCase):
 
     def test_deleting_news(self):
         response = self.app.delete("/api/1.0/news/{}".format(int(self.news_ids[0])))
+        query_result = News.query.filter_by(NewsID=self.news_ids[0]).first()
+
         self.assertEquals(204, response.status_code)
         self.assertEquals("", response.data.decode())
+        self.assertEquals(None, query_result)

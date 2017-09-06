@@ -65,13 +65,20 @@ class NewsView(FlaskView):
         return "This is PUT /news/{}\n".format(news_id)
 
     def patch(self, news_id):
-        """Change an existing News item partially"""
+        """Change an existing News item partially using an instruction-based JSON, as defined by:
+        https://tools.ietf.org/html/rfc6902
+        """
+        from apps.news.patch import Patch
+        patch = Patch()
+        data = json.loads(request.data.decode())
+        patch.with_data(data)
         return "This is PATCH /news/{}\n".format(news_id)
 
     def delete(self, news_id):
         """Delete a News item"""
         news = News.query.filter_by(NewsID=news_id).first()
         db.session.delete(news)
+        db.session.commit()
         return make_response("", 204)
 
     @route("/<int:news_id>/comments/<int:comment_id>", methods=["GET"])

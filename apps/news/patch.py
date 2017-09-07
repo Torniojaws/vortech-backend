@@ -1,4 +1,8 @@
 """This is the News-specific extended Patch class"""
+
+# TODO: Delete this if the jsonpatch library works well
+
+from apps.news.models import News
 from apps.utils.patch import Patch
 
 
@@ -9,7 +13,15 @@ class Patch(Patch):
         # { "op": "add", "path": "/title", "value": "Edited news title" }
         # Add the value(s) to the given path. The path should be created if it does not exist.
         # If there already is a value in "path", it will be replaced.
-        pass
+        for value in values:
+            # This would need some magic to map to the name.
+            # "column" cannot be used directly as it expects the actual model name
+            # column = self.get_column(path)
+            patch = News(
+                Title=""
+            )
+            self.db.session.update(patch)
+            self.db.session.commit()
 
     def copy(self, source, path):
         # Example:
@@ -47,3 +59,12 @@ class Patch(Patch):
         # Compare the value in the path to the value provided in the request.
         # Return a boolean response
         pass
+
+    def get_column(self, path):
+        # The mapping from URI to DB Column
+        selector = {
+            "/title": "Title",
+            "/contents": "Contents",
+            "/author": "Author",
+        }
+        return selector.get(path, "Unknown path, skipping...")

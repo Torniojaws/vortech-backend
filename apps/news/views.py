@@ -4,10 +4,13 @@ import time
 
 from flask import jsonify, make_response, request, url_for
 from flask_classful import FlaskView, route
+from jsonpatch import JsonPatch
 from sqlalchemy import desc
+from dictalchemy import make_class_dictable
 
 from app import db
 from apps.news.models import News
+make_class_dictable(News)
 
 
 class NewsView(FlaskView):
@@ -51,6 +54,7 @@ class NewsView(FlaskView):
         )
         db.session.add(news_item)
         db.session.commit()
+
         # The RFC 7231 spec says a 201 Created should return an absolute full path
         server = socket.gethostname()
         contents = "Location: {}{}{}".format(
@@ -62,23 +66,34 @@ class NewsView(FlaskView):
 
     def put(self, news_id):
         """Replace an existing News item with new data"""
-        return "This is PUT /news/{}\n".format(news_id)
+        data = json.loads(request.data.decode())
+        news = News.query.get_or_404(news_id)
+
+        # Update the news item
+        news.Title = data["title"]
+        news.Contents = data["contents"]
+        news.Author = data["author"]
+        news.Updated = time.strftime('%Y-%m-%d %H:%M:%S')
+        db.session.commit()
+
+        return make_response("", 200)
 
     def patch(self, news_id):
         """Change an existing News item partially using an instruction-based JSON, as defined by:
         https://tools.ietf.org/html/rfc6902
         """
-        from apps.news.patch import Patch
-        patch = Patch()
-        data = json.loads(request.data.decode())
-        patch.with_data(data)
-        return "This is PATCH /news/{}\n".format(news_id)
+        news_item = News.query.get_or_404(news_id)
+        self.patch_item(news_item, request.get_json())
+        db.session.commit()
+
+        return make_response(jsonify(news_item.asdict()), 200)
 
     def delete(self, news_id):
         """Delete a News item"""
         news = News.query.filter_by(NewsID=news_id).first()
         db.session.delete(news)
         db.session.commit()
+
         return make_response("", 204)
 
     @route("/<int:news_id>/comments/<int:comment_id>", methods=["GET"])
@@ -90,3 +105,12 @@ class NewsView(FlaskView):
     def news_comments(self, news_id):
         """Return all comments for a given News item, in chronological order"""
         return "This is GET /news/{}/comments/\n".format(news_id)
+
+    def patch_item(self, news, patchdata, **kwargs):
+        """This is used to run patches on the database model, using the method described here:
+        https://gist.github.com/mattupstate/d63caa0156b3d2bdfcdb
+        """
+        patch = JsonPatch(patchdata)
+        data = news.asdict(exclude_pk=True, **kwargs)
+        data = patch.apply(data)
+        news.fromdict(data)

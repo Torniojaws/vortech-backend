@@ -13,9 +13,16 @@ The RFC 6902 defines a Patch JSON like this:
 ]
 """
 import abc
+from app import db
+
+# TODO: Delete this if jsonpatch works well
 
 
 class Patch(metaclass=abc.ABCMeta):
+    def __init__(self, target_id):
+        self.id = target_id
+        self.db = db
+
     def with_data(self, patchdict):
         """Run the patches defined in <patchdict>"""
         for patch in patchdict:
@@ -87,3 +94,9 @@ class Patch(metaclass=abc.ABCMeta):
         # Compare the value in the path to the value provided in the request.
         # Return a boolean response
         raise NotImplementedError("You must define test(path, values) method")
+
+    @abc.abstractmethod
+    def get_column(self, path):
+        """The path in the JSON might be eg. "/email" while the database column name could be for
+        example "EmailAddress", so we need to map them in the implementation classes."""
+        raise NotImplementedError("You must define get_column(path) method")

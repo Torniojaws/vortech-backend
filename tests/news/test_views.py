@@ -12,14 +12,14 @@ class TestNewsView(unittest.TestCase):
         # Add some test news
         news1 = News(
             Title="UnitTest",
-            Contents="UnitTest",
-            Author="UnitTest",
+            Contents="UnitTest Contents",
+            Author="UnitTest Author",
             Created=time.strftime('%Y-%m-%d %H:%M:%S')
         )
         news2 = News(
             Title="UnitTest2",
-            Contents="UnitTest2",
-            Author="UnitTest2",
+            Contents="UnitTest2 Contents",
+            Author="UnitTest2 Author",
             Created=time.strftime('%Y-%m-%d %H:%M:%S')
         )
         db.session.add(news1)
@@ -65,7 +65,7 @@ class TestNewsView(unittest.TestCase):
                     author="UnitTester"
                 )
             ),
-            content_type='application/json'
+            content_type="application/json"
         )
         self.assertEquals(201, response.status_code)
         self.assertTrue("Location" in response.get_data().decode())
@@ -77,3 +77,165 @@ class TestNewsView(unittest.TestCase):
         self.assertEquals(204, response.status_code)
         self.assertEquals("", response.data.decode())
         self.assertEquals(None, query_result)
+
+    def test_putting_things(self):
+        response = self.app.put(
+            "/api/1.0/news/{}".format(int(self.news_ids[0])),
+            data=json.dumps(
+                dict(
+                    title="UnitTest Put Title",
+                    contents="UnitTest Put Contents",
+                    author="UnitTest Put Author",
+                )
+            ),
+            content_type="application/json"
+        )
+
+        news = News.query.get_or_404(self.news_ids[0])
+
+        self.assertEquals(200, response.status_code)
+        self.assertEquals("UnitTest Put Title", news.Title)
+        self.assertEquals("UnitTest Put Contents", news.Contents)
+        self.assertEquals("UnitTest Put Author", news.Author)
+
+    """
+    The below tests run various PATCH cases, as defined:
+
+    The RFC 6902 defines a Patch JSON like this (the order of "op" does not matter):
+    [
+        { "op": "add", "path": "/a/b/c", "value": [ "foo", "bar" ] },
+        { "op": "copy", "from": "/a/b/d", "path": "/a/b/e" }
+        { "op": "move", "from": "/a/b/c", "path": "/a/b/d" },
+        { "op": "remove", "path": "/a/b/c" },
+        { "op": "replace", "path": "/a/b/c", "value": 42 },
+        { "op": "test", "path": "/a/b/c", "value": "foo" },
+    ]
+    """
+
+    def test_patching_things_using_add(self):
+        # TODO: How to make the "path" case-insensitive, since the DB column is eg. News.Title
+        # With path "/title" it fails, and with path "/Title" it works
+        response = self.app.patch(
+            "/api/1.0/news/{}".format(int(self.news_ids[0])),
+            data=json.dumps(
+                [
+                    dict(
+                        op="add",
+                        path="/Title",
+                        value="UnitTest Patched Title",
+                    )
+                ]
+            ),
+            content_type="application/json"
+        )
+
+        news = News.query.get_or_404(self.news_ids[0])
+
+        self.assertEquals(200, response.status_code)
+        self.assertEquals("UnitTest Patched Title", news.Title)
+
+    """
+    def test_patching_things_using_copy(self):
+        response = self.app.patch(
+            "/api/1.0/news/{}".format(int(self.news_ids[1])),
+            data=json.dumps(
+                [{
+                    "op": "copy",
+                    "from": "/contents",  # Cannot use from in a dict. It is a keyword
+                    "path": "/author"
+                }]
+            ),
+            content_type="application/json"
+        )
+
+        news = News.query.get_or_404(self.news_ids[1])
+
+        self.assertEquals(200, response.status_code)
+        self.assertEquals("UnitTest2 Contents", news.Author)
+
+    def test_patching_things_using_move(self):
+        response = self.app.patch(
+            "/api/1.0/news/{}".format(int(self.news_ids[0])),
+            data=json.dumps(
+                [{
+                    "op": "move",
+                    "from": "/contents",  # Cannot use from in a dict. It is a keyword
+                    "path": "/author"
+                }]
+            ),
+            content_type="application/json"
+        )
+
+        news = News.query.get_or_404(self.news_ids[0])
+
+        self.assertEquals(200, response.status_code)
+        self.assertEquals("UnitTest2 Contents", news.Author)
+        self.assertEquals(None, news.Contents)  # Move is identical to replace+remove
+
+    def test_patching_things_using_remove(self):
+        response = self.app.patch(
+            "/api/1.0/news/{}".format(int(self.news_ids[0])),
+            data=json.dumps(
+                [{
+                    "op": "remove",
+                    "path": "/author"
+                }]
+            ),
+            content_type="application/json"
+        )
+
+        news = News.query.get_or_404(self.news_ids[0])
+
+        self.assertEquals(200, response.status_code)
+        self.assertEquals(None, news.Author)
+
+    def test_patching_things_using_replace(self):
+        response = self.app.patch(
+            "/api/1.0/news/{}".format(int(self.news_ids[0])),
+            data=json.dumps(
+                [{
+                    "op": "replace",
+                    "path": "/author",
+                    "value": "UnitTest Patch Replace"
+                }]
+            ),
+            content_type="application/json"
+        )
+
+        news = News.query.get_or_404(self.news_ids[0])
+
+        self.assertEquals(200, response.status_code)
+        self.assertEquals("UnitTest Patch Replace", news.Author)
+
+    def test_patching_things_using_test_with_existing_value(self):
+        response = self.app.patch(
+            "/api/1.0/news/{}".format(int(self.news_ids[1])),
+            data=json.dumps(
+                [{
+                    "op": "test",
+                    "path": "/author",
+                    "value": "UnitTest2 Author"
+                }]
+            ),
+            content_type="application/json"
+        )
+
+        self.assertEquals(200, response.status_code)
+        self.assertTrue(response.data)
+
+    def test_patching_things_using_test_with_nonexisting_value(self):
+        response = self.app.patch(
+            "/api/1.0/news/{}".format(int(self.news_ids[1])),
+            data=json.dumps(
+                [{
+                    "op": "test",
+                    "path": "/contents",
+                    "value": "I do not exist"
+                }]
+            ),
+            content_type="application/json"
+        )
+
+        self.assertEquals(200, response.status_code)
+        self.assertFalse(response.data)
+    """

@@ -12,3 +12,5 @@ uWSGI==2.0.15
 # Database things
 PyMySQL==0.7.11
 SQLAlchemy==1.1.13
+jsonpatch==1.16
+dictalchemy==0.1.2.7

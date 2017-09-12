@@ -2,8 +2,10 @@ import json
 import unittest
 import time
 
+from sqlalchemy import asc
+
 from app import app, db
-from apps.news.models import News
+from apps.news.models import News, NewsCategoriesMapping
 
 
 class TestNewsView(unittest.TestCase):
@@ -32,6 +34,18 @@ class TestNewsView(unittest.TestCase):
         added_news = News.query.filter(News.Title.like("UnitTest%")).all()
         for news in added_news:
             self.news_ids.append(news.NewsID)
+            # And create some Category mappings for them
+            cat1 = NewsCategoriesMapping(
+                NewsID=news.NewsID,
+                NewsCategoryID=1
+            )
+            cat2 = NewsCategoriesMapping(
+                NewsID=news.NewsID,
+                NewsCategoryID=3
+            )
+            db.session.add(cat1)
+            db.session.add(cat2)
+            db.session.commit()
 
     def tearDown(self):
         to_delete = News.query.filter(News.Title.like("UnitTest%")).all()
@@ -47,6 +61,8 @@ class TestNewsView(unittest.TestCase):
         self.assertEquals(200, response.status_code)
         self.assertEquals(2, len([n for n in news["news"]]))
         self.assertEquals("UnitTest", news["news"][0]["title"])
+        self.assertEquals(2, len(news["news"][0]["categories"]))
+        self.assertEquals(3, news["news"][0]["categories"][1])
 
     def test_getting_one_news(self):
         response = self.app.get("/api/1.0/news/{}".format(int(self.news_ids[1])))
@@ -55,6 +71,8 @@ class TestNewsView(unittest.TestCase):
         )
         self.assertEquals(200, response.status_code)
         self.assertEquals("UnitTest2", news["news"][0]["title"])
+        self.assertEquals(2, len(news["news"][0]["categories"]))
+        self.assertEquals(3, news["news"][0]["categories"][1])
 
     def test_adding_news(self):
         response = self.app.post(
@@ -63,13 +81,20 @@ class TestNewsView(unittest.TestCase):
                 dict(
                     title="UnitTest Post",
                     contents="UnitTest",
-                    author="UnitTester"
+                    author="UnitTester",
+                    categories=[1, 3],
                 )
             ),
             content_type="application/json"
         )
+        news = News.query.filter_by(Title="UnitTest Post").first_or_404()
+        cats = NewsCategoriesMapping.query.filter_by(NewsID=news.NewsID).order_by(
+            asc(NewsCategoriesMapping.NewsCategoryID)).all()
         self.assertEquals(201, response.status_code)
         self.assertTrue("Location" in response.get_data().decode())
+        self.assertEquals("UnitTest", news.Contents)
+        self.assertEquals(2, len(cats))
+        self.assertEquals(3, cats[1].NewsCategoryID)
 
     def test_deleting_news(self):
         response = self.app.delete("/api/1.0/news/{}".format(int(self.news_ids[0])))
@@ -134,6 +159,9 @@ class TestNewsView(unittest.TestCase):
         { "op": "replace", "path": "/a/b/c", "value": 42 },
         { "op": "test", "path": "/a/b/c", "value": "foo" },
     ]
+
+    All have been implemented, but in practice I doubt we'll use anything else than "add" and
+    "replace"
     """
 
     def test_patching_things_using_add(self):
@@ -200,7 +228,7 @@ class TestNewsView(unittest.TestCase):
 
         self.assertEquals(200, response.status_code)
         self.assertNotEquals("UnitTest Author", news.Author)
-        # FIXME: This does not work. See https://github.com/stefankoegl/python-json-patch/issues/70
+        # NB: The below cannot be done, because in jsonpatch the value is fully removed.
         # self.assertEquals(None, news.Updated)
 
     def test_patching_things_using_remove(self):
@@ -218,10 +246,9 @@ class TestNewsView(unittest.TestCase):
             content_type="application/json"
         )
 
-        # news = News.query.get_or_404(self.news_ids[0])
-
         self.assertEquals(200, response.status_code)
-        # FIXME: This does not work. See https://github.com/stefankoegl/python-json-patch/issues/70
+        # NB: This cannot be done with jsonpatch.
+        # See https://github.com/stefankoegl/python-json-patch/issues/70
         # self.assertEquals(None, news.Updated)
 
     def test_patching_things_using_replace(self):

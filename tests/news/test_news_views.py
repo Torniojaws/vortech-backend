@@ -1,42 +1,103 @@
 import json
 import unittest
-import time
+
+from sqlalchemy import asc
 
 from app import app, db
-from apps.news.models import News
+from apps.news.models import News, NewsCategoriesMapping, NewsComments
+from apps.users.models import Users
+from apps.utils.time import get_datetime
 
 
 class TestNewsView(unittest.TestCase):
     def setUp(self):
         self.app = app.test_client()
+        # Add a dummy user - needed for NewsComments. No need to configure access levels here
+        user = Users(
+            Name="UnitTest",
+            Username="unittester",
+            Password="unittest",
+            Created=get_datetime(),
+        )
+        db.session.add(user)
+        db.session.commit()
+        self.valid_user = user.UserID
+
         # Add some test news
         news1 = News(
             Title="UnitTest",
             Contents="UnitTest Contents",
             Author="UnitTest Author",
-            Created=time.strftime('%Y-%m-%d %H:%M:%S'),
-            Updated=time.strftime('%Y-%m-%d %H:%M:%S')  # This is only to test "move" and "remove"
+            Created=get_datetime(),
+            Updated=get_datetime(),  # This is only to test "move" and "remove"
         )
         news2 = News(
             Title="UnitTest2",
             Contents="UnitTest2 Contents",
             Author="UnitTest2 Author",
-            Created=time.strftime('%Y-%m-%d %H:%M:%S')
+            Created=get_datetime(),
         )
         db.session.add(news1)
         db.session.add(news2)
         db.session.commit()
 
-        # Get their IDs
+        # Get the added news IDs
         self.news_ids = []
         added_news = News.query.filter(News.Title.like("UnitTest%")).all()
+
+        # And create some Category mappings and comments for them
         for news in added_news:
             self.news_ids.append(news.NewsID)
+            cat1 = NewsCategoriesMapping(
+                NewsID=news.NewsID,
+                NewsCategoryID=1,
+            )
+            cat2 = NewsCategoriesMapping(
+                NewsID=news.NewsID,
+                NewsCategoryID=3,
+            )
+            comment1 = NewsComments(
+                NewsID=news.NewsID,
+                UserID=self.valid_user,
+                Comment="UnitTest Comment for news {}".format(news.NewsID),
+                Created=get_datetime(),
+            )
+            comment2 = NewsComments(
+                NewsID=news.NewsID,
+                UserID=self.valid_user,
+                Comment="UnitTest Another Comment for news {}".format(news.NewsID),
+                Created=get_datetime(),
+            )
+            db.session.add(cat1)
+            db.session.add(cat2)
+            db.session.add(comment1)
+            db.session.add(comment2)
+            db.session.commit()
+
+        # Get the added news comment IDs
+        comments = NewsComments.query.filter(
+            NewsComments.Comment.like("UnitTest%")
+        ).order_by(
+            asc(NewsComments.NewsCommentID)
+        ).all()
+        self.news_comments = [nc.NewsCommentID for nc in comments]
 
     def tearDown(self):
+        # Delete news items created for the unittest
         to_delete = News.query.filter(News.Title.like("UnitTest%")).all()
         for news in to_delete:
             db.session.delete(news)
+
+        # Delete news comments created for the unittest
+        delete_comments = NewsComments.query.filter(NewsComments.Comment.like("UnitTest%")).all()
+        for comment in delete_comments:
+            db.session.delete(comment)
+
+        # Delete user created for the unittest
+        delete_user = Users.query.filter(Users.Name == "UnitTest").all()
+        for user in delete_user:
+            db.session.delete(user)
+
         db.session.commit()
 
     def test_getting_all_news(self):
@@ -47,6 +108,8 @@ class TestNewsView(unittest.TestCase):
         self.assertEquals(200, response.status_code)
         self.assertEquals(2, len([n for n in news["news"]]))
         self.assertEquals("UnitTest", news["news"][0]["title"])
+        self.assertEquals(2, len(news["news"][0]["categories"]))
+        self.assertEquals(3, news["news"][0]["categories"][1])
 
     def test_getting_one_news(self):
         response = self.app.get("/api/1.0/news/{}".format(int(self.news_ids[1])))
@@ -55,6 +118,8 @@ class TestNewsView(unittest.TestCase):
         )
         self.assertEquals(200, response.status_code)
         self.assertEquals("UnitTest2", news["news"][0]["title"])
+        self.assertEquals(2, len(news["news"][0]["categories"]))
+        self.assertEquals(3, news["news"][0]["categories"][1])
 
     def test_adding_news(self):
         response = self.app.post(
@@ -63,13 +128,20 @@ class TestNewsView(unittest.TestCase):
                 dict(
                     title="UnitTest Post",
                     contents="UnitTest",
-                    author="UnitTester"
+                    author="UnitTester",
+                    categories=[1, 3],
                 )
             ),
             content_type="application/json"
         )
+        news = News.query.filter_by(Title="UnitTest Post").first_or_404()
+        cats = NewsCategoriesMapping.query.filter_by(NewsID=news.NewsID).order_by(
+            asc(NewsCategoriesMapping.NewsCategoryID)).all()
         self.assertEquals(201, response.status_code)
         self.assertTrue("Location" in response.get_data().decode())
+        self.assertEquals("UnitTest", news.Contents)
+        self.assertEquals(2, len(cats))
+        self.assertEquals(3, cats[1].NewsCategoryID)
 
     def test_deleting_news(self):
         response = self.app.delete("/api/1.0/news/{}".format(int(self.news_ids[0])))
@@ -134,6 +206,9 @@ class TestNewsView(unittest.TestCase):
         { "op": "replace", "path": "/a/b/c", "value": 42 },
         { "op": "test", "path": "/a/b/c", "value": "foo" },
     ]
+
+    All have been implemented, but in practice I doubt we'll use anything else than "add" and
+    "replace"
     """
 
     def test_patching_things_using_add(self):
@@ -200,7 +275,7 @@ class TestNewsView(unittest.TestCase):
 
         self.assertEquals(200, response.status_code)
         self.assertNotEquals("UnitTest Author", news.Author)
-        # FIXME: This does not work. See https://github.com/stefankoegl/python-json-patch/issues/70
+        # NB: The below cannot be done, because in jsonpatch the value is fully removedself.
         # self.assertEquals(None, news.Updated)
 
     def test_patching_things_using_remove(self):
@@ -218,10 +293,9 @@ class TestNewsView(unittest.TestCase):
             content_type="application/json"
         )
 
-        # news = News.query.get_or_404(self.news_ids[0])
-
         self.assertEquals(200, response.status_code)
-        # FIXME: This does not work. See https://github.com/stefankoegl/python-json-patch/issues/70
+        # NB: This cannot be done with jsonpatch.
+        # See https://github.com/stefankoegl/python-json-patch/issues/70
         # self.assertEquals(None, news.Updated)
 
     def test_patching_things_using_replace(self):
@@ -274,3 +348,36 @@ class TestNewsView(unittest.TestCase):
 
         self.assertEquals(200, response.status_code)
         self.assertFalse(resp["success"])
+
+    def test_getting_specific_news_comment(self):
+        response = self.app.get(
+            "/api/1.0/news/{}/comments/{}".format(
+                int(self.news_ids[0]),
+                int(self.news_comments[0]),
+            )
+        )
+        resp = json.loads(response.get_data().decode())
+
+        self.assertEquals(200, response.status_code)
+        self.assertEquals(1, len(resp["comments"]))
+        self.assertEquals(
+            "UnitTest Comment for news {}".format(self.news_ids[0]),
+            resp["comments"][0]["comment"]
+        )
+
+    def test_getting_all_news_comments_for_a_news(self):
+        response = self.app.get(
+            "/api/1.0/news/{}/comments/".format(self.news_ids[0])
+        )
+        resp = json.loads(response.get_data().decode())
+
+        self.assertEquals(200, response.status_code)
+        self.assertEquals(2, len(resp["comments"]))
+        self.assertEquals(
+            "UnitTest Comment for news {}".format(self.news_ids[0]),
+            resp["comments"][0]["comment"]
+        )
+        self.assertEquals(
+            "UnitTest Another Comment for news {}".format(self.news_ids[0]),
+            resp["comments"][1]["comment"]
+        )

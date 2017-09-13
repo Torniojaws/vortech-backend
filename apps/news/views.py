@@ -1,17 +1,19 @@
-from copy import deepcopy
 import json
 import socket
-import time
+from copy import deepcopy
 
 from flask import jsonify, make_response, request, url_for
 from flask_classful import FlaskView, route
 from jsonpatch import JsonPatch, JsonPatchTestFailed
-from sqlalchemy import desc
+from sqlalchemy import asc, desc
 from dictalchemy import make_class_dictable
 
 from app import db
-from apps.news.models import News
+from apps.news.models import News, NewsComments, NewsCategoriesMapping
+from apps.utils.time import get_datetime
+
 make_class_dictable(News)
+make_class_dictable(NewsCategoriesMapping)
 
 
 class NewsView(FlaskView):
@@ -25,6 +27,7 @@ class NewsView(FlaskView):
                 "author": news.Author,
                 "created": news.Created,
                 "updated": news.Updated,
+                "categories": self.get_categories(news.NewsID),
             } for news in News.query.order_by(desc(News.Created)).all()]
         })
         return make_response(contents, 200)
@@ -40,6 +43,7 @@ class NewsView(FlaskView):
                 "author": news.Author,
                 "created": news.Created,
                 "updated": news.Updated,
+                "categories": self.get_categories(news.NewsID),
             }]
         })
         return make_response(contents, 200)
@@ -51,9 +55,21 @@ class NewsView(FlaskView):
             Title=data["title"],
             Contents=data["contents"],
             Author=data["author"],
-            Created=time.strftime('%Y-%m-%d %H:%M:%S')
+            Created=get_datetime(),
         )
         db.session.add(news_item)
+        # Flush so that we can use the insert ID for the categories
+        db.session.flush()
+
+        # There is almost always more than one category for a news item
+        for category in data["categories"]:
+            cm = NewsCategoriesMapping(
+                NewsID=news_item.NewsID,
+                NewsCategoryID=category,
+            )
+            db.session.add(cm)
+
+        # Finally, commit all the inserts above
         db.session.commit()
 
         # The RFC 7231 spec says a 201 Created should return an absolute full path
@@ -74,7 +90,7 @@ class NewsView(FlaskView):
         news.Title = data["title"]
         news.Contents = data["contents"]
         news.Author = data["author"]
-        news.Updated = time.strftime('%Y-%m-%d %H:%M:%S')
+        news.Updated = get_datetime()
         db.session.commit()
 
         return make_response("", 200)
@@ -106,12 +122,41 @@ class NewsView(FlaskView):
     @route("/<int:news_id>/comments/<int:comment_id>", methods=["GET"])
     def news_comment(self, news_id, comment_id):
         """Return a specific comment to a given News item"""
-        return "This is GET /news/{}/comments/{}\n".format(news_id, comment_id)
+        comment = NewsComments.query.filter_by(
+            NewsID=news_id,
+            NewsCommentID=comment_id
+        ).first_or_404()
+
+        contents = jsonify({
+            "comments": [{
+                "id": comment.NewsCommentID,
+                "newsId": comment.NewsID,
+                "userId": comment.UserID,
+                "comment": comment.Comment,
+                "created": comment.Created,
+                "updated": comment.Updated,
+            }]
+        })
+        return make_response(contents, 200)
 
     @route("/<int:news_id>/comments/", methods=["GET"])
     def news_comments(self, news_id):
         """Return all comments for a given News item, in chronological order"""
-        return "This is GET /news/{}/comments/\n".format(news_id)
+        comments = NewsComments.query.filter_by(NewsID=news_id).order_by(
+            asc(NewsComments.Created)
+        ).all()
+
+        contents = jsonify({
+            "comments": [{
+                "id": comment.NewsCommentID,
+                "newsId": comment.NewsID,
+                "userId": comment.UserID,
+                "comment": comment.Comment,
+                "created": comment.Created,
+                "updated": comment.Updated,
+            } for comment in comments]
+        })
+        return make_response(contents, 200)
 
     def patch_item(self, news, patchdata, **kwargs):
         """This is used to run patches on the database model, using the method described here:
@@ -127,6 +172,10 @@ class NewsView(FlaskView):
         data = news.asdict(exclude_pk=True, **kwargs)
         patch = JsonPatch(mapped_patchdata)
         data = patch.apply(data)
+        # NB: There are two limitations:
+        # 1. When op is "move", there is no simple way to make sure the source is empty
+        # 2. When op is "remove", there also is no simple way to make sure the source is empty
+        # NB: Most of the data in this project is nullable=False anyway, so they cannot be deleted.
         news.fromdict(data)
 
     def patch_mapping(self, patch):
@@ -155,3 +204,8 @@ class NewsView(FlaskView):
             if prop == "path" or prop == "from":
                 mutable[prop] = mapping.get(patch[prop], None)
         return mutable
+
+    def get_categories(self, news_id):
+        """Return a list of category IDs for the news_id"""
+        categories = NewsCategoriesMapping.query.filter_by(NewsID=news_id).all()
+        return [c.NewsCategoryID for c in categories]

@@ -34,6 +34,7 @@ class Config(object):
     SQLALCHEMY_DATABASE_URI = database_uri(configfile.get("env", "env"))
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     LOGPATH = configfile.get("log", "path")
+    MIN_PASSWORD_LENGTH = 8
 
 
 class ProdConfig(Config):

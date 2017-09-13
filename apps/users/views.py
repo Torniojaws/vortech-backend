@@ -8,6 +8,7 @@ from werkzeug.security import generate_password_hash
 from app import db
 from apps.users.models import Users
 from apps.utils.time import get_datetime
+from settings.config import CONFIG
 
 
 class UsersView(FlaskView):
@@ -28,7 +29,8 @@ class UsersView(FlaskView):
 
     def get(self, user_id):
         """Returns a specific user"""
-        user = jsonify({
+        user = Users.query.filter_by(UserID=user_id).first_or_404()
+        contents = jsonify({
             "users": [{
                 "id": user.UserID,
                 "name": user.Name,
@@ -36,9 +38,9 @@ class UsersView(FlaskView):
                 "username": user.Username,
                 "created": user.Created,
                 "updated": user.Updated,
-            } for user in Users.query.filter_by(UserID=user_id).first_or_404()]
+            }]
         })
-        return make_response(user, 200)
+        return make_response(contents, 200)
 
     def post(self):
         """Add a new User. All new users start at normal level. Any promotions to eg. moderator,
@@ -49,6 +51,16 @@ class UsersView(FlaskView):
 
         which returns boolean"""
         data = json.loads(request.data.decode())
+        if (
+            not data["password"]
+            or len(data["password"]) < CONFIG.MIN_PASSWORD_LENGTH
+        ):
+            result = {
+                "success": False,
+                "result": "Existing value is not identical to tested one"
+            }
+            return make_response(jsonify(result), 400)
+
         user = Users(
             Name=data["name"],
             Email=data["email"],

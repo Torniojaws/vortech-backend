@@ -1,16 +1,17 @@
 import json
 import socket
-import time
 from copy import deepcopy
 
 from flask import jsonify, make_response, request, url_for
 from flask_classful import FlaskView, route
 from jsonpatch import JsonPatch, JsonPatchTestFailed
-from sqlalchemy import desc
+from sqlalchemy import asc, desc
 from dictalchemy import make_class_dictable
 
 from app import db
 from apps.news.models import News, NewsComments, NewsCategoriesMapping
+from apps.utils.time import get_datetime
+
 make_class_dictable(News)
 make_class_dictable(NewsCategoriesMapping)
 
@@ -54,7 +55,7 @@ class NewsView(FlaskView):
             Title=data["title"],
             Contents=data["contents"],
             Author=data["author"],
-            Created=time.strftime('%Y-%m-%d %H:%M:%S')
+            Created=get_datetime(),
         )
         db.session.add(news_item)
         # Flush so that we can use the insert ID for the categories
@@ -89,7 +90,7 @@ class NewsView(FlaskView):
         news.Title = data["title"]
         news.Contents = data["contents"]
         news.Author = data["author"]
-        news.Updated = time.strftime('%Y-%m-%d %H:%M:%S')
+        news.Updated = get_datetime()
         db.session.commit()
 
         return make_response("", 200)
@@ -121,12 +122,13 @@ class NewsView(FlaskView):
     @route("/<int:news_id>/comments/<int:comment_id>", methods=["GET"])
     def news_comment(self, news_id, comment_id):
         """Return a specific comment to a given News item"""
-        comment = NewsComments.query.filter(
+        comment = NewsComments.query.filter_by(
             NewsID=news_id,
             NewsCommentID=comment_id
         ).first_or_404()
+
         contents = jsonify({
-            "comment": [{
+            "comments": [{
                 "id": comment.NewsCommentID,
                 "newsId": comment.NewsID,
                 "userId": comment.UserID,
@@ -140,7 +142,21 @@ class NewsView(FlaskView):
     @route("/<int:news_id>/comments/", methods=["GET"])
     def news_comments(self, news_id):
         """Return all comments for a given News item, in chronological order"""
-        return "This is GET /news/{}/comments/\n".format(news_id)
+        comments = NewsComments.query.filter_by(NewsID=news_id).order_by(
+            asc(NewsComments.Created)
+        ).all()
+
+        contents = jsonify({
+            "comments": [{
+                "id": comment.NewsCommentID,
+                "newsId": comment.NewsID,
+                "userId": comment.UserID,
+                "comment": comment.Comment,
+                "created": comment.Created,
+                "updated": comment.Updated,
+            } for comment in comments]
+        })
+        return make_response(contents, 200)
 
     def patch_item(self, news, patchdata, **kwargs):
         """This is used to run patches on the database model, using the method described here:

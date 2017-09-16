@@ -5,6 +5,7 @@ from sqlalchemy import asc
 
 from app import app, db
 from apps.news.models import News, NewsCategoriesMapping, NewsComments
+from apps.news.patches import patch_mapping
 from apps.users.models import Users
 from apps.utils.time import get_datetime
 
@@ -146,10 +147,14 @@ class TestNewsView(unittest.TestCase):
     def test_deleting_news(self):
         response = self.app.delete("/api/1.0/news/{}".format(int(self.news_ids[0])))
         query_result = News.query.filter_by(NewsID=self.news_ids[0]).first()
+        # On delete cascade should also remove the categories of the news ID
+        cats = NewsCategoriesMapping.query.filter_by(NewsID=self.news_ids[0]).order_by(
+            asc(NewsCategoriesMapping.NewsCategoryID)).all()
 
         self.assertEquals(204, response.status_code)
         self.assertEquals("", response.data.decode())
         self.assertEquals(None, query_result)
+        self.assertEquals([], cats)
 
     def test_putting_things(self):
         response = self.app.put(
@@ -159,40 +164,43 @@ class TestNewsView(unittest.TestCase):
                     title="UnitTest Put Title",
                     contents="UnitTest Put Contents",
                     author="UnitTest Put Author",
+                    categories=[4, 5],
                 )
             ),
             content_type="application/json"
         )
 
         news = News.query.get_or_404(self.news_ids[0])
+        cats = NewsCategoriesMapping.query.filter_by(NewsID=self.news_ids[0]).all()
 
         self.assertEquals(200, response.status_code)
         self.assertEquals("UnitTest Put Title", news.Title)
         self.assertEquals("UnitTest Put Contents", news.Contents)
         self.assertEquals("UnitTest Put Author", news.Author)
+        self.assertEquals(2, len(cats))
+        self.assertEquals(4, cats[0].NewsCategoryID)
 
     def test_patch_mapping(self):
-        from apps.news.views import NewsView
-        news = NewsView()
-
         patch = [
             {"op": "add", "path": "/title", "value": "testi"},
             {"op": "copy", "from": "/author", "path": "/contents"},
-            {"op": "remove", "path": "/contents"}
+            {"op": "remove", "path": "/contents"},
+            {"op": "replace", "path": "/categories", "value": [2, 3]},
         ]
 
         mapped_patchdata = []
         for p in patch:
-            p = news.patch_mapping(p)
+            p = patch_mapping(p)
             mapped_patchdata.append(p)
 
-        self.assertEquals(3, len(mapped_patchdata))
+        self.assertEquals(4, len(mapped_patchdata))
         self.assertEquals("add", mapped_patchdata[0]["op"])
         self.assertEquals("/Title", mapped_patchdata[0]["path"])
         self.assertEquals("testi", mapped_patchdata[0]["value"])
         self.assertEquals("/Author", mapped_patchdata[1]["from"])
         self.assertEquals("/Contents", mapped_patchdata[1]["path"])
         self.assertEquals("/Contents", mapped_patchdata[2]["path"])
+        self.assertEquals("/NewsCategoryID", mapped_patchdata[3]["path"])
 
     """
     The below tests run various PATCH cases, as defined:
@@ -225,17 +233,29 @@ class TestNewsView(unittest.TestCase):
                         op="add",
                         path="/author",
                         value="UnitTest Patched Author",
-                    )
+                    ),
+                    dict(
+                        op="add",
+                        path="/categories",
+                        value=[2],
+                    ),
                 ]
             ),
             content_type="application/json"
         )
 
         news = News.query.get_or_404(self.news_ids[0])
+        cats = NewsCategoriesMapping.query.filter_by(NewsID=self.news_ids[0]).order_by(
+            asc(NewsCategoriesMapping.NewsCategoryID)).all()
 
-        self.assertEquals(200, response.status_code)
+        self.assertEquals(204, response.status_code)
         self.assertEquals("UnitTest Patched Title", news.Title)
         self.assertEquals("UnitTest Patched Author", news.Author)
+        self.assertEquals(3, len(cats))
+        # Since we order_by, the new "add" will be between the two existing values 1 and 3
+        self.assertEquals(1, cats[0].NewsCategoryID)
+        self.assertEquals(2, cats[1].NewsCategoryID)
+        self.assertEquals(3, cats[2].NewsCategoryID)
 
     def test_patching_things_using_copy(self):
         response = self.app.patch(
@@ -252,7 +272,7 @@ class TestNewsView(unittest.TestCase):
 
         news = News.query.get_or_404(self.news_ids[1])
 
-        self.assertEquals(200, response.status_code)
+        self.assertEquals(204, response.status_code)
         self.assertEquals("UnitTest2 Contents", news.Author)
 
     def test_patching_things_using_move(self):
@@ -273,15 +293,16 @@ class TestNewsView(unittest.TestCase):
 
         news = News.query.get_or_404(self.news_ids[0])
 
-        self.assertEquals(200, response.status_code)
+        self.assertEquals(204, response.status_code)
         self.assertNotEquals("UnitTest Author", news.Author)
-        # NB: The below cannot be done, because in jsonpatch the value is fully removedself.
-        # self.assertEquals(None, news.Updated)
 
-    def test_patching_things_using_remove(self):
+    def test_patching_news_using_remove(self):
         """NOTE! More than half the columns in this project are nullable=False, which prevents
         "move" and "remove" from making the old value NULL :)
-        In the News model, only Updated is nullable=True"""
+        In the News model, only Updated is nullable=True.
+
+        For News Categories, there is a special separate method that does support remove, because
+        it is a common thing to do."""
         response = self.app.patch(
             "/api/1.0/news/{}".format(int(self.news_ids[0])),
             data=json.dumps(
@@ -293,10 +314,61 @@ class TestNewsView(unittest.TestCase):
             content_type="application/json"
         )
 
-        self.assertEquals(200, response.status_code)
-        # NB: This cannot be done with jsonpatch.
-        # See https://github.com/stefankoegl/python-json-patch/issues/70
-        # self.assertEquals(None, news.Updated)
+        self.assertEquals(204, response.status_code)
+
+    def test_patching_categories_using_remove(self):
+        """For News Categories, there is a special separate method that does support remove, because
+        it is a common thing to do."""
+        response = self.app.patch(
+            "/api/1.0/news/{}".format(int(self.news_ids[0])),
+            data=json.dumps(
+                [{
+                    "op": "remove",
+                    "path": "/categories"
+                }]
+            ),
+            content_type="application/json"
+        )
+
+        cats = NewsCategoriesMapping.query.filter_by(NewsID=self.news_ids[0]).all()
+        self.assertEquals(response.status_code, 204)
+        self.assertEquals([], cats)
+
+    def test_patching_categories_using_copy(self):
+        """For News Categories, the "copy" patch has no meaning, as there is nowhere to copy to.
+        But for full coverage, this test is needed."""
+        response = self.app.patch(
+            "/api/1.0/news/{}".format(int(self.news_ids[0])),
+            data=json.dumps(
+                [{
+                    "op": "copy",
+                    "from": "/categories",
+                    "path": "/categories"
+                }]
+            ),
+            content_type="application/json"
+        )
+
+        self.assertEquals(response.status_code, 204)
+        self.assertEquals("", response.data.decode())
+
+    def test_patching_categories_using_move(self):
+        """For News Categories, the "move" patch has no meaning, as there is nowhere to move to.
+        But for full coverage, this test is needed."""
+        response = self.app.patch(
+            "/api/1.0/news/{}".format(int(self.news_ids[0])),
+            data=json.dumps(
+                [{
+                    "op": "move",
+                    "from": "/categories",
+                    "path": "/categories"
+                }]
+            ),
+            content_type="application/json"
+        )
+
+        self.assertEquals(response.status_code, 204)
+        self.assertEquals("", response.data.decode())
 
     def test_patching_things_using_replace(self):
         response = self.app.patch(
@@ -313,41 +385,24 @@ class TestNewsView(unittest.TestCase):
 
         news = News.query.get_or_404(self.news_ids[0])
 
-        self.assertEquals(200, response.status_code)
+        self.assertEquals(204, response.status_code)
         self.assertEquals("UnitTest Patch Replace", news.Author)
 
-    def test_patching_things_using_test_with_existing_value(self):
+    def test_patching_things_using_test_with_nonexisting_path(self):
         response = self.app.patch(
             "/api/1.0/news/{}".format(int(self.news_ids[1])),
             data=json.dumps(
                 [{
                     "op": "test",
-                    "path": "/author",
-                    "value": "UnitTest2 Author"
-                }]
-            ),
-            content_type="application/json"
-        )
-
-        self.assertEquals(200, response.status_code)
-        self.assertTrue(response.data)
-
-    def test_patching_things_using_test_with_nonexisting_value(self):
-        response = self.app.patch(
-            "/api/1.0/news/{}".format(int(self.news_ids[1])),
-            data=json.dumps(
-                [{
-                    "op": "test",
-                    "path": "/contents",
+                    "path": "/doesnotexist",
                     "value": "I do not exist"
                 }]
             ),
             content_type="application/json"
         )
-        resp = json.loads(response.data.decode())
 
-        self.assertEquals(200, response.status_code)
-        self.assertFalse(resp["success"])
+        self.assertEquals(422, response.status_code)
+        self.assertFalse("", response.data.decode())
 
     def test_getting_specific_news_comment(self):
         response = self.app.get(
@@ -381,3 +436,19 @@ class TestNewsView(unittest.TestCase):
             "UnitTest Another Comment for news {}".format(self.news_ids[0]),
             resp["comments"][1]["comment"]
         )
+
+    def test_category_patch_replace(self):
+        response = self.app.patch(
+            "/api/1.0/news/{}".format(self.news_ids[0]),
+            data=json.dumps(
+                [{
+                    "op": "replace",
+                    "path": "/categories",
+                    "value": [4, 5]
+                }]
+            ),
+            content_type="application/json"
+        )
+
+        self.assertEquals(204, response.status_code)
+        self.assertFalse("", response.data.decode())

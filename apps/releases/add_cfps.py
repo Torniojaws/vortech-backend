@@ -7,6 +7,12 @@ from apps.releases.models import (
     ReleaseFormats, ReleasesFormatsMapping
 )
 
+# TODO: add_categories() and add_formats() are pretty much identical. The only differences are the
+# DB Models in use and the column names we compare to. Could they be simplified to one add()
+# method?
+# NB: add_people() and add_songs() are also similar, but they have unique columns that we add to,
+# so they cannot be merged into one method.
+
 
 def add_categories(release_id, categories):
     """Add the categories for the release. If the value is an integer, it references an existing
@@ -51,36 +57,35 @@ def add_formats(release_id, formats):
     """Add formats for the release. If the value is an integer, it references an existing release
     format entry. If it is a string, it is potentially a new format. If no matches are found for
     the string, we create a new release format entry and use its ID for this release."""
-    for rformat in formats:
-        # Cast to string to avoid AttributeError: 'int' object has no attribute 'isdigit'
-        if str(format).isdigit() is False:
-            # Potentially a new format
-            exists = ReleaseFormats.query.filter_by(ReleaseFormat=rformat).first()
-            if exists:
-                # Get the ID of the existing string
-                format_id = exists.ReleaseFormatID
+    for release_format in formats:
+        format_id = None
+        if type(release_format) is int:
+            # Potentially an existing ID
+            id_exists = ReleaseFormats.query.filter_by(ReleaseFormatID=release_format).first()
+            if id_exists:
+                format_id = id_exists.ReleaseFormatID
             else:
-                # Insert a new format
-                f = ReleaseFormats(
-                    ReleaseFormat=rformat
-                )
-                db.session.add(f)
-                db.session.commit()
-                format_id = f.ReleaseFormatID
-        else:
-            # Verify that it does exist
-            id_exists = ReleaseFormats.query.filter_by(ReleaseFormatID=rformat).first()
-            if not id_exists:
-                # Invalid ID was given, so we cannot proceed. It wouldn't make sense to insert a
-                # number as the name of the format. No need to throw.
+                # The ID does not exist, so we ignore this format and continue with the next
                 continue
+        else:
+            # Check does a format exist by that string?
+            string_exists = ReleaseFormats.query.filter_by(Title=release_format).first()
+            if string_exists:
+                # Yep! Use its ID for mapping.
+                format_id = string_exists.ReleaseFormatID
             else:
-                format_id = rformat
+                # Nope. Let's insert it and then use the shiny new ID
+                rf = ReleaseFormats(
+                    Title=release_format
+                )
+                db.session.add(rf)
+                db.session.commit()
+                format_id = rf.ReleaseFormatID
 
-        # Map format to the current release
+        # Do the mapping
         mapping = ReleasesFormatsMapping(
-            ReleaseID=release_id,
             ReleaseFormatID=format_id,
+            ReleaseID=release_id,
         )
         db.session.add(mapping)
         db.session.commit()

@@ -133,27 +133,33 @@ class TestReleases(unittest.TestCase):
         release_map1 = ReleasesSongsMapping(
             ReleaseID=release.ReleaseID,
             SongID=song1.SongID,
+            ReleaseSongDuration=66,
         )
         release_map2 = ReleasesSongsMapping(
             ReleaseID=release.ReleaseID,
             SongID=song2.SongID,
+            ReleaseSongDuration=120,
         )
         release_map3 = ReleasesSongsMapping(
             ReleaseID=release.ReleaseID,
             SongID=song3.SongID,
+            ReleaseSongDuration=123,
         )
         # It's fine to have the same songs in another release too (could be a live album)
         release2_map1 = ReleasesSongsMapping(
             ReleaseID=release2.ReleaseID,
             SongID=song1.SongID,
+            ReleaseSongDuration=66,
         )
         release2_map2 = ReleasesSongsMapping(
             ReleaseID=release2.ReleaseID,
             SongID=song2.SongID,
+            ReleaseSongDuration=120,
         )
         release2_map3 = ReleasesSongsMapping(
             ReleaseID=release2.ReleaseID,
             SongID=song3.SongID,
+            ReleaseSongDuration=123,
         )
 
         db.session.add(release_map1)

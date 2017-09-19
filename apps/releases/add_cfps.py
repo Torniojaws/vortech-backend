@@ -6,6 +6,8 @@ from apps.releases.models import (
     ReleasesCategoriesMapping, ReleaseCategories,
     ReleaseFormats, ReleasesFormatsMapping
 )
+from apps.people.models import People, ReleasesPeopleMapping
+from apps.songs.models import Songs, ReleasesSongsMapping
 
 # TODO: add_categories() and add_formats() are pretty much identical. The only differences are the
 # DB Models in use and the column names we compare to. Could they be simplified to one add()
@@ -66,7 +68,10 @@ def add_formats(release_id, formats):
                 format_id = id_exists.ReleaseFormatID
             else:
                 # The ID does not exist, so we ignore this format and continue with the next
-                continue
+                # NB: Pytest has a bug regarding continue, which results in it being marked as
+                # not covered - see:
+                # https://bitbucket.org/ned/coveragepy/issues/198/continue-marked-as-not-covered
+                continue  # pragma: no cover
         else:
             # Check does a format exist by that string?
             string_exists = ReleaseFormats.query.filter_by(Title=release_format).first()
@@ -94,10 +99,100 @@ def add_formats(release_id, formats):
 def add_people(release_id, people):
     """Add people for the release. If the value is an integer, it references an existing person.
     If it is a string, it is potentially a new person. If no matches are found for the string, we
-    create a new people entry and use its ID for this release."""
+    create a new people entry and use its ID for this release.
+
+    Each person also comes with instruments! That will be mapped on a per-release basis, so that
+    the same PersonID can play guitar on one album and drums on another.
+
+    For example: [{1: "Guitar"}, {"Mike": "Drums"}]
+    1 = The ID of an existing person.
+    "Mike" = a new person, to be added to the table People
+    """
+    for person in people:
+        # Get the values
+        for k, v in person.items():
+            identifier = k
+            instruments = v
+
+        person_id = None
+        if type(identifier) is int:
+            id_exists = People.query.filter_by(PersonID=identifier).first()
+            if id_exists:
+                person_id = id_exists.PersonID
+            else:
+                # The person ID is invalid, so we will not map it at all.
+                # NB: Pytest has a bug regarding continue, which results in it being marked as
+                # not covered - see:
+                # https://bitbucket.org/ned/coveragepy/issues/198/continue-marked-as-not-covered
+                continue  # pragma: no cover
+        else:
+            name_exists = People.query.filter_by(Name=identifier).first()
+            if name_exists:
+                person_id = name_exists.PersonID
+            else:
+                new_person = People(
+                    Name=identifier
+                )
+                db.session.add(new_person)
+                db.session.commit()
+                person_id = new_person.PersonID
+
+        # Map to a release
+        mapping = ReleasesPeopleMapping(
+            ReleaseID=release_id,
+            PersonID=person_id,
+            Instruments=instruments,
+        )
+        db.session.add(mapping)
+        db.session.commit()
 
 
 def add_songs(release_id, songs):
     """Add songs for the release. If the value is an integer, it references an existing song.
     If it is a string, it is potentially a new song. If no matches are found for the string, we
-    create a new songs entry and use its ID for this release."""
+    create a new songs entry and use its ID for this release.
+
+    Each song also has a duration in seconds. This is stored to Songs.
+
+    eg. [{"Song Title": 123}, {1: 321}]
+    "Song Title" = new song to be added to Songs
+    1 = Refers to an existing song by ID=1
+
+    NB: The Duration is ignored for existing songs.
+    """
+    for song in songs:
+        # Get the data
+        for k, v in song.items():
+            identifier = k
+            duration = v
+        song_id = None
+        if type(identifier) is int:
+            id_exists = Songs.query.filter_by(SongID=identifier).first()
+            if id_exists:
+                song_id = id_exists.SongID
+            else:
+                # NB: Pytest has a bug regarding continue, which results in it being marked as
+                # not covered - see:
+                # https://bitbucket.org/ned/coveragepy/issues/198/continue-marked-as-not-covered
+                continue  # pragma: no cover
+        else:
+            song_exists = Songs.query.filter_by(Title=identifier).first()
+            if song_exists:
+                song_id = song_exists.SongID
+            else:
+                new_song = Songs(
+                    Title=identifier,
+                    Duration=duration,
+                )
+                db.session.add(new_song)
+                db.session.commit()
+                song_id = new_song.SongID
+
+        # Map to a release
+        mapping = ReleasesSongsMapping(
+            ReleaseID=release_id,
+            SongID=song_id,
+            ReleaseSongDuration=duration,
+        )
+        db.session.add(mapping)
+        db.session.commit()

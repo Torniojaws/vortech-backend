@@ -1,6 +1,7 @@
 import json
+import socket
 
-from flask import jsonify, make_response, request
+from flask import jsonify, make_response, request, url_for
 from flask_classful import FlaskView
 from sqlalchemy import asc, desc
 
@@ -73,7 +74,15 @@ class ReleasesView(FlaskView):
         add_people(release.ReleaseID, data["people"])
         add_songs(release.ReleaseID, data["songs"])
 
-        return make_response("Gone postal", 201)
+        # The RFC 7231 spec says a 201 Created should return an absolute full path
+        server = socket.gethostname()
+        contents = jsonify("Location: {}{}{}".format(
+            server,
+            url_for("ReleasesView:index"),
+            release.ReleaseID
+        ))
+
+        return make_response(contents, 201)
 
     def put(self, release_id):
         """Replace the data of a specific release"""

@@ -1,6 +1,8 @@
 import json
 import unittest
 
+from sqlalchemy import asc
+
 from app import app, db
 from apps.releases.models import (
     Releases,
@@ -55,6 +57,8 @@ class TestReleases(unittest.TestCase):
         )
         db.session.add(cats)
         db.session.flush()
+        self.valid_cats = []
+        self.valid_cats.append(cats.ReleaseCategoryID)
 
         cat_map = ReleasesCategoriesMapping(
             ReleaseID=release.ReleaseID,
@@ -238,3 +242,62 @@ class TestReleases(unittest.TestCase):
         self.assertEquals(1, len(releases["releases"][1]["formats"]))
         self.assertEquals(1, len(releases["releases"][1]["people"]))
         self.assertEquals(3, len(releases["releases"][1]["songs"]))
+
+    def test_adding_a_release(self):
+        """Should insert the release and all it's related data."""
+        response = self.app.post(
+            "/api/1.0/releases/",
+            data=json.dumps(
+                dict(
+                    title="UnitTest Title",
+                    releaseDate=get_datetime(),
+                    artist="UnitTest Artist",
+                    credits="UnitTest Credits",
+                    categories=["UnitTest Category"],
+                    formats=["UnitTest Format"],
+                    people=[{"UnitTest Person": "UnitTest Guitar"}],
+                    songs=[{"UnitTest Song 1": 85}],
+                )
+            ),
+            content_type="application/json"
+        )
+
+        release = Releases.query.filter_by(Title="UnitTest Title").first_or_404()
+
+        cats = ReleasesCategoriesMapping.query.filter_by(ReleaseID=release.ReleaseID).order_by(
+            asc(ReleasesCategoriesMapping.ReleaseCategoryID)).all()
+        formats = ReleasesFormatsMapping.query.filter_by(ReleaseID=release.ReleaseID).order_by(
+            asc(ReleasesFormatsMapping.ReleaseFormatID)).all()
+        people = ReleasesPeopleMapping.query.filter_by(ReleaseID=release.ReleaseID).order_by(
+            asc(ReleasesPeopleMapping.ReleasesPeopleMappingID)).all()
+        songs = ReleasesSongsMapping.query.filter_by(ReleaseID=release.ReleaseID).order_by(
+            asc(ReleasesSongsMapping.ReleasesSongsMappingID)).all()
+
+        self.assertEquals(201, response.status_code)
+        self.assertTrue("Location" in response.get_data().decode())
+        self.assertEquals("UnitTest Title", release.Title)
+        # These are tested more thoroughly in their own unit tests, so just a simple check here
+        self.assertEquals(1, len(cats))
+        self.assertEquals(
+            "UnitTest Category",
+            ReleaseCategories.query.filter_by(
+                ReleaseCategoryID=cats[0].ReleaseCategoryID
+            ).first().ReleaseCategory
+        )
+        self.assertEquals(1, len(formats))
+        self.assertEquals(
+            "UnitTest Format",
+            ReleaseFormats.query.filter_by(
+                ReleaseFormatID=formats[0].ReleaseFormatID
+            ).first().Title
+        )
+        self.assertEquals(1, len(people))
+        self.assertEquals(
+            "UnitTest Person",
+            People.query.filter_by(PersonID=people[0].PersonID).first().Name
+        )
+        self.assertEquals(1, len(songs))
+        self.assertEquals(
+            "UnitTest Song 1",
+            Songs.query.filter_by(SongID=songs[0].SongID).first().Title
+        )

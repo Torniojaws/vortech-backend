@@ -11,6 +11,7 @@ from apps.releases.models import (
     ReleaseCategories,
     ReleasesCategoriesMapping
 )
+from apps.releases.patches import patch_mapping
 from apps.people.models import People, ReleasesPeopleMapping
 from apps.songs.models import Songs, ReleasesSongsMapping
 from apps.utils.time import get_datetime
@@ -383,3 +384,33 @@ class TestReleases(unittest.TestCase):
                 ReleasesSongsMappingID=songs[0].ReleasesSongsMappingID
             ).first().ReleaseSongDuration
         )
+
+    def test_patch_mapping(self):
+        """Because the JSON values can be in different case than the actual DB model, we map them
+        to the correct case."""
+        patch = [
+            {"op": "add", "path": "/title", "value": "testi"},
+            {"op": "copy", "from": "/releaseDate", "path": "/artist"},
+            {"op": "remove", "path": "/credits"},
+            {"op": "replace", "path": "/categories", "value": [2, 3]},
+            {"op": "remove", "path": "/formats"},
+            {"op": "copy", "from": "/people", "path": "/songs"},
+        ]
+
+        mapped_patchdata = []
+        for p in patch:
+            p = patch_mapping(p)
+            mapped_patchdata.append(p)
+
+        self.assertEquals(6, len(mapped_patchdata))
+        self.assertEquals("add", mapped_patchdata[0]["op"])
+        self.assertEquals("replace", mapped_patchdata[3]["op"])
+        self.assertEquals("/Title", mapped_patchdata[0]["path"])
+        self.assertEquals("testi", mapped_patchdata[0]["value"])
+        self.assertEquals("/Date", mapped_patchdata[1]["from"])
+        self.assertEquals("/Artist", mapped_patchdata[1]["path"])
+        self.assertEquals("/Credits", mapped_patchdata[2]["path"])
+        self.assertEquals("/Categories", mapped_patchdata[3]["path"])
+        self.assertEquals("/Formats", mapped_patchdata[4]["path"])
+        self.assertEquals("/People", mapped_patchdata[5]["from"])
+        self.assertEquals("/Songs", mapped_patchdata[5]["path"])

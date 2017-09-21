@@ -86,7 +86,37 @@ class ReleasesView(FlaskView):
 
     def put(self, release_id):
         """Replace the data of a specific release"""
-        return make_response("Put into place", 200)
+        data = json.loads(request.data.decode())
+        release = Releases.query.get_or_404(release_id)
+
+        # Update the release
+        release.Title = data["title"]
+        release.Date = data["releaseDate"]
+        release.Artist = data["artist"]
+        release.Credits = data["credits"]
+        release.Updated = get_datetime()
+
+        # Update Categories. Since they are one per row, we'll just delete and add.
+        db.session.query(ReleasesCategoriesMapping).filter_by(ReleaseID=release_id).delete()
+        db.session.commit()
+        add_categories(release_id, data["categories"])
+
+        # Update Formats. Since they are one per row, we'll just delete and add.
+        db.session.query(ReleasesFormatsMapping).filter_by(ReleaseID=release_id).delete()
+        db.session.commit()
+        add_formats(release_id, data["formats"])
+
+        # Update People. Since they are one per row, we'll just delete and add.
+        db.session.query(ReleasesPeopleMapping).filter_by(ReleaseID=release_id).delete()
+        db.session.commit()
+        add_people(release_id, data["people"])
+
+        # Update Songs. Since they are one per row, we'll just delete and add.
+        db.session.query(ReleasesSongsMapping).filter_by(ReleaseID=release_id).delete()
+        db.session.commit()
+        add_songs(release_id, data["songs"])
+
+        return make_response("", 200)
 
     def patch(self, release_id):
         """Partially update a specific release"""

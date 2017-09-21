@@ -301,3 +301,85 @@ class TestReleases(unittest.TestCase):
             "UnitTest Song 1",
             Songs.query.filter_by(SongID=songs[0].SongID).first().Title
         )
+
+    def test_updating_release(self):
+        """Using PUT will replace the entire release dataset with the new values defined in the
+        JSON of the request. All previous values and mapping should be cleared and only the new
+        ones will remain."""
+        response = self.app.put(
+            "/api/1.0/releases/{}".format(int(self.release_ids[0])),
+            data=json.dumps(
+                dict(
+                    title="UnitTest Title Put",
+                    releaseDate=get_datetime(),
+                    artist="UnitTest Artist Put",
+                    credits="UnitTest Credits Put",
+                    categories=["UnitTest Category Put"],
+                    formats=["UnitTest Format Put"],
+                    people=[{"UnitTest Person": "UnitTest Guitar Put"}],
+                    songs=[{"UnitTest Song 1": 89}],
+                )
+            ),
+            content_type="application/json"
+        )
+
+        release = Releases.query.get_or_404(self.release_ids[0])
+
+        cats = ReleasesCategoriesMapping.query.filter_by(ReleaseID=release.ReleaseID).order_by(
+            asc(ReleasesCategoriesMapping.ReleaseCategoryID)).all()
+        formats = ReleasesFormatsMapping.query.filter_by(ReleaseID=release.ReleaseID).order_by(
+            asc(ReleasesFormatsMapping.ReleaseFormatID)).all()
+        people = ReleasesPeopleMapping.query.filter_by(ReleaseID=release.ReleaseID).order_by(
+            asc(ReleasesPeopleMapping.ReleasesPeopleMappingID)).all()
+        songs = ReleasesSongsMapping.query.filter_by(ReleaseID=release.ReleaseID).order_by(
+            asc(ReleasesSongsMapping.ReleasesSongsMappingID)).all()
+
+        self.assertEquals(200, response.status_code)
+        self.assertEquals("UnitTest Title Put", release.Title)
+        self.assertEquals("UnitTest Artist Put", release.Artist)
+
+        # Categories
+        self.assertEquals(1, len(cats))
+        self.assertEquals(
+            "UnitTest Category Put",
+            ReleaseCategories.query.filter_by(
+                ReleaseCategoryID=cats[0].ReleaseCategoryID
+            ).first().ReleaseCategory
+        )
+
+        # Formats
+        self.assertEquals(1, len(formats))
+        self.assertEquals(
+            "UnitTest Format Put",
+            ReleaseFormats.query.filter_by(
+                ReleaseFormatID=formats[0].ReleaseFormatID
+            ).first().Title
+        )
+
+        # People
+        # NB: Any person created during the initial adding of release will still remain. However,
+        # the new value in a PUT will be evaluated as usual as either existing, new or invalid.
+        # The original person will not be deleted by a PUT, but the mapping for this release will
+        # be cleared and replaced with the new people defined in the JSON.
+        self.assertEquals(1, len(people))
+        self.assertEquals(
+            "UnitTest Guitar Put",
+            ReleasesPeopleMapping.query.filter_by(
+                ReleasesPeopleMappingID=people[0].ReleasesPeopleMappingID
+            ).first().Instruments
+        )
+
+        # Songs
+        # NB: One limitation is that if a Song was first inserted during adding a release and
+        # the original had a wrong song duration, then you can only update it for the release
+        # mapping. The original song will still have the wrong duration, and we shouldn't update it
+        # every time a release is updated, because the time should be release-specific.
+        # So the only choice is to use the PUT /songs/:id or PATCH /songs/:id endpoint to update
+        # the original song. Or just fix it manually in the DB :)
+        self.assertEquals(1, len(songs))
+        self.assertEquals(
+            89,
+            ReleasesSongsMapping.query.filter_by(
+                ReleasesSongsMappingID=songs[0].ReleasesSongsMappingID
+            ).first().ReleaseSongDuration
+        )

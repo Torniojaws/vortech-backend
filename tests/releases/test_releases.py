@@ -414,3 +414,8 @@ class TestReleases(unittest.TestCase):
         self.assertEquals("/Formats", mapped_patchdata[4]["path"])
         self.assertEquals("/People", mapped_patchdata[5]["from"])
         self.assertEquals("/Songs", mapped_patchdata[5]["path"])
+
+    def test_patch_item(self):
+        """This contains the actual implementation of the patching logic for PATCH /endpoint
+        requests. The RFC 6902 definition is used."""
+        pass

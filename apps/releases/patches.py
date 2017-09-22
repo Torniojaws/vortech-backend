@@ -5,12 +5,10 @@ from copy import deepcopy
 from jsonpatch import JsonPatch
 
 from app import db
-from apps.releases.models import (
-    ReleasesCategoriesMapping,
-    ReleasesFormatsMapping,
-    ReleasesPeopleMapping,
-    ReleasesSongsMapping,
-)
+from apps.releases.models import ReleasesCategoriesMapping, ReleasesFormatsMapping
+from apps.releases.add_cfps import add_categories, add_formats, add_people, add_songs
+from apps.people.models import ReleasesPeopleMapping
+from apps.songs.models import ReleasesSongsMapping
 
 
 def patch_item(release, patchdata, **kwargs):
@@ -51,31 +49,23 @@ def patch_item(release, patchdata, **kwargs):
         result = patch_songs(mapped_patchdata, release.ReleaseID)
 
     # We only return from non-Release patches. It is None if no test ops were in the patches.
+    # TODO: How/Should we handle the multiple results from each mapping type?
+    # But generally "op": "test" is only used once - it doesn't really make sense to use it many
+    # times in one JSON anyway.
     return result
 
 
 def patch_mapping(patch):
-    """This is used to map a patch "path" or "from" to a custom value.
-    Useful for when the patch path/from is not the same as the DB column name. Eg.
-
-    PATCH /news/123
-    [
-        { "op": "move", "from": "/title", "path": "/author" }
-    ]
-
-    If the News column in the DB is "Title", using the lowercase "/title" in the patch would fail
-    because the case does not match, and MariaDB is case-sensitive in Linux. So the mapping
-    converts this:
-        { "op": "move", "from": "/title", "path": "/author" }
-    To this:
-        { "op": "move", "from": "/Title", "path": "/Author" }
-    """
+    """This is used to map a patch "path" or "from" to a custom value."""
     mapping = {
         "/title": "/Title",
-        "/contents": "/Contents",
-        "/author": "/Author",
-        "/updated": "/Updated",
-        "/categories": "/NewsCategoryID",
+        "/releaseDate": "/Date",
+        "/artist": "/Artist",
+        "/credits": "/Credits",
+        "/categories": "/Categories",
+        "/formats": "/Formats",
+        "/people": "/People",
+        "/songs": "/Songs",
     }
 
     mutable = deepcopy(patch)
@@ -85,51 +75,45 @@ def patch_mapping(patch):
     return mutable
 
 
-def patch_categories(patches, news_id):
-    """Apply patches to NewsCategoriesMapping table. Since there are multiple rows, we need some
-    special processing for it, which the regular JsonPatch cannot handle.
-
-    Generally we receive a patch like this:
-        {"op": "add", "path": "/NewsCategoryID", "value": [2, 3]}
-    or:
-        {"op": "replace", "path": "/NewsCategoryID", "value": [4, 5]}
-
-    We only return values for the "test" ops, which must return boolean. The spec doesn't seem to
-    tell what to do if there are multiple "test" ops. So for now, we return False if there's any
-    non-matches.
-    """
+def patch_categories(patches, release_id):
+    """Apply patches to ReleasesCategoriesMapping table. Since there are multiple rows, we need
+    some special processing for it, which the regular JsonPatch cannot handle."""
     # Filter out unrelated patches
-    cat_patches = [p for p in patches if "/NewsCategoryID" in p.values()]
+    cat_patches = [p for p in patches if "/Categories" in p.values()]
 
     for patch in cat_patches:
         if patch["op"] == "add":
-            # Generally it is a list of values
-            for value in patch["value"]:
-                new_category = NewsCategoriesMapping(
-                    NewsID=news_id,
-                    NewsCategoryID=value,
-                )
-                db.session.add(new_category)
-            db.session.commit()
+            # Generally it is a list of values, eg.
+            # {"op": "add", "path": "/Categories", "value": [1, 2, "New"]}
+            # Where 1 and 2 are references to existing ones, and "New" is a new category to add
+            # also, non-array values are possible:
+            # {"op": "add", "path": "/Categories", "value": "Another"}
+            add_categories(release_id, patch["value"])
         elif patch["op"] == "copy":
-            # This has no meaningful operation in News Categories, so not implemented.
+            # This has no meaningful operation in Release Categories, so not implemented.
             continue
         elif patch["op"] == "move":
-            # This has no meaningful operation in News Categories, so not implemented.
+            # This has no meaningful operation in Release Categories, so not implemented.
             continue
         elif patch["op"] == "remove":
             # NB "remove" is for deleting an entire resource.
             # To remove specific ID(s), use "replace".
-            NewsCategoriesMapping.query.filter_by(NewsID=news_id).delete()
+            ReleasesCategoriesMapping.query.filter_by(ReleaseID=release_id).delete()
             db.session.commit()
         elif patch["op"] == "replace":
-            # This is really a delete + insert operation in the News Categories case
-            NewsCategoriesMapping.query.filter_by(NewsID=news_id).delete()
+            # This is really a delete + insert operation in the Release Categories case
+            ReleasesCategoriesMapping.query.filter_by(ReleaseID=release_id).delete()
             db.session.commit()
-            for value in patch["value"]:
-                new_category = NewsCategoriesMapping(
-                    NewsID=news_id,
-                    NewsCategoryID=value,
-                )
-                db.session.add(new_category)
-            db.session.commit()
+            add_categories(release_id, patch["value"])
+
+
+def patch_formats(patches, release_id):
+    pass
+
+
+def patch_people(patches, release_id):
+    pass
+
+
+def patch_songs(patches, release_id):
+    pass

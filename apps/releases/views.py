@@ -9,6 +9,7 @@ from app import db
 from apps.people.models import ReleasesPeopleMapping
 from apps.releases.add_cfps import add_categories, add_formats, add_people, add_songs
 from apps.releases.models import Releases, ReleasesCategoriesMapping, ReleasesFormatsMapping
+from apps.releases.patches import patch_item
 from apps.songs.models import ReleasesSongsMapping
 from apps.utils.time import get_datetime
 
@@ -120,7 +121,20 @@ class ReleasesView(FlaskView):
 
     def patch(self, release_id):
         """Partially update a specific release"""
-        return make_response("Patchy things", 200)
+        release = Releases.query.get_or_404(release_id)
+        result = []
+        status_code = 204
+        try:
+            # This only returns a value (boolean) for "op": "test"
+            result = patch_item(release, request.get_json())
+            db.session.commit()
+        except Exception as e:
+            print(e)
+            # If any other exceptions happened during the patching, we'll return 422
+            result = {"success": False, "error": "Could not apply patch"}
+            status_code = 422
+
+        return make_response(jsonify(result), status_code)
 
     def delete(self, release_id):
         """Delete a specific release"""

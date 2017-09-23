@@ -116,9 +116,11 @@ def patch_categories(patches, news_id):
             NewsCategoriesMapping.query.filter_by(NewsID=news_id).delete()
             db.session.commit()
             for value in patch["value"]:
-                new_category = NewsCategoriesMapping(
-                    NewsID=news_id,
-                    NewsCategoryID=value,
-                )
-                db.session.add(new_category)
-            db.session.commit()
+                # Ignore non-integers
+                if type(value) is int:
+                    new_category = NewsCategoriesMapping(
+                        NewsID=news_id,
+                        NewsCategoryID=value,
+                    )
+                    db.session.add(new_category)
+                    db.session.commit()

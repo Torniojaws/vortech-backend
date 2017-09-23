@@ -104,16 +104,101 @@ def patch_categories(patches, release_id):
             # This is really a delete + insert operation in the Release Categories case
             ReleasesCategoriesMapping.query.filter_by(ReleaseID=release_id).delete()
             db.session.commit()
+            print("Releases patch_categories() got values: {}\n".format(patch["value"]))
             add_categories(release_id, patch["value"])
 
 
 def patch_formats(patches, release_id):
-    pass
+    """Apply patches to ReleasesFormatsMapping table. Since there are multiple rows, we need
+    some special processing for it, which the regular JsonPatch cannot handle."""
+    # Filter out unrelated patches
+    fmt_patches = [p for p in patches if "/Formats" in p.values()]
+
+    for patch in fmt_patches:
+        if patch["op"] == "add":
+            # Generally it is a list of values, eg.
+            # {"op": "add", "path": "/Formats", "value": [1, 2, "New"]}
+            # Where 1 and 2 are references to existing ones, and "New" is a new format to add
+            # also, non-array values are possible:
+            # {"op": "add", "path": "/Formats", "value": "Another"}
+            add_formats(release_id, patch["value"])
+        elif patch["op"] == "copy":
+            # This has no meaningful operation in Release Formats, so not implemented.
+            continue
+        elif patch["op"] == "move":
+            # This has no meaningful operation in Release Formats, so not implemented.
+            continue
+        elif patch["op"] == "remove":
+            # NB "remove" is for deleting an entire resource.
+            # To remove specific ID(s), use "replace".
+            ReleasesFormatsMapping.query.filter_by(ReleaseID=release_id).delete()
+            db.session.commit()
+        elif patch["op"] == "replace":
+            # This is really a delete + insert operation in the Release Formats case
+            ReleasesFormatsMapping.query.filter_by(ReleaseID=release_id).delete()
+            db.session.commit()
+            add_formats(release_id, patch["value"])
 
 
 def patch_people(patches, release_id):
-    pass
+    """Apply patches to ReleasesPeopleMapping table. Since there are multiple rows, we need
+    some special processing for it, which the regular JsonPatch cannot handle."""
+    # Filter out unrelated patches
+    people_patches = [p for p in patches if "/People" in p.values()]
+
+    for patch in people_patches:
+        if patch["op"] == "add":
+            # Generally it is a list of values, eg.
+            # {"op": "add", "path": "/People", "value": [{1: "Guitar", {"New": "Drums"}]}
+            # Where 1 is a reference to an existing person, and "New" is a new person to add
+            # also, non-array values are possible:
+            # {"op": "add", "path": "/People", "value": {"New": "Bass"}}
+            add_people(release_id, patch["value"])
+        elif patch["op"] == "copy":
+            # This has no meaningful operation in Release People, so not implemented.
+            continue
+        elif patch["op"] == "move":
+            # This has no meaningful operation in Release People, so not implemented.
+            continue
+        elif patch["op"] == "remove":
+            # NB "remove" is for deleting an entire resource.
+            # To remove specific ID(s), use "replace".
+            ReleasesPeopleMapping.query.filter_by(ReleaseID=release_id).delete()
+            db.session.commit()
+        elif patch["op"] == "replace":
+            # This is really a delete + insert operation in the Release People case
+            ReleasesPeopleMapping.query.filter_by(ReleaseID=release_id).delete()
+            db.session.commit()
+            add_people(release_id, patch["value"])
 
 
 def patch_songs(patches, release_id):
-    pass
+    """Apply patches to ReleasesSongsMapping table. Since there are multiple rows, we need
+    some special processing for it, which the regular JsonPatch cannot handle."""
+    # Filter out unrelated patches
+    song_patches = [p for p in patches if "/Songs" in p.values()]
+
+    for patch in song_patches:
+        if patch["op"] == "add":
+            # Generally it is a list of values, eg.
+            # {"op": "add", "path": "/Songs", "value": [{1: 123, {"New Song": 223}]}
+            # Where 1 is a reference to an existing song, and "New" is a new song to add
+            # also, non-array values are possible:
+            # {"op": "add", "path": "/Songs", "value": {"New": 555}}
+            add_songs(release_id, patch["value"])
+        elif patch["op"] == "copy":
+            # This has no meaningful operation in Release Songs, so not implemented.
+            continue
+        elif patch["op"] == "move":
+            # This has no meaningful operation in Release Songs, so not implemented.
+            continue
+        elif patch["op"] == "remove":
+            # NB "remove" is for deleting an entire resource.
+            # To remove specific ID(s), use "replace".
+            ReleasesSongsMapping.query.filter_by(ReleaseID=release_id).delete()
+            db.session.commit()
+        elif patch["op"] == "replace":
+            # This is really a delete + insert operation in the Release People case
+            ReleasesSongsMapping.query.filter_by(ReleaseID=release_id).delete()
+            db.session.commit()
+            add_songs(release_id, patch["value"])

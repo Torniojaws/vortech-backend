@@ -20,9 +20,19 @@ def add_categories(release_id, categories):
     """Add the categories for the release. If the value is an integer, it references an existing
     release category. If it is a string, it is potentially a new category. If no matches are found
     for the string, we create a new release category entry and then use its ID for this release."""
+    print("add_categories() received patches for release=[{}]:".format(release_id))
+    print(categories)
     for category in categories:
-        # Cast to string to avoid AttributeError: 'int' object has no attribute 'isdigit'
-        if str(category).isdigit() is False:
+        category_id = None
+        if type(category) is int:
+            id_exists = ReleaseCategories.query.filter_by(ReleaseCategoryID=category).first()
+            if not id_exists:
+                # Invalid ID was given, so we cannot proceed. It wouldn't make sense to insert a
+                # number as the name of the category. No need to throw.
+                continue
+            else:
+                category_id = category
+        else:
             # Potentially a new category
             exists = ReleaseCategories.query.filter_by(ReleaseCategory=category).first()
             if exists:
@@ -36,15 +46,6 @@ def add_categories(release_id, categories):
                 db.session.add(cat)
                 db.session.commit()
                 category_id = cat.ReleaseCategoryID
-        else:
-            # Verify that it does exist
-            id_exists = ReleaseCategories.query.filter_by(ReleaseCategoryID=category).first()
-            if not id_exists:
-                # Invalid ID was given, so we cannot proceed. It wouldn't make sense to insert a
-                # number as the name of the category. No need to throw.
-                continue
-            else:
-                category_id = category
 
         # Map category to the current release
         mapping = ReleasesCategoriesMapping(

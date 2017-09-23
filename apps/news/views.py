@@ -124,6 +124,7 @@ class NewsView(FlaskView):
             result = patch_item(news_item, request.get_json())
             db.session.commit()
         except Exception as e:
+            print("News Patch threw error:")
             print(e)
             # If any other exceptions happened during the patching, we'll return 422
             result = {"success": False, "error": "Could not apply patch"}

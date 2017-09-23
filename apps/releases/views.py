@@ -1,6 +1,7 @@
 import json
 import socket
 
+from dictalchemy import make_class_dictable
 from flask import jsonify, make_response, request, url_for
 from flask_classful import FlaskView
 from sqlalchemy import asc, desc
@@ -12,6 +13,12 @@ from apps.releases.models import Releases, ReleasesCategoriesMapping, ReleasesFo
 from apps.releases.patches import patch_item
 from apps.songs.models import ReleasesSongsMapping
 from apps.utils.time import get_datetime
+
+make_class_dictable(Releases)
+make_class_dictable(ReleasesCategoriesMapping)
+make_class_dictable(ReleasesFormatsMapping)
+make_class_dictable(ReleasesPeopleMapping)
+make_class_dictable(ReleasesSongsMapping)
 
 
 class ReleasesView(FlaskView):
@@ -137,8 +144,12 @@ class ReleasesView(FlaskView):
         return make_response(jsonify(result), status_code)
 
     def delete(self, release_id):
-        """Delete a specific release"""
-        return make_response("Wipe them out", 204)
+        """Delete a Release"""
+        release = Releases.query.filter_by(ReleaseID=release_id).first()
+        db.session.delete(release)
+        db.session.commit()
+
+        return make_response("", 204)
 
     def get_categories(self, release_id):
         """Return all the categories that the release is assigned to"""

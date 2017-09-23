@@ -450,5 +450,12 @@ class TestNewsView(unittest.TestCase):
             content_type="application/json"
         )
 
+        cats = NewsCategoriesMapping.query.filter_by(NewsID=self.news_ids[0]).order_by(
+            asc(NewsCategoriesMapping.NewsCategoryID)
+        ).all()
+
         self.assertEquals(204, response.status_code)
         self.assertFalse("", response.data.decode())
+        self.assertEquals(2, len(cats))
+        self.assertEquals(4, cats[0].NewsCategoryID)
+        self.assertEquals(5, cats[1].NewsCategoryID)

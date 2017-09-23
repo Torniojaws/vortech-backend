@@ -415,7 +415,517 @@ class TestReleases(unittest.TestCase):
         self.assertEquals("/People", mapped_patchdata[5]["from"])
         self.assertEquals("/Songs", mapped_patchdata[5]["path"])
 
-    def test_patch_item(self):
-        """This contains the actual implementation of the patching logic for PATCH /endpoint
-        requests. The RFC 6902 definition is used."""
+    """The below contains the actual implementation of the patching logic for PATCH /endpoint
+    requests.  The RFC 6902 definition is used."""
+
+    def test_patching_using_add(self):
+        """Add can be used to insert new values into the existing resource."""
+        response = self.app.patch(
+            "/api/1.0/releases/{}".format(int(self.release_ids[0])),
+            data=json.dumps(
+                [
+                    dict(
+                        op="add",
+                        path="/title",
+                        value="UnitTest Patched Title",
+                    ),
+                    dict(
+                        op="add",
+                        path="/artist",
+                        value="UnitTest Patched Artist",
+                    ),
+                ]
+            ),
+            content_type="application/json"
+        )
+
+        release = Releases.query.get_or_404(self.release_ids[0])
+
+        self.assertEquals(204, response.status_code)
+        self.assertEquals("UnitTest Patched Title", release.Title)
+        self.assertEquals("UnitTest Patched Artist", release.Artist)
+
+    def test_patching_using_add_in_categories(self):
+        """Add can be used to insert new values into the existing resource."""
+        response = self.app.patch(
+            "/api/1.0/releases/{}".format(int(self.release_ids[0])),
+            data=json.dumps(
+                [
+                    dict(
+                        op="add",
+                        path="/categories",
+                        value=["UnitTest patched category"],
+                    ),
+                ]
+            ),
+            content_type="application/json"
+        )
+
+        cats = ReleasesCategoriesMapping.query.filter_by(ReleaseID=self.release_ids[0]).order_by(
+            asc(ReleasesCategoriesMapping.ReleaseCategoryID)).all()
+
+        self.assertEquals(204, response.status_code)
+        self.assertEquals(2, len(cats))
+
+        self.assertEquals(
+            "UnitTest patched category",
+            ReleaseCategories.query.filter_by(
+                ReleaseCategoryID=cats[1].ReleaseCategoryID
+            ).first().ReleaseCategory
+        )
+
+    def test_patching_using_add_in_formats(self):
+        """Add can be used to insert new values into the existing resource."""
+        response = self.app.patch(
+            "/api/1.0/releases/{}".format(int(self.release_ids[0])),
+            data=json.dumps(
+                [
+                    dict(
+                        op="add",
+                        path="/formats",
+                        value=["UnitTest patched format"],
+                    ),
+                ]
+            ),
+            content_type="application/json"
+        )
+
+        formats = ReleasesFormatsMapping.query.filter_by(ReleaseID=self.release_ids[0]).order_by(
+            asc(ReleasesFormatsMapping.ReleaseFormatID)).all()
+
+        self.assertEquals(204, response.status_code)
+        self.assertEquals(2, len(formats))
+        self.assertEquals(
+            "UnitTest patched format",
+            ReleaseFormats.query.filter_by(
+                ReleaseFormatID=formats[1].ReleaseFormatID
+            ).first().Title
+        )
+
+    def test_patching_using_add_in_people(self):
+        """Add can be used to insert new values into the existing resource."""
+        response = self.app.patch(
+            "/api/1.0/releases/{}".format(int(self.release_ids[0])),
+            data=json.dumps(
+                [
+                    dict(
+                        op="add",
+                        path="/people",
+                        value=[{"UnitTest patched person": "Synths"}],
+                    ),
+                ]
+            ),
+            content_type="application/json"
+        )
+
+        people = ReleasesPeopleMapping.query.filter_by(ReleaseID=self.release_ids[0]).order_by(
+            asc(ReleasesPeopleMapping.PersonID)).all()
+
+        self.assertEquals(204, response.status_code)
+        self.assertEquals(2, len(people))
+        self.assertEquals(
+            "UnitTest patched person",
+            People.query.filter_by(
+                PersonID=people[1].PersonID
+            ).first().Name
+        )
+        self.assertEquals(
+            "Synths",
+            ReleasesPeopleMapping.query.filter_by(
+                PersonID=people[1].PersonID
+            ).first().Instruments
+        )
+
+    def test_patching_using_add_in_songs(self):
+        """Add can be used to insert new values into the existing resource."""
+        response = self.app.patch(
+            "/api/1.0/releases/{}".format(int(self.release_ids[0])),
+            data=json.dumps(
+                [
+                    dict(
+                        op="add",
+                        path="/songs",
+                        value=[{"UnitTest patched Song 2": 290}],
+                    ),
+                ]
+            ),
+            content_type="application/json"
+        )
+
+        songs = ReleasesSongsMapping.query.filter_by(ReleaseID=self.release_ids[0]).order_by(
+            asc(ReleasesSongsMapping.SongID)).all()
+
+        self.assertEquals(204, response.status_code)
+        self.assertEquals(4, len(songs))
+        self.assertEquals(
+            "UnitTest patched Song 2",
+            Songs.query.filter_by(
+                SongID=songs[3].SongID
+            ).first().Title
+        )
+        self.assertEquals(
+            290,
+            ReleasesSongsMapping.query.filter_by(
+                SongID=songs[3].SongID
+            ).first().ReleaseSongDuration
+        )
+
+    def test_patching_using_copy(self):
+        """Copy is used to copy one resource to another."""
+        response = self.app.patch(
+            "/api/1.0/releases/{}".format(int(self.release_ids[1])),
+            data=json.dumps(
+                [{
+                    "op": "copy",
+                    "from": "/artist",  # Cannot use from in a dict. It is a keyword
+                    "path": "/title"
+                }]
+            ),
+            content_type="application/json"
+        )
+
+        release = Releases.query.get_or_404(self.release_ids[1])
+
+        self.assertEquals(204, response.status_code)
+        self.assertEquals("UnitTest 2 Arts", release.Title)
+
+    def test_patching_using_copy_in_categories(self):
+        """For Release Categories, the "copy" patch has no meaning, as there is nowhere to copy to.
+        But for full coverage, this test is needed."""
+        response = self.app.patch(
+            "/api/1.0/releases/{}".format(int(self.release_ids[0])),
+            data=json.dumps(
+                [{
+                    "op": "copy",
+                    "from": "/categories",
+                    "path": "/categories"
+                }]
+            ),
+            content_type="application/json"
+        )
+
+        self.assertEquals(response.status_code, 204)
+        self.assertEquals("", response.data.decode())
+
+    def test_patching_using_copy_in_formats(self):
+        """For Release Formats, the "copy" patch has no meaning, as there is nowhere to copy to.
+        But for full coverage, this test is needed."""
+        response = self.app.patch(
+            "/api/1.0/releases/{}".format(int(self.release_ids[0])),
+            data=json.dumps(
+                [{
+                    "op": "copy",
+                    "from": "/formats",
+                    "path": "/formats"
+                }]
+            ),
+            content_type="application/json"
+        )
+
+        self.assertEquals(response.status_code, 204)
+        self.assertEquals("", response.data.decode())
+
+    def test_patching_using_copy_in_people(self):
+        """For Release People, the "copy" patch has no real meaning. It can technically be used,
+        but it makes no sense. You could only copy instruments <-> PersonID <-> ReleaseID, which is
+        nonsense."""
+        response = self.app.patch(
+            "/api/1.0/releases/{}".format(int(self.release_ids[0])),
+            data=json.dumps(
+                [{
+                    "op": "copy",
+                    "from": "/people",
+                    "path": "/people"
+                }]
+            ),
+            content_type="application/json"
+        )
+
+        self.assertEquals(response.status_code, 204)
+        self.assertEquals("", response.data.decode())
+
+    def test_patching_using_copy_in_songs(self):
+        """For Release Songs, the "copy" patch has no real meaning. It can technically be used,
+        but it makes no sense. You could only copy song duration <-> SongID <-> ReleaseID, which is
+        nonsense."""
+        response = self.app.patch(
+            "/api/1.0/releases/{}".format(int(self.release_ids[0])),
+            data=json.dumps(
+                [{
+                    "op": "copy",
+                    "from": "/songs",
+                    "path": "/songs"
+                }]
+            ),
+            content_type="application/json"
+        )
+
+        self.assertEquals(response.status_code, 204)
+        self.assertEquals("", response.data.decode())
+
+    def test_patching_using_move(self):
+        """NOTE! More than half the columns in this project are nullable=False, which prevents
+        "move" and "remove" from making the old value NULL :)
+        In the Release model, only Credits, Created and Updated are nullable. But due to
+        the patch basically just removing it from the dict, the patch will not remove it from DB.
+        It would need to be explicitly set to null."""
+        response = self.app.patch(
+            "/api/1.0/releases/{}".format(int(self.release_ids[0])),
+            data=json.dumps(
+                [{
+                    "op": "move",
+                    "from": "/credits",  # Cannot use from in a dict. It is a keyword
+                    "path": "/artist"
+                }]
+            ),
+            content_type="application/json"
+        )
+
+        release = Releases.query.get_or_404(self.release_ids[0])
+
+        self.assertEquals(204, response.status_code)
+        self.assertEquals("UnitTest is a good and fun activity", release.Artist)
+
+    def test_patching_using_move_in_categories(self):
+        """For Release Categories, the "move" patch has no meaning, as there is nowhere to move to.
+        But for full coverage, this test is needed."""
+        response = self.app.patch(
+            "/api/1.0/releases/{}".format(int(self.release_ids[0])),
+            data=json.dumps(
+                [{
+                    "op": "move",
+                    "from": "/categories",
+                    "path": "/categories"
+                }]
+            ),
+            content_type="application/json"
+        )
+
+        self.assertEquals(response.status_code, 204)
+        self.assertEquals("", response.data.decode())
+
+    def test_patching_using_move_in_formats(self):
+        """For Release Formats, the "move" patch has no meaning, as there is nowhere to move to.
+        But for full coverage, this test is needed."""
+        response = self.app.patch(
+            "/api/1.0/releases/{}".format(int(self.release_ids[0])),
+            data=json.dumps(
+                [{
+                    "op": "move",
+                    "from": "/formats",
+                    "path": "/formats"
+                }]
+            ),
+            content_type="application/json"
+        )
+
+        self.assertEquals(response.status_code, 204)
+        self.assertEquals("", response.data.decode())
+
+    def test_patching_using_move_in_people(self):
+        """For Release People, the "move" patch has no meaning, as there is nowhere to move to.
+        But for full coverage, this test is needed."""
+        response = self.app.patch(
+            "/api/1.0/releases/{}".format(int(self.release_ids[0])),
+            data=json.dumps(
+                [{
+                    "op": "move",
+                    "from": "/people",
+                    "path": "/people"
+                }]
+            ),
+            content_type="application/json"
+        )
+
+        self.assertEquals(response.status_code, 204)
+        self.assertEquals("", response.data.decode())
+
+    def test_patching_using_move_in_songs(self):
+        """For Release Songs, the "move" patch has no meaning, as there is nowhere to move to.
+        But for full coverage, this test is needed."""
+        response = self.app.patch(
+            "/api/1.0/releases/{}".format(int(self.release_ids[0])),
+            data=json.dumps(
+                [{
+                    "op": "move",
+                    "from": "/songs",
+                    "path": "/songs"
+                }]
+            ),
+            content_type="application/json"
+        )
+
+        self.assertEquals(response.status_code, 204)
+        self.assertEquals("", response.data.decode())
+
+    def test_patching_using_remove(self):
+        """NOTE! More than half the columns in this project are nullable=False, which prevents
+        "move" and "remove" from making the old value NULL :)
+        In the Release model, only Credits, Created and Updated are nullable"""
+        response = self.app.patch(
+            "/api/1.0/releases/{}".format(int(self.release_ids[0])),
+            data=json.dumps(
+                [{
+                    "op": "remove",
+                    "path": "/artist"
+                }]
+            ),
+            content_type="application/json"
+        )
+
+        release = Releases.query.get_or_404(self.release_ids[0])
+
+        self.assertEquals(204, response.status_code)
+        self.assertNotEquals(None, release.Artist)
+
+    def test_patching_using_remove_in_categories(self):
+        """For Release Categories, the "remove" has a special own method that deletes things."""
+        response = self.app.patch(
+            "/api/1.0/releases/{}".format(int(self.release_ids[0])),
+            data=json.dumps(
+                [{
+                    "op": "remove",
+                    "path": "/categories"
+                }]
+            ),
+            content_type="application/json"
+        )
+
+        cats = ReleasesCategoriesMapping.query.filter_by(ReleaseID=self.release_ids[0]).all()
+        self.assertEquals(response.status_code, 204)
+        self.assertEquals([], cats)
+
+    def test_patching_using_remove_in_formats(self):
+        """For Release Formats, the "remove" has a special own method that deletes things."""
+        response = self.app.patch(
+            "/api/1.0/releases/{}".format(int(self.release_ids[0])),
+            data=json.dumps(
+                [{
+                    "op": "remove",
+                    "path": "/formats"
+                }]
+            ),
+            content_type="application/json"
+        )
+
+        formats = ReleasesFormatsMapping.query.filter_by(ReleaseID=self.release_ids[0]).all()
+        self.assertEquals(response.status_code, 204)
+        self.assertEquals([], formats)
+
+    def test_patching_using_remove_in_people(self):
+        """For Release People, the "remove" has a special own method that deletes things."""
+        response = self.app.patch(
+            "/api/1.0/releases/{}".format(int(self.release_ids[0])),
+            data=json.dumps(
+                [{
+                    "op": "remove",
+                    "path": "/people"
+                }]
+            ),
+            content_type="application/json"
+        )
+
+        people = ReleasesPeopleMapping.query.filter_by(ReleaseID=self.release_ids[0]).all()
+        self.assertEquals(response.status_code, 204)
+        self.assertEquals([], people)
+
+    def test_patching_using_remove_in_songs(self):
+        """For Release Songs, the "remove" has a special own method that deletes things."""
+        response = self.app.patch(
+            "/api/1.0/releases/{}".format(int(self.release_ids[0])),
+            data=json.dumps(
+                [{
+                    "op": "remove",
+                    "path": "/songs"
+                }]
+            ),
+            content_type="application/json"
+        )
+
+        songs = ReleasesSongsMapping.query.filter_by(ReleaseID=self.release_ids[0]).all()
+        self.assertEquals(response.status_code, 204)
+        self.assertEquals([], songs)
+
+    def test_patching_using_replace(self):
+        """Replace will delete any existing values in the source and insert the new value there."""
+        response = self.app.patch(
+            "/api/1.0/releases/{}".format(int(self.release_ids[0])),
+            data=json.dumps(
+                [{
+                    "op": "replace",
+                    "path": "/artist",
+                    "value": "UnitTest Patch Replace"
+                }]
+            ),
+            content_type="application/json"
+        )
+
+        release = Releases.query.get_or_404(self.release_ids[0])
+
+        self.assertEquals(204, response.status_code)
+        self.assertEquals("UnitTest Patch Replace", release.Artist)
+
+    def test_patching_using_replace_in_categories(self):
+        """Categories has its own method for replacing things."""
+        response = self.app.patch(
+            "/api/1.0/releases/{}".format(self.release_ids[0]),
+            data=json.dumps(
+                [{
+                    "op": "replace",
+                    "path": "/categories",
+                    "value": [4, 5]
+                }]
+            ),
+            content_type="application/json"
+        )
+
+        cats = ReleasesCategoriesMapping.query.filter_by(ReleaseID=self.release_ids[0]).order_by(
+            asc(ReleasesCategoriesMapping.ReleaseCategoryID)
+        ).all()
+
+        self.assertEquals(204, response.status_code)
+        self.assertEquals("", response.data.decode())
+        self.assertEquals(2, len(cats))
+        self.assertEquals(4, cats[0].ReleaseCategoryID)
+        self.assertEquals(5, cats[1].ReleaseCategoryID)
+
+    def test_patching_using_test(self):
+        """Test is used to check does a resource contain the same value as our source data."""
         pass
+
+    def test_patching_using_test_with_nonexisting_path(self):
+        response = self.app.patch(
+            "/api/1.0/releases/{}".format(int(self.release_ids[1])),
+            data=json.dumps(
+                [{
+                    "op": "test",
+                    "path": "/doesnotexist",
+                    "value": "I do not exist"
+                }]
+            ),
+            content_type="application/json"
+        )
+
+        self.assertEquals(422, response.status_code)
+        self.assertFalse("", response.data.decode())
+
+    def test_deleting_release(self):
+        response = self.app.delete("/api/1.0/releases/{}".format(int(self.release_ids[0])))
+        query_result = Releases.query.filter_by(ReleaseID=self.release_ids[0]).first()
+        # On delete cascade should also remove the CFPS of the release ID
+        cats = ReleasesCategoriesMapping.query.filter_by(ReleaseID=self.release_ids[0]).order_by(
+            asc(ReleasesCategoriesMapping.ReleaseID)).all()
+        formats = ReleasesFormatsMapping.query.filter_by(ReleaseID=self.release_ids[0]).order_by(
+            asc(ReleasesFormatsMapping.ReleaseID)).all()
+        people = ReleasesPeopleMapping.query.filter_by(ReleaseID=self.release_ids[0]).order_by(
+            asc(ReleasesPeopleMapping.ReleaseID)).all()
+        songs = ReleasesSongsMapping.query.filter_by(ReleaseID=self.release_ids[0]).order_by(
+            asc(ReleasesSongsMapping.ReleaseID)).all()
+
+        self.assertEquals(204, response.status_code)
+        self.assertEquals("", response.data.decode())
+        self.assertEquals(None, query_result)
+        self.assertEquals([], cats)
+        self.assertEquals([], formats)
+        self.assertEquals([], people)
+        self.assertEquals([], songs)

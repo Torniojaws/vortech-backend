@@ -1,7 +1,7 @@
 import json
 import unittest
 
-from sqlalchemy import desc
+from sqlalchemy import desc, or_
 
 from app import app, db
 from apps.biography.models import Biography
@@ -35,7 +35,12 @@ class TestBiographyViews(unittest.TestCase):
 
     def tearDown(self):
         """Clean up the test data we entered."""
-        to_delete = Biography.query.filter(Biography.Short.like("UnitTest%")).all()
+        to_delete = Biography.query.filter(
+            or_(
+                Biography.Short.like("UnitTest%"),
+                Biography.Full.like("This is the third%")
+            )
+        ).all()
         for bio in to_delete:
             db.session.delete(bio)
         db.session.commit()

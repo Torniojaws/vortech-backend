@@ -56,10 +56,20 @@ class TestReleases(unittest.TestCase):
         cats = ReleaseCategories(
             ReleaseCategory="UnitTest Category"
         )
+        cats2 = ReleaseCategories(
+            ReleaseCategory="UnitTest Category 2"
+        )
+        cats3 = ReleaseCategories(
+            ReleaseCategory="UnitTest Category 3"
+        )
         db.session.add(cats)
+        db.session.add(cats2)
+        db.session.add(cats3)
         db.session.flush()
         self.valid_cats = []
         self.valid_cats.append(cats.ReleaseCategoryID)
+        self.valid_cats.append(cats2.ReleaseCategoryID)
+        self.valid_cats.append(cats3.ReleaseCategoryID)
 
         cat_map = ReleasesCategoriesMapping(
             ReleaseID=release.ReleaseID,
@@ -83,6 +93,20 @@ class TestReleases(unittest.TestCase):
         db.session.add(format_digital)
         db.session.flush()
 
+        # For patch testing
+        format1 = ReleaseFormats(
+            Title="UnitTest Format One"
+        )
+        format2 = ReleaseFormats(
+            Title="UnitTest Format Two"
+        )
+        db.session.add(format1)
+        db.session.add(format2)
+        db.session.flush()
+        self.valid_formats = []
+        self.valid_formats.append(format1.ReleaseFormatID)
+        self.valid_formats.append(format2.ReleaseFormatID)
+
         format_mapping = ReleasesFormatsMapping(
             ReleaseFormatID=format_cd.ReleaseFormatID,
             ReleaseID=release.ReleaseID,
@@ -103,6 +127,20 @@ class TestReleases(unittest.TestCase):
             )
             db.session.add(person)
             db.session.flush()
+
+        # For testing patching:
+        person1 = People(
+            Name="UnitTest Person One"
+        )
+        person2 = People(
+            Name="UnitTest Person Two"
+        )
+        db.session.add(person1)
+        db.session.add(person2)
+        db.session.flush()
+        self.valid_people = []
+        self.valid_people.append(person1.PersonID)
+        self.valid_people.append(person2.PersonID)
 
         person_map = ReleasesPeopleMapping(
             ReleaseID=release.ReleaseID,
@@ -130,10 +168,24 @@ class TestReleases(unittest.TestCase):
             Title="UnitTest Three",
             Duration=123,
         )
+        # And some patch songs
+        song_p1 = Songs(
+            Title="UnitTest Patch One",
+            Duration=59,
+        )
+        song_p2 = Songs(
+            Title="UnitTest Patch Two",
+            Duration=161,
+        )
         db.session.add(song1)
         db.session.add(song2)
         db.session.add(song3)
+        db.session.add(song_p1)
+        db.session.add(song_p2)
         db.session.flush()
+        self.valid_songs = []
+        self.valid_songs.append(song_p1.SongID)
+        self.valid_songs.append(song_p2.SongID)
 
         release_map1 = ReleasesSongsMapping(
             ReleaseID=release.ReleaseID,
@@ -873,7 +925,7 @@ class TestReleases(unittest.TestCase):
                 [{
                     "op": "replace",
                     "path": "/categories",
-                    "value": [4, 5]
+                    "value": [self.valid_cats[1], self.valid_cats[2]]
                 }]
             ),
             content_type="application/json"
@@ -886,8 +938,82 @@ class TestReleases(unittest.TestCase):
         self.assertEquals(204, response.status_code)
         self.assertEquals("", response.data.decode())
         self.assertEquals(2, len(cats))
-        self.assertEquals(4, cats[0].ReleaseCategoryID)
-        self.assertEquals(5, cats[1].ReleaseCategoryID)
+        self.assertEquals(self.valid_cats[1], cats[0].ReleaseCategoryID)
+        self.assertEquals(self.valid_cats[2], cats[1].ReleaseCategoryID)
+
+    def test_patching_using_replace_in_formats(self):
+        """Formats has its own method for replacing things."""
+        response = self.app.patch(
+            "/api/1.0/releases/{}".format(self.release_ids[0]),
+            data=json.dumps(
+                [{
+                    "op": "replace",
+                    "path": "/formats",
+                    "value": [self.valid_formats[0], self.valid_formats[1]]
+                }]
+            ),
+            content_type="application/json"
+        )
+
+        formats = ReleasesFormatsMapping.query.filter_by(ReleaseID=self.release_ids[0]).order_by(
+            asc(ReleasesFormatsMapping.ReleaseFormatID)
+        ).all()
+
+        self.assertEquals(204, response.status_code)
+        self.assertEquals("", response.data.decode())
+        self.assertEquals(2, len(formats))
+        self.assertEquals(self.valid_formats[0], formats[0].ReleaseFormatID)
+        self.assertEquals(self.valid_formats[1], formats[1].ReleaseFormatID)
+
+    def test_patching_using_replace_in_people(self):
+        """People has its own method for replacing things."""
+        response = self.app.patch(
+            "/api/1.0/releases/{}".format(self.release_ids[0]),
+            data=json.dumps(
+                [{
+                    "op": "replace",
+                    "path": "/people",
+                    "value": [{self.valid_people[0]: "Bass"}, {self.valid_people[1]: "Triangle"}]
+                }]
+            ),
+            content_type="application/json"
+        )
+
+        people = ReleasesPeopleMapping.query.filter_by(ReleaseID=self.release_ids[0]).order_by(
+            asc(ReleasesPeopleMapping.PersonID)
+        ).all()
+
+        self.assertEquals(204, response.status_code)
+        self.assertEquals("", response.data.decode())
+        self.assertEquals(2, len(people))
+        self.assertEquals(self.valid_people[0], people[0].PersonID)
+        self.assertEquals(self.valid_people[1], people[1].PersonID)
+
+    def test_patching_using_replace_in_songs(self):
+        """Songs has its own method for replacing things."""
+        response = self.app.patch(
+            "/api/1.0/releases/{}".format(self.release_ids[0]),
+            data=json.dumps(
+                [{
+                    "op": "replace",
+                    "path": "/songs",
+                    "value": [{self.valid_songs[0]: 55}, {self.valid_songs[1]: 167}]
+                }]
+            ),
+            content_type="application/json"
+        )
+
+        songs = ReleasesSongsMapping.query.filter_by(ReleaseID=self.release_ids[0]).order_by(
+            asc(ReleasesSongsMapping.SongID)
+        ).all()
+
+        self.assertEquals(204, response.status_code)
+        self.assertEquals("", response.data.decode())
+        self.assertEquals(2, len(songs))
+        for song in songs:
+            print(song.SongID)
+        self.assertEquals(self.valid_songs[0], songs[0].SongID)
+        self.assertEquals(self.valid_songs[1], songs[1].SongID)
 
     def test_patching_using_test(self):
         """Test is used to check does a resource contain the same value as our source data."""

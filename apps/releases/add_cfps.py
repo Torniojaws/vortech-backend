@@ -27,6 +27,7 @@ def add_categories(release_id, categories):
         if type(category) is int:
             id_exists = ReleaseCategories.query.filter_by(ReleaseCategoryID=category).first()
             if not id_exists:
+                print("ID not found, continue")
                 # Invalid ID was given, so we cannot proceed. It wouldn't make sense to insert a
                 # number as the name of the category. No need to throw.
                 continue
@@ -113,10 +114,15 @@ def add_people(release_id, people):
         # Get the values
         for k, v in person.items():
             identifier = k
+            try:
+                int(identifier)
+                maybe_exists = True
+            except:
+                maybe_exists = False
             instruments = v
 
         person_id = None
-        if type(identifier) is int:
+        if maybe_exists:
             id_exists = People.query.filter_by(PersonID=identifier).first()
             if id_exists:
                 person_id = id_exists.PersonID
@@ -165,13 +171,19 @@ def add_songs(release_id, songs):
         # Get the data
         for k, v in song.items():
             identifier = k
+            try:
+                int(identifier)
+                maybe_exists = True
+            except:
+                maybe_exists = False
             duration = v
         song_id = None
-        if type(identifier) is int:
+        if maybe_exists:
             id_exists = Songs.query.filter_by(SongID=identifier).first()
             if id_exists:
                 song_id = id_exists.SongID
             else:
+                print("Invalid ID - skipping")
                 # NB: Pytest has a bug regarding continue, which results in it being marked as
                 # not covered - see:
                 # https://bitbucket.org/ned/coveragepy/issues/198/continue-marked-as-not-covered
@@ -181,6 +193,9 @@ def add_songs(release_id, songs):
             if song_exists:
                 song_id = song_exists.SongID
             else:
+                print("Will insert to Songs, title=[{}], dura=[{}]".format(
+                    identifier, duration
+                ))
                 new_song = Songs(
                     Title=identifier,
                     Duration=duration,

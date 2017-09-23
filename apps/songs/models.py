@@ -12,7 +12,10 @@ class Songs(db.Model):
 
 
 class ReleasesSongsMapping(db.Model):
-    """The mapping between songs and releases"""
+    """The mapping between songs and releases. There is also a release-specific duration for
+    songs. For example if the song is of different length on a live album than in the studio
+    album. We also want to keep a duration in Songs, so that one-off songs that are not on any
+    releases can also have a duration."""
     __tablename__ = "ReleasesSongsMapping"
     ReleasesSongsMappingID = db.Column(db.Integer, primary_key=True)
     ReleaseID = db.Column(
@@ -21,3 +24,4 @@ class ReleasesSongsMapping(db.Model):
     SongID = db.Column(
         db.Integer, db.ForeignKey("Songs.SongID", ondelete="CASCADE"), nullable=False
     )
+    ReleaseSongDuration = db.Column(db.Integer, nullable=False)

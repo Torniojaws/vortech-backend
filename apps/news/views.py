@@ -1,15 +1,14 @@
 import json
 import socket
-from copy import deepcopy
 
 from flask import jsonify, make_response, request, url_for
 from flask_classful import FlaskView, route
-from jsonpatch import JsonPatch, JsonPatchTestFailed
 from sqlalchemy import asc, desc
 from dictalchemy import make_class_dictable
 
 from app import db
 from apps.news.models import News, NewsComments, NewsCategoriesMapping
+from apps.news.patches import patch_item
 from apps.utils.time import get_datetime
 
 make_class_dictable(News)
@@ -91,6 +90,17 @@ class NewsView(FlaskView):
         news.Contents = data["contents"]
         news.Author = data["author"]
         news.Updated = get_datetime()
+
+        # Update Categories. Since they are one per row, we'll just delete and add.
+        db.session.query(NewsCategoriesMapping).filter_by(NewsID=news_id).delete()
+        db.session.commit()
+
+        for category in data["categories"]:
+            cm = NewsCategoriesMapping(
+                NewsID=news_id,
+                NewsCategoryID=category,
+            )
+            db.session.add(cm)
         db.session.commit()
 
         return make_response("", 200)
@@ -98,18 +108,29 @@ class NewsView(FlaskView):
     def patch(self, news_id):
         """Change an existing News item partially using an instruction-based JSON, as defined by:
         https://tools.ietf.org/html/rfc6902
+
+        When patching a joined table (like NewsCategoriesMapping), it should behave like a partial
+        PUT, so basically just a delete+add instead of nothing fancy.
+
+        According to RFC 5789, a PATCH should generally return 204 No Content, unless there were
+        errors. We return 422 Unprocessable Entity if the patch JSON is ok, but could
+        not be completed.
         """
         news_item = News.query.get_or_404(news_id)
-        result = None
+        result = []
+        status_code = 204
         try:
-            self.patch_item(news_item, request.get_json())
+            # This only returns a value (boolean) for "op": "test"
+            result = patch_item(news_item, request.get_json())
             db.session.commit()
-            result = news_item.asdict()
-        except JsonPatchTestFailed:
-            # This is raised when using "op": "test" and the compared values are not identical
-            result = {"success": False, "result": "Existing value is not identical to tested one"}
+        except Exception as e:
+            print("News Patch threw error:")
+            print(e)
+            # If any other exceptions happened during the patching, we'll return 422
+            result = {"success": False, "error": "Could not apply patch"}
+            status_code = 422
 
-        return make_response(jsonify(result), 200)
+        return make_response(jsonify(result), status_code)
 
     def delete(self, news_id):
         """Delete a News item"""
@@ -157,53 +178,6 @@ class NewsView(FlaskView):
             } for comment in comments]
         })
         return make_response(contents, 200)
-
-    def patch_item(self, news, patchdata, **kwargs):
-        """This is used to run patches on the database model, using the method described here:
-        https://gist.github.com/mattupstate/d63caa0156b3d2bdfcdb
-        """
-        # Map the values to DB column names
-        mapped_patchdata = []
-        for p in patchdata:
-            # Replace eg. /title with /Title
-            p = self.patch_mapping(p)
-            mapped_patchdata.append(p)
-
-        data = news.asdict(exclude_pk=True, **kwargs)
-        patch = JsonPatch(mapped_patchdata)
-        data = patch.apply(data)
-        # NB: There are two limitations:
-        # 1. When op is "move", there is no simple way to make sure the source is empty
-        # 2. When op is "remove", there also is no simple way to make sure the source is empty
-        # NB: Most of the data in this project is nullable=False anyway, so they cannot be deleted.
-        news.fromdict(data)
-
-    def patch_mapping(self, patch):
-        """This is used to map a patch "path" or "from" to a custom value.
-        Useful for when the patch path/from is not the same as the DB column name.
-
-        Eg.
-        PATCH /news/123
-        [{ "op": "move", "from": "/title", "path": "/author" }]
-
-        If the News column is "Title", having "/title" would fail to patch because the case does
-        not match. So the mapping converts this:
-            { "op": "move", "from": "/title", "path": "/author" }
-        To this:
-            { "op": "move", "from": "/Title", "path": "/Author" }
-        """
-        mapping = {
-            "/title": "/Title",
-            "/contents": "/Contents",
-            "/author": "/Author",
-            "/updated": "/Updated"
-        }
-
-        mutable = deepcopy(patch)
-        for prop in patch:
-            if prop == "path" or prop == "from":
-                mutable[prop] = mapping.get(patch[prop], None)
-        return mutable
 
     def get_categories(self, news_id):
         """Return a list of category IDs for the news_id"""

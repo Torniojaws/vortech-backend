@@ -11,6 +11,9 @@ def register_views(app):
     from apps.news.views import NewsView
     NewsView.register(app, route_base="{}/news/".format(api_path))
 
+    from apps.people.views import PeopleView
+    PeopleView.register(app, route_base="{}/people/".format(api_path))
+
     from apps.releases.views import ReleasesView
     ReleasesView.register(app, route_base="{}/releases/".format(api_path))
 

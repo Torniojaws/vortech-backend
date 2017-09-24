@@ -14,6 +14,9 @@ def register_views(app):
     from apps.releases.views import ReleasesView
     ReleasesView.register(app, route_base="{}/releases/".format(api_path))
 
+    from apps.shows.views import ShowsView
+    ShowsView.register(app, route_base="{}/shows/".format(api_path))
+
     from apps.songs.views import SongsView
     SongsView.register(app, route_base="{}/songs/".format(api_path))
 
@@ -28,6 +31,7 @@ def register_models(app):
         "news",
         "people",
         "releases",
+        "shows",
         "songs",
         "users",
     ]:

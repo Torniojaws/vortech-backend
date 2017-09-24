@@ -10,7 +10,7 @@ def add_bands(show_id, bands):
         show_band = ShowsOtherBands(
             ShowID=show_id,
             BandName=band["bandName"],
-            BandWebsite=band["BandWebsite"],
+            BandWebsite=band["bandWebsite"],
         )
         db.session.add(show_band)
     db.session.commit()

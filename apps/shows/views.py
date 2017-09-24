@@ -66,13 +66,13 @@ class ShowsView(FlaskView):
         db.session.commit()
 
         # There is a change we also received extra details. Add them if so:
-        if data["otherBands"]:
+        if "otherBands" in data:
             add_bands(show.ShowID, data["otherBands"])
 
-        if data["people"]:
+        if "people" in data:
             add_people(show.ShowID, data["people"])
 
-        if data["setlist"]:
+        if "setlist" in data:
             add_setlist(show.ShowID, data["setlist"])
 
         # The RFC 7231 spec says a 201 Created should return an absolute full path
@@ -99,13 +99,13 @@ class ShowsView(FlaskView):
 
         # Remove any existing BPS for this show, and add the new ones
         self.clear_bps(show.ShowID)
-        if data["otherBands"]:
+        if "otherBands" in data:
             add_bands(show.ShowID, data["otherBands"])
 
-        if data["people"]:
+        if "people" in data:
             add_people(show.ShowID, data["people"])
 
-        if data["setlist"]:
+        if "setlist" in data:
             add_setlist(show.ShowID, data["setlist"])
 
         db.session.commit()
@@ -137,38 +137,42 @@ class ShowsView(FlaskView):
 
     def get_other_bands(self, show_id):
         """Return the list of other bands for a given show."""
-        bands = ShowsOtherBands.query.filter_by(ShowID=show_id).all()
-        return jsonify([
-            {
+        result = []
+        for band in ShowsOtherBands.query.filter_by(ShowID=show_id).all():
+            bd = {
                 "name": band.BandName,
-                "website": band.Website,
+                "website": band.BandWebsite,
             }
-        ] for band in bands)
+            result.append(bd)
+        return result
 
     def get_setlist(self, show_id):
         """Return the setlist for a given show in SetlistOrder."""
         songs = ShowsSongsMapping.query.filter_by(ShowID=show_id).order_by(
-            asc(ShowsSongsMapping.SetlistOrder)
-        ).all()
-        return jsonify([
-            {
+            asc(ShowsSongsMapping.SetlistOrder)).all()
+
+        result = []
+        for song in songs:
+            sd = {
                 "setlistOrder": song.SetlistOrder,
                 "showID": song.ShowID,
                 "songID": song.SongID,
                 "duration": song.ShowSongDuration,
             }
-        ] for song in songs)
+            result.append(sd)
+        return result
 
     def get_show_people(self, show_id):
         """Return the people and their instruments for a given show."""
-        people = ShowsPeopleMapping.query.filter_by(ShowID=show_id).all()
-        return jsonify([
-            {
+        result = []
+        for person in ShowsPeopleMapping.query.filter_by(ShowID=show_id).all():
+            pd = {
                 "showID": person.ShowID,
                 "personID": person.PersonID,
-                "instruments": person.instruments,
+                "instruments": person.Instruments,
             }
-        ] for person in people)
+            result.append(pd)
+        return result
 
     def clear_bps(self, show_id):
         """Remove all BPS (Bands, People, Setlist) entries for this show."""

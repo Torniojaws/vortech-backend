@@ -8,6 +8,9 @@ def register_views(app):
     from apps.biography.views import BiographyView
     BiographyView.register(app, route_base="{}/biography/".format(api_path))
 
+    from apps.contacts.views import ContactsView
+    ContactsView.register(app, route_base="{}/contacts/".format(api_path))
+
     from apps.news.views import NewsView
     NewsView.register(app, route_base="{}/news/".format(api_path))
 
@@ -31,6 +34,7 @@ def register_models(app):
     """All database models need to be registered for Flask-Migrate to see them"""
     for model in [
         "biography",
+        "contacts",
         "news",
         "people",
         "releases",

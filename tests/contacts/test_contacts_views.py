@@ -37,6 +37,7 @@ class TestContactsViews(unittest.TestCase):
     def tearDown(self):
         for contact in Contacts.query.filter(Contacts.Email.like("unittest%")).all():
             db.session.delete(contact)
+        db.session.commit()
 
     def test_getting_contacts_is_latest(self):
         """When you GET /contacts, it should return the newest contact information."""

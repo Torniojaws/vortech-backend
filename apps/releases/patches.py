@@ -104,7 +104,6 @@ def patch_categories(patches, release_id):
             # This is really a delete + insert operation in the Release Categories case
             ReleasesCategoriesMapping.query.filter_by(ReleaseID=release_id).delete()
             db.session.commit()
-            print("Releases patch_categories() got values: {}\n".format(patch["value"]))
             add_categories(release_id, patch["value"])
 
 

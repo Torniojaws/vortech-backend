@@ -32,6 +32,9 @@ def register_views(app):
     from apps.users.views import UsersView
     UsersView.register(app, route_base="{}/users/".format(api_path))
 
+    from apps.videos.views import VideosView
+    VideosView.register(app, route_base="{}/videos/".format(api_path))
+
 
 def register_models(app):
     """All database models need to be registered for Flask-Migrate to see them"""

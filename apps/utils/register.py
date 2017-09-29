@@ -2,7 +2,7 @@ import importlib
 
 
 def register_views(app):
-    """All route views must be registered before the can be used"""
+    """All route views must be registered before they can be used"""
     api_path = "/api/1.0"
 
     from apps.biography.views import BiographyView
@@ -22,6 +22,9 @@ def register_views(app):
 
     from apps.releases.views import ReleasesView
     ReleasesView.register(app, route_base="{}/releases/".format(api_path))
+
+    from apps.shop.views import ShopItemsView
+    ShopItemsView.register(app, route_base="{}/shopitems/".format(api_path))
 
     from apps.shows.views import ShowsView
     ShowsView.register(app, route_base="{}/shows/".format(api_path))
@@ -45,6 +48,7 @@ def register_models(app):
         "news",
         "people",
         "releases",
+        "shop",
         "shows",
         "songs",
         "users",

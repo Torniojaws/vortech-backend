@@ -107,12 +107,7 @@ class TestShopViews(unittest.TestCase):
             ShopItemID=self.valid_items[1],
             ShopCategoryID=self.valid_cats[0]
         )
-        item2_cat2 = ShopItemsCategoriesMapping(
-            ShopItemID=self.valid_items[1],
-            ShopCategoryID=self.valid_cats[1]
-        )
         db.session.add(item2_cat1)
-        db.session.add(item2_cat2)
         db.session.commit()
 
         item2_url1 = ShopItemsURLMapping(
@@ -200,14 +195,59 @@ class TestShopViews(unittest.TestCase):
         self.assertNotEquals("", data["shopItems"][0]["createdAt"])
         self.assertTrue("updatedAt" in data["shopItems"][0])
 
-        self.assertEquals(2, len(data["shopItems"][0]["urls"]))
         self.assertEquals(
             [self.valid_cats[0], self.valid_cats[1]],
             data["shopItems"][0]["categories"]
         )
+        self.assertEquals(2, len(data["shopItems"][0]["urls"]))
         self.assertEquals("Spotify", data["shopItems"][0]["urls"][0]["urlTitle"])
         self.assertEquals(
             "http://www.example.com/spotify",
             data["shopItems"][0]["urls"][0]["url"]
         )
         self.assertEquals(self.valid_logo_ids[0], data["shopItems"][0]["urls"][0]["logoID"])
+
+    def test_getting_specific_shopitem(self):
+        """Should return the data of the specified shopitem."""
+        response = self.app.get("/api/1.0/shopitems/{}".format(self.valid_items[2]))
+        data = json.loads(response.data.decode())
+
+        self.assertEquals(200, response.status_code)
+        self.assertEquals(1, len(data["shopItems"]))
+
+        self.assertEquals("UnitTest ShopItem 3", data["shopItems"][0]["title"])
+        self.assertEquals("UnitTest This is item 3", data["shopItems"][0]["description"])
+        self.assertEquals(12, data["shopItems"][0]["price"])
+        self.assertEquals("EUR", data["shopItems"][0]["currency"])
+        self.assertEquals("unittest-shopitem3.jpg", data["shopItems"][0]["image"])
+        self.assertNotEquals("", data["shopItems"][0]["createdAt"])
+        self.assertTrue("updatedAt" in data["shopItems"][0])
+
+        self.assertEquals(
+            [self.valid_cats[0], self.valid_cats[1]],
+            data["shopItems"][0]["categories"]
+        )
+        self.assertEquals(2, len(data["shopItems"][0]["urls"]))
+
+        self.assertEquals("Spotify", data["shopItems"][0]["urls"][0]["urlTitle"])
+        self.assertEquals(
+            "http://www.example.com/spotify",
+            data["shopItems"][0]["urls"][0]["url"]
+        )
+        self.assertEquals(self.valid_logo_ids[0], data["shopItems"][0]["urls"][0]["logoID"])
+
+        self.assertEquals("BandCamp", data["shopItems"][0]["urls"][1]["urlTitle"])
+        self.assertEquals(
+            "http://www.example.com/bandcamp",
+            data["shopItems"][0]["urls"][1]["url"]
+        )
+        self.assertEquals(self.valid_logo_ids[1], data["shopItems"][0]["urls"][1]["logoID"])
+
+    def test_getting_shopitems_by_category_filter(self):
+        """Should return all items that match the category filter. Eg. category="""
+        response = self.app.get("/api/1.0/shopitems/?category=UnitTests")
+        data = json.loads(response.data.decode())
+
+        self.assertEquals(200, response.status_code)
+        self.assertNotEquals(None, data)
+        self.assertEquals(2, len(data["shopItems"]))

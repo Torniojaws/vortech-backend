@@ -20,6 +20,9 @@ def register_views(app):
     from apps.people.views import PeopleView
     PeopleView.register(app, route_base="{}/people/".format(api_path))
 
+    from apps.photos.views import PhotosView
+    PhotosView.register(app, route_base="{}/photos/".format(api_path))
+
     from apps.releases.views import ReleasesView
     ReleasesView.register(app, route_base="{}/releases/".format(api_path))
 
@@ -47,6 +50,7 @@ def register_models(app):
         "guestbook",
         "news",
         "people",
+        "photos",
         "releases",
         "shop",
         "shows",

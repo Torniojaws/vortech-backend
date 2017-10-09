@@ -15,3 +15,6 @@ PyMySQL==0.7.11
 SQLAlchemy==1.1.13
 jsonpatch==1.16
 dictalchemy==0.1.2.7
+
+# For statistics about visitors. Strange version numbering scheme, but it is correct
+maxminddb-geolite2==2017.803

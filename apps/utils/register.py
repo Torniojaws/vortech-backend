@@ -11,6 +11,9 @@ def register_views(app):
     from apps.contacts.views import ContactsView
     ContactsView.register(app, route_base="{}/contacts/".format(api_path))
 
+    from apps.downloads.views import DownloadsView
+    DownloadsView.register(app, route_base="{}/downloads/".format(api_path))
+
     from apps.guestbook.views import GuestbookView
     GuestbookView.register(app, route_base="{}/guestbook/".format(api_path))
 
@@ -53,6 +56,7 @@ def register_models(app):
     for model in [
         "biography",
         "contacts",
+        "downloads",
         "guestbook",
         "news",
         "people",

@@ -21,6 +21,15 @@ separate repository, most likely using Vue.js due to the recent React licensing 
 
 See the [Install Instructions](INSTALL.md)
 
+## Running locally
+
+In the actual server, the backend runs via uWSGI as a service. But locally you can/need to launch
+it manually:
+
+1. Start the virtualenv: ``source ~/.venv/vortech-backend/bin/activate``
+1. Launch with: ``python3 manage.py runserver -h 0.0.0.0``
+1. Send a request, eg. GET http://localhost:5000/api/1.0/news/
+
 ## Tests
 
 You can run the tests with ``python3 -m pytest tests/``. If you want the coverage report too, run

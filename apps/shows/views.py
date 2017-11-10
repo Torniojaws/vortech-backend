@@ -10,6 +10,7 @@ from app import db
 from apps.shows.add_bps import add_bands, add_people, add_setlist
 from apps.shows.models import Shows, ShowsOtherBands, ShowsPeopleMapping, ShowsSongsMapping
 from apps.shows.patches import patch_item
+from apps.utils.time import get_iso_format
 
 make_class_dictable(Shows)
 
@@ -20,7 +21,7 @@ class ShowsView(FlaskView):
         shows = Shows.query.order_by(asc(Shows.ShowID)).all()
         content = jsonify({
             "shows": [{
-                "date": show.ShowDate,
+                "date": get_iso_format(show.ShowDate),
                 "countryCode": show.CountryCode,
                 "country": show.Country,
                 "city": show.City,
@@ -38,7 +39,7 @@ class ShowsView(FlaskView):
         show = Shows.query.filter_by(ShowID=show_id).first_or_404()
         content = jsonify({
             "shows": [{
-                "date": show.ShowDate,
+                "date": get_iso_format(show.ShowDate),
                 "countryCode": show.CountryCode,
                 "country": show.Country,
                 "city": show.City,

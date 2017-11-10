@@ -14,7 +14,8 @@ from apps.releases.models import (
 from apps.releases.patches import patch_mapping
 from apps.people.models import People, ReleasesPeopleMapping
 from apps.songs.models import Songs, ReleasesSongsMapping
-from apps.utils.time import get_datetime
+from apps.users.models import Users, UsersAccessTokens, UsersAccessMapping, UsersAccessLevels
+from apps.utils.time import get_datetime, get_datetime_one_hour_ahead
 
 
 class TestReleases(unittest.TestCase):
@@ -36,6 +37,7 @@ class TestReleases(unittest.TestCase):
             Artist="UnitTest Arts",
             Credits="UnitTest is a good and fun activity",
             Created=get_datetime(),
+            ReleaseCode="TEST001"
         )
         release2 = Releases(
             Title="UnitTest 2",
@@ -43,6 +45,7 @@ class TestReleases(unittest.TestCase):
             Artist="UnitTest 2 Arts",
             Credits="UnitTest too is good for testing",
             Created=get_datetime(),
+            ReleaseCode="TEST002"
         )
         db.session.add(release)
         db.session.add(release2)
@@ -230,6 +233,43 @@ class TestReleases(unittest.TestCase):
         # Phew! Let's commit
         db.session.commit()
 
+        # We also need a valid admin user for the add release endpoint test.
+        user = Users(
+            Name="UnitTest Admin",
+            Username="unittest",
+            Password="password"
+        )
+        db.session.add(user)
+        db.session.commit()
+
+        # This is non-standard, but is fine for testing.
+        self.access_token = "unittest-access-token"
+        user_token = UsersAccessTokens(
+            UserID=user.UserID,
+            AccessToken=self.access_token,
+            ExpirationDate=get_datetime_one_hour_ahead()
+        )
+        db.session.add(user_token)
+        db.session.commit()
+
+        # Define level for admin
+        if not UsersAccessLevels.query.filter_by(LevelName="Admin").first():
+            access_level = UsersAccessLevels(
+                UsersAccessLevelID=4,
+                LevelName="Admin"
+            )
+            db.session.add(access_level)
+            db.session.commit()
+
+        grant_admin = UsersAccessMapping(
+            UserID=user.UserID,
+            UsersAccessLevelID=4
+        )
+        db.session.add(grant_admin)
+        db.session.commit()
+
+        self.user_id = user.UserID
+
     def tearDown(self):
         # This will delete all the mappings too, via ondelete cascade
         releases = Releases.query.filter(Releases.Title.like("UnitTest%")).all()
@@ -257,6 +297,10 @@ class TestReleases(unittest.TestCase):
         songs = Songs.query.filter(Songs.Title.like("UnitTest%")).all()
         for song in songs:
             db.session.delete(song)
+        db.session.commit()
+
+        user = Users.query.filter_by(UserID=self.user_id).first()
+        db.session.delete(user)
         db.session.commit()
 
     def test_getting_one_release(self):
@@ -297,12 +341,15 @@ class TestReleases(unittest.TestCase):
         self.assertEquals(3, len(releases["releases"][1]["songs"]))
 
     def test_adding_a_release(self):
-        """Should insert the release and all it's related data."""
+        """Should insert the release and all it's related data.
+        NB: This endpoint requires a valid admin token in the request header. We create one in
+        setUp() for this test."""
         response = self.app.post(
             "/api/1.0/releases/",
             data=json.dumps(
                 dict(
                     title="UnitTest Title",
+                    releaseCode="TEST001",
                     releaseDate=get_datetime(),
                     artist="UnitTest Artist",
                     credits="UnitTest Credits",
@@ -312,7 +359,11 @@ class TestReleases(unittest.TestCase):
                     songs=[{"UnitTest Song 1": 85}],
                 )
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         release = Releases.query.filter_by(Title="UnitTest Title").first_or_404()
@@ -364,6 +415,7 @@ class TestReleases(unittest.TestCase):
             data=json.dumps(
                 dict(
                     title="UnitTest Title Put",
+                    releaseCode="TEST001",
                     releaseDate=get_datetime(),
                     artist="UnitTest Artist Put",
                     credits="UnitTest Credits Put",

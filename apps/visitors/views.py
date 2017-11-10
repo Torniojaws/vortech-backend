@@ -12,16 +12,19 @@ from apps.visitors.models import Visitors
 
 class VisitorsView(FlaskView):
     def index(self):
-        """Return the amount of visits for today, this week and this month."""
+        """Return the amount of visits for today, this week, this month, and all time."""
         today = Visitors.query.filter(Visitors.VisitDate >= get_date()).count()
         week = Visitors.query.filter(Visitors.VisitDate >= get_monday()).count()
         month = Visitors.query.filter(Visitors.VisitDate >= get_first_day()).count()
+        # The date 2017-11-01 is the first day of the month the new site went live.
+        alltime = Visitors.query.filter(Visitors.VisitDate >= "2017-11-01").count()
 
         content = jsonify({
             "visits": {
                 "today": today,
                 "week": week,
                 "month": month,
+                "all": alltime,
             }
         })
 
@@ -38,15 +41,15 @@ class VisitorsView(FlaskView):
         # Get visitor's Country and Continent based on the public IP address. Used for statistics.
         ip_address = request.headers.get('X-Forwarded-For', request.remote_addr)
 
-        # If the IP is localhost 127.0.0.1, geolite2 would return None and raise an exception
-        if ip_address == "127.0.0.1":
-            continent = "Unknown"
-            country = "Unknown"
-        else:
+        # If the IP is a local IP, geolite2 will return None and raise a TypeError
+        try:
             reader = geolite2.reader()
             visitor_data = reader.get(ip_address)
             continent = visitor_data["continent"]["names"]["en"]
             country = visitor_data["country"]["names"]["en"]
+        except TypeError:
+            continent = "Unknown"
+            country = "Unknown"
 
         visit = Visitors(
             VisitDate=get_datetime(),

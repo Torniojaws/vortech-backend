@@ -4,8 +4,8 @@ import unittest
 from werkzeug import check_password_hash
 
 from app import app, db
-from apps.users.models import Users
-from apps.utils.time import get_datetime
+from apps.users.models import Users, UsersAccessLevels, UsersAccessMapping, UsersAccessTokens
+from apps.utils.time import get_datetime, get_datetime_one_hour_ahead
 
 
 class TestUsersView(unittest.TestCase):
@@ -28,6 +28,31 @@ class TestUsersView(unittest.TestCase):
         db.session.add(user2)
         db.session.commit()
 
+        # Make user1 a registered user with a token
+        if not UsersAccessLevels.query.filter_by(LevelName="Registered").first():
+            registered = UsersAccessLevels(
+                UsersAccessLevelID=2,
+                LevelName="Registered"
+            )
+            db.session.add(registered)
+            db.session.commit()
+
+        grant_registered = UsersAccessMapping(
+            UserID=user1.UserID,
+            UsersAccessLevelID=2
+        )
+
+        self.access_token = "unittest-access-token"
+        user_token = UsersAccessTokens(
+            UserID=user1.UserID,
+            AccessToken=self.access_token,
+            ExpirationDate=get_datetime_one_hour_ahead()
+        )
+
+        db.session.add(grant_registered)
+        db.session.add(user_token)
+        db.session.commit()
+
         self.valid_users = [user1.UserID, user2.UserID]
 
     def tearDown(self):
@@ -38,8 +63,14 @@ class TestUsersView(unittest.TestCase):
         db.session.commit()
 
     def test_getting_one_user(self):
-        """Should return just one user's details"""
-        resp = self.app.get("/api/1.0/users/{}".format(self.valid_users[0]))
+        """Should return just one user's details. NB: This needs a registered user."""
+        resp = self.app.get(
+            "/api/1.0/users/{}".format(self.valid_users[0]),
+            headers={
+                'User': self.valid_users[0],
+                'Authorization': self.access_token
+            }
+        )
         user = json.loads(resp.get_data().decode())
 
         self.assertEquals(resp.status_code, 200)

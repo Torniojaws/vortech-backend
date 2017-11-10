@@ -34,6 +34,7 @@ class TestPeopleViews(unittest.TestCase):
             Artist="UnitTest Artist",
             Credits="UnitTest Credits",
             Created=get_datetime(),
+            ReleaseCode="TEST001"
         )
         db.session.add(release)
         db.session.commit()

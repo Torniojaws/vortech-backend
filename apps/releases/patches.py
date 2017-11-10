@@ -59,6 +59,7 @@ def patch_mapping(patch):
     """This is used to map a patch "path" or "from" to a custom value."""
     mapping = {
         "/title": "/Title",
+        "/releaseCode": "/ReleaseCode",
         "/releaseDate": "/Date",
         "/artist": "/Artist",
         "/credits": "/Credits",

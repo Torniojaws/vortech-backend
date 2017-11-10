@@ -21,6 +21,7 @@ class TestAddCategories(unittest.TestCase):
             Artist="UnitTest Arts",
             Credits="UnitTest is a good and fun activity",
             Created=get_datetime(),
+            ReleaseCode="TEST001"
         )
         db.session.add(release)
         db.session.commit()

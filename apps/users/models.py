@@ -33,3 +33,17 @@ class UsersAccessMapping(db.Model):
         db.ForeignKey("UsersAccessLevels.UsersAccessLevelID", ondelete="CASCADE"),
         nullable=False
     )
+
+
+class UsersAccessTokens(db.Model):
+    """User session access data is stored here."""
+    __tablename__ = "UsersAccessTokens"
+    UsersAccessTokenID = db.Column(db.Integer, primary_key=True)
+    UserID = db.Column(
+        db.Integer,
+        db.ForeignKey("Users.UserID", ondelete="CASCADE"),
+        nullable=False
+    )
+    AccessToken = db.Column(db.String(40))
+    RefreshToken = db.Column(db.String(40))
+    ExpirationDate = db.Column(db.DateTime, nullable=False)

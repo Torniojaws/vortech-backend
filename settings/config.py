@@ -35,6 +35,11 @@ class Config(object):
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     LOGPATH = configfile.get("log", "path")
     MIN_PASSWORD_LENGTH = 8
+    # User access levels. These must match the DB table UsersAccessLevels
+    GUEST_LEVEL = 1
+    REGISTERED_LEVEL = 2
+    MODERATOR_LEVEL = 3
+    ADMIN_LEVEL = 4
 
 
 class ProdConfig(Config):

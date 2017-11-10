@@ -9,7 +9,7 @@ from dictalchemy import make_class_dictable
 from app import db
 from apps.news.models import News, NewsComments, NewsCategoriesMapping
 from apps.news.patches import patch_item
-from apps.utils.time import get_datetime
+from apps.utils.time import get_datetime, get_iso_format
 
 make_class_dictable(News)
 make_class_dictable(NewsCategoriesMapping)
@@ -24,8 +24,8 @@ class NewsView(FlaskView):
                 "title": news.Title,
                 "contents": news.Contents,
                 "author": news.Author,
-                "created": news.Created,
-                "updated": news.Updated,
+                "created": get_iso_format(news.Created),
+                "updated": get_iso_format(news.Updated),
                 "categories": self.get_categories(news.NewsID),
             } for news in News.query.order_by(desc(News.Created)).all()]
         })
@@ -40,8 +40,8 @@ class NewsView(FlaskView):
                 "title": news.Title,
                 "contents": news.Contents,
                 "author": news.Author,
-                "created": news.Created,
-                "updated": news.Updated,
+                "created": get_iso_format(news.Created),
+                "updated": get_iso_format(news.Updated),
                 "categories": self.get_categories(news.NewsID),
             }]
         })

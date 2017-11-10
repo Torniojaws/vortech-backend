@@ -15,15 +15,22 @@ def get_date():
 def get_monday():
     """Return the date of current week's Monday in datetime format."""
     now = datetime.now()
-    return (now - timedelta(days=now.weekday()) + timedelta(days=0)).strftime("%Y-%m-%d 00:00:00")
+    return (now - timedelta(days=now.weekday()) + timedelta(days=0)).strftime('%Y-%m-%d 00:00:00')
 
 
 def get_first_day():
     """Return the datetime of current month's first day."""
     now = datetime.now()
-    return datetime(now.year, now.month, 1).strftime("%Y-%m-%d 00:00:00")
+    return datetime(now.year, now.month, 1).strftime('%Y-%m-%d 00:00:00')
 
 
 def get_iso_format(date):
-    """Convert the date (normally a DateTime object from DB) to ISO format YYYY-MM-DD HH:MM:SS."""
-    return date.strftime('%Y-%m-%d %H:%M:%S')
+    """Convert the date (a DateTime object from DB, or NULL) to ISO format YYYY-MM-DD HH:MM:SS."""
+    if date:
+        return date.strftime('%Y-%m-%d %H:%M:%S')
+
+
+def get_datetime_one_hour_ahead():
+    """Returns the datetime exactly 1 hour in the future. Used for AccessTokens."""
+    now = datetime.now()
+    return (now + timedelta(hours=1)).strftime('%Y-%m-%d %H:%M:%S')

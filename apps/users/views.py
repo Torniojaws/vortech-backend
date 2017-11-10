@@ -1,12 +1,14 @@
 import json
 import socket
+import uuid
 
 from flask import jsonify, make_response, request, url_for
 from flask_classful import FlaskView
-from werkzeug.security import generate_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
 
 from app import db
-from apps.users.models import Users
+from apps.users.models import Users, UsersAccessTokens
+from apps.utils.auth import registered_only
 from apps.utils.time import get_datetime
 from settings.config import CONFIG
 
@@ -27,6 +29,7 @@ class UsersView(FlaskView):
         })
         return make_response(users, 200)
 
+    @registered_only
     def get(self, user_id):
         """Returns a specific user"""
         user = Users.query.filter_by(UserID=user_id).first_or_404()
@@ -57,7 +60,7 @@ class UsersView(FlaskView):
         ):
             result = {
                 "success": False,
-                "result": "Existing value is not identical to tested one"
+                "result": "Password is missing or too short."
             }
             return make_response(jsonify(result), 400)
 
@@ -79,3 +82,78 @@ class UsersView(FlaskView):
             user.UserID
         )
         return make_response(jsonify(contents), 201)
+
+
+class UserLoginView(FlaskView):
+    def post(self):
+        """Compare username and matching hashed password to user input. If valid, generate the
+        access token and return the details. The frontend will then update the session."""
+        data = json.loads(request.data.decode())
+
+        # Check that user exists
+        user = Users.query.filter_by(Username=data["username"]).first_or_404()
+
+        # If so, then compare the given password to the password of the matching user
+        if check_password_hash(user.Password, data["password"]):
+            # If there are existing access tokens for current user, remove them first
+            for old_token in UsersAccessTokens.query.filter_by(UserID=user.UserID).all():
+                db.session.delete(old_token)
+                db.session.commit()
+
+            # Then create the token for the current valid login
+            token = UsersAccessTokens(
+                UserID=user.UserID,
+                AccessToken=str(uuid.uuid4()),
+                RefreshToken=str(uuid.uuid4()),
+                ExpirationDate=get_datetime(),
+            )
+            db.session.add(token)
+            db.session.commit()
+
+            status_code = 201
+            result = {
+                "success": True,
+                "accessToken": token.AccessToken,
+                "refreshToken": token.RefreshToken,
+                "expires_in": 3600,
+                "userID": user.UserID,
+            }
+        else:
+            # Invalid password
+            status_code = 401
+            result = {
+                "success": False,
+                "error": "Invalid password."
+            }
+
+        return make_response(jsonify(result), status_code)
+
+
+class UserLogoutView(FlaskView):
+    def post(self):
+        """Logout user - delete the UsersAccessToken(s) for current UserID."""
+        user_id = request.headers.get("User", "")
+        access_token = request.headers.get("Authorization", "")
+
+        # Does UserID exist
+        user_found = Users.query.filter_by(UserID=user_id).first()
+
+        # The access token is just a formality, since this will revoke all access anyway.
+        if user_found and access_token:
+            # Delete the token(s) - after this point, even valid requests will not pass
+            for token in UsersAccessTokens.query.filter_by(UserID=user_id).all():
+                db.session.delete(token)
+                db.session.commit()
+            status_code = 200
+            result = {
+                "success": True
+            }
+        else:
+            # UserID and/or AccessToken was missing from headers - do not logout
+            status_code = 404
+            result = {
+                "success": False,
+                "error": "Missing UserID or Token"
+            }
+
+        return make_response(jsonify(result), status_code)

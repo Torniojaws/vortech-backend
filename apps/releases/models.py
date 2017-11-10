@@ -5,6 +5,7 @@ class Releases(db.Model):
     """The basic data for release items"""
     __tablename__ = "Releases"
     ReleaseID = db.Column(db.Integer, primary_key=True)
+    ReleaseCode = db.Column(db.String(10), nullable=False)
     Title = db.Column(db.String(200), nullable=False)
     Date = db.Column(db.DateTime, nullable=False)
     Artist = db.Column(db.String(200), nullable=False)

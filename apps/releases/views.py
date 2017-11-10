@@ -7,12 +7,15 @@ from flask_classful import FlaskView
 from sqlalchemy import asc, desc
 
 from app import db
-from apps.people.models import ReleasesPeopleMapping
+from apps.people.models import ReleasesPeopleMapping, People
 from apps.releases.add_cfps import add_categories, add_formats, add_people, add_songs
-from apps.releases.models import Releases, ReleasesCategoriesMapping, ReleasesFormatsMapping
+from apps.releases.models import (
+    Releases, ReleasesCategoriesMapping, ReleasesFormatsMapping, ReleaseFormats, ReleaseCategories
+)
 from apps.releases.patches import patch_item
-from apps.songs.models import ReleasesSongsMapping
-from apps.utils.time import get_datetime
+from apps.songs.models import ReleasesSongsMapping, Songs
+from apps.utils.auth import admin_only
+from apps.utils.time import get_datetime, get_iso_format
 
 make_class_dictable(Releases)
 make_class_dictable(ReleasesCategoriesMapping)
@@ -27,16 +30,17 @@ class ReleasesView(FlaskView):
         contents = jsonify({
             "releases": [{
                 "id": release.ReleaseID,
+                "releaseCode": release.ReleaseCode,
                 "title": release.Title,
-                "releaseDate": release.Date,
+                "releaseDate": get_iso_format(release.Date),
                 "artist": release.Artist,
                 "credits": release.Credits,
                 "formats": self.get_formats(release.ReleaseID),
                 "categories": self.get_categories(release.ReleaseID),
                 "songs": self.get_songs(release.ReleaseID),
                 "people": self.get_people(release.ReleaseID),
-                "created": release.Created,
-                "updated": release.Updated,
+                "created": get_iso_format(release.Created),
+                "updated": get_iso_format(release.Updated),
             } for release in Releases.query.order_by(desc(Releases.ReleaseID)).all()]
         })
         return make_response(contents, 200)
@@ -47,26 +51,29 @@ class ReleasesView(FlaskView):
         contents = jsonify({
             "releases": [{
                 "id": release.ReleaseID,
+                "releaseCode": release.ReleaseCode,
                 "title": release.Title,
-                "releaseDate": release.Date,
+                "releaseDate": get_iso_format(release.Date),
                 "artist": release.Artist,
                 "credits": release.Credits,
                 "categories": self.get_categories(release.ReleaseID),
                 "formats": self.get_formats(release.ReleaseID),
                 "people": self.get_people(release.ReleaseID),
                 "songs": self.get_songs(release.ReleaseID),
-                "created": release.Created,
-                "updated": release.Updated,
+                "created": get_iso_format(release.Created),
+                "updated": get_iso_format(release.Updated),
             }]
         })
         return make_response(contents, 200)
 
+    @admin_only
     def post(self):
         """Add a new release and its related CFPS details. This gets quite complex due to
         four different inserts and checks in some of them, so the actual implementation will be
         in its own file."""
         data = json.loads(request.data.decode())
         release = Releases(
+            ReleaseCode=data["releaseCode"],
             Title=data["title"],
             Date=data["releaseDate"],
             Artist=data["artist"],
@@ -98,6 +105,7 @@ class ReleasesView(FlaskView):
         release = Releases.query.get_or_404(release_id)
 
         # Update the release
+        release.ReleaseCode = data["releaseCode"]
         release.Title = data["title"]
         release.Date = data["releaseDate"]
         release.Artist = data["artist"]
@@ -153,36 +161,80 @@ class ReleasesView(FlaskView):
 
     def get_categories(self, release_id):
         """Return all the categories that the release is assigned to"""
-        categories = ReleasesCategoriesMapping.query.filter_by(
+        release_categories = ReleasesCategoriesMapping.query.filter_by(
             ReleaseID=release_id
         ).order_by(
             asc(ReleasesCategoriesMapping.ReleaseCategoryID)
         ).all()
-        return [c.ReleaseCategoryID for c in categories]
+
+        # Get the values
+        categories = []
+        for release_cat in release_categories:
+            category = ReleaseCategories.query.filter_by(
+                ReleaseCategoryID=release_cat.ReleaseCategoryID
+            ).first()
+            categories.append(category.ReleaseCategory)
+
+        return categories
 
     def get_formats(self, release_id):
         """Return all the formats assigned to the release"""
-        formats = ReleasesFormatsMapping.query.filter_by(
+        release_formats = ReleasesFormatsMapping.query.filter_by(
             ReleaseID=release_id
         ).order_by(
             asc(ReleasesFormatsMapping.ReleaseFormatID)
         ).all()
-        return [f.ReleaseFormatID for f in formats]
+
+        # Get the values
+        formats = []
+        for release_format in release_formats:
+            _format = ReleaseFormats.query.filter_by(
+                ReleaseFormatID=release_format.ReleaseFormatID
+            ).first()
+            formats.append(
+                _format.Title
+            )
+
+        return formats
 
     def get_people(self, release_id):
         """Return all the people that were part of the release"""
-        people = ReleasesPeopleMapping.query.filter_by(
+        release_people = ReleasesPeopleMapping.query.filter_by(
             ReleaseID=release_id
         ).order_by(
             asc(ReleasesPeopleMapping.PersonID)
         ).all()
-        return [p.PersonID for p in people]
+
+        # Retrieve the data for each personID
+        people = []
+        for release_person in release_people:
+            person = People.query.filter_by(PersonID=release_person.PersonID).first()
+            people.append(
+                dict(
+                    name=person.Name,
+                    instruments=release_person.Instruments,
+                )
+            )
+
+        return people
 
     def get_songs(self, release_id):
         """Return all the songs that were on the release"""
-        songs = ReleasesSongsMapping.query.filter_by(
+        release_songs = ReleasesSongsMapping.query.filter_by(
             ReleaseID=release_id
         ).order_by(
             asc(ReleasesSongsMapping.ReleasesSongsMappingID)
         ).all()
-        return [s.SongID for s in songs]
+
+        # Then retrieve the data of the songs
+        songs = []
+        for release_song in release_songs:
+            song = Songs.query.filter_by(SongID=release_song.SongID).first()
+            songs.append(
+                dict(
+                    title=song.Title,
+                    duration=song.Duration,
+                )
+            )
+
+        return songs

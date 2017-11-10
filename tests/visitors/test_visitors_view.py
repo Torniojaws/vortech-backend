@@ -82,6 +82,10 @@ class TestVisitorsViews(unittest.TestCase):
             db.session.delete(visit)
         db.session.commit()
 
+        # Special real IP test
+        Visitors.query.filter_by(Country="Republic of Lithuania").delete()
+        db.session.commit()
+
     def test_getting_visitor_count(self):
         """The visitor count should return the total count and counts by current day/week/month.
         There is one weird thing that must be done: If this test is run on a Monday, then the

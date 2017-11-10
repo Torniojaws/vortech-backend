@@ -17,6 +17,7 @@ class TestDownloadsReleasesViews(unittest.TestCase):
             Artist="UnitTest Arts 1",
             Credits="UnitTest is a good and fun activity",
             Created=get_datetime(),
+            ReleaseCode="TEST001"
         )
         release2 = Releases(
             Title="UnitTest 2",
@@ -24,6 +25,7 @@ class TestDownloadsReleasesViews(unittest.TestCase):
             Artist="UnitTest 2 Arts",
             Credits="UnitTest too is good for testing",
             Created=get_datetime(),
+            ReleaseCode="TEST002"
         )
         db.session.add(release1)
         db.session.add(release2)

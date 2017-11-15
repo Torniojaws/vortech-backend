@@ -38,10 +38,11 @@ def register_views(app):
     from apps.songs.views import SongsView
     SongsView.register(app, route_base="{}/songs/".format(api_path))
 
-    from apps.users.views import UsersView, UserLoginView, UserLogoutView
+    from apps.users.views import UsersView, UserLoginView, UserLogoutView, UserRefreshTokenView
     UsersView.register(app, route_base="{}/users/".format(api_path))
     UserLoginView.register(app, route_base="{}/login/".format(api_path))
     UserLogoutView.register(app, route_base="{}/logout/".format(api_path))
+    UserRefreshTokenView.register(app, route_base="{}/refresh/".format(api_path))
 
     from apps.videos.views import VideosView
     VideosView.register(app, route_base="{}/videos/".format(api_path))

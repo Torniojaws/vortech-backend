@@ -107,6 +107,7 @@ class TestUsersView(unittest.TestCase):
         )
 
         user = Users.query.filter_by(Name="UnitTest Post").first_or_404()
+        userlevel = UsersAccessMapping.query.filter_by(UserID=user.UserID).first()
 
         self.assertEquals(resp.status_code, 201)
         self.assertTrue("Location" in resp.get_data().decode())
@@ -117,6 +118,9 @@ class TestUsersView(unittest.TestCase):
         self.assertTrue(check_password_hash(user.Password, "unittesting"))
         # Sanity check with invalid password
         self.assertFalse(check_password_hash(user.Password, "notcorrect"))
+        # Make sure user is mapped as level 2 (Registered user)
+        self.assertNotEquals(None, userlevel)
+        self.assertEquals(2, userlevel.UsersAccessLevelID)
 
     def test_adding_user_with_empty_password(self):
         """Test behaviour with empty password."""

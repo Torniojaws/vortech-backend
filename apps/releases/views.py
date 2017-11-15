@@ -41,7 +41,9 @@ class ReleasesView(FlaskView):
                 "people": self.get_people(release.ReleaseID),
                 "created": get_iso_format(release.Created),
                 "updated": get_iso_format(release.Updated),
-            } for release in Releases.query.order_by(desc(Releases.ReleaseID)).all()]
+            } for release in Releases.query.filter(
+                Releases.Date <= get_datetime()
+            ).order_by(desc(Releases.ReleaseID)).all()]
         })
         return make_response(contents, 200)
 

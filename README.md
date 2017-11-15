@@ -6,7 +6,7 @@
 
 This will be the production API on the new VPS and will be used in the future version of
 https://www.vortechmusic.com as the RESTful API for use by the frontend that will be done in a
-separate repository, most likely using Vue.js due to the recent React licensing developments.
+separate repository.
 
 ## Stack
 

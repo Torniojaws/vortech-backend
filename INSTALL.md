@@ -27,6 +27,8 @@ These are the mandatory programs needed to get started.
 
 1. Vagrant specialty: At least for me, there was a lock file in ``/var/lib/dpkg/lock`` that had to
 be deleted
+1. Apache seems to run by default in Ubuntu 16.04, so stop it: ``sudo systemctl stop apache2.service``
+1. Update apt: ``sudo apt-get update``
 1. Then install the first pieces:
 ``sudo apt install virtualenv python3 uwsgi uwsgi-emperor uwsgi-plugin-python3 nginx-full git``
 1. And the database of course: ``sudo apt install mariadb-server``
@@ -46,6 +48,7 @@ be deleted
 1. Change to the project dir: ``cd /srv/vortech-backend/html``
 1. And then install the requirements:
 ``sudo /srv/vortech-backend/venv/bin/pip install -r requirements/prod.txt``
+1. Create the logs dir that is *required* by nginx: ``sudo mkdir /srv/vortech-backend/logs``
 1. And finally, change the owner of the app dir:
 ``sudo chown -R www-data:www-data /srv/vortech-backend``
 
@@ -186,6 +189,7 @@ be deleted
 1. Then create the file contents: ``sudo openssl dhparam 2048 -out /etc/nginx/cert/dhparam.pem``
 It will take about 2 minutes to finish.
 1. Then, for the below steps we will need Certbot from Let's Encrypt.
+1. Install add-apt-repository: ``sudo apt-get install software-properties-common``
 1. Setup the repository: ``sudo add-apt-repository ppa:certbot/certbot``
 1. Update: ``sudo apt-get update``
 1. Install: ``sudo apt-get install python-certbot-nginx``
@@ -202,6 +206,7 @@ It will take about 2 minutes to finish.
     }
     ```
 1. Save and close.
+1. Verify that nginx config is OK: ``sudo nginx -t``
 1. Then generate the certs: ``sudo certbot --nginx -d vortechmusic.com -d www.vortechmusic.com``
     1. In Vagrant, the easiest way is to run:
     ``sudo certbot run -a manual -i nginx -d vortechmusic.com -d www.vortechmusic.com``

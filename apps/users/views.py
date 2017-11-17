@@ -4,12 +4,13 @@ import uuid
 
 from flask import jsonify, make_response, request, url_for
 from flask_classful import FlaskView
+from sqlalchemy import and_
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from app import db
-from apps.users.models import Users, UsersAccessTokens
+from apps.users.models import Users, UsersAccessTokens, UsersAccessMapping
 from apps.utils.auth import registered_only
-from apps.utils.time import get_datetime
+from apps.utils.time import get_datetime, get_datetime_one_hour_ahead
 from settings.config import CONFIG
 
 
@@ -74,6 +75,14 @@ class UsersView(FlaskView):
         db.session.add(user)
         db.session.commit()
 
+        # Grant level 2 (= registered). Anything more is on a case-by-case basis.
+        userlevel = UsersAccessMapping(
+            UserID=user.UserID,
+            UsersAccessLevelID=2
+        )
+        db.session.add(userlevel)
+        db.session.commit()
+
         # The RFC 7231 spec says a 201 Created should return an absolute full path
         server = socket.gethostname()
         contents = "Location: {}{}{}".format(
@@ -105,7 +114,7 @@ class UserLoginView(FlaskView):
                 UserID=user.UserID,
                 AccessToken=str(uuid.uuid4()),
                 RefreshToken=str(uuid.uuid4()),
-                ExpirationDate=get_datetime(),
+                ExpirationDate=get_datetime_one_hour_ahead(),
             )
             db.session.add(token)
             db.session.commit()
@@ -154,6 +163,51 @@ class UserLogoutView(FlaskView):
             result = {
                 "success": False,
                 "error": "Missing UserID or Token"
+            }
+
+        return make_response(jsonify(result), status_code)
+
+
+class UserRefreshTokenView(FlaskView):
+    def post(self):
+        """If the user's access token has expired, the frontend will attempt to send the refresh
+        token to this endpoint. If the userID and refresh token are valid, we renew the access
+        token to be valid for another hour."""
+        user_id = request.headers.get("User", "")
+        refresh_token = request.headers.get("Authorization", "")
+
+        # Does UserID exist
+        user_found = Users.query.filter_by(UserID=user_id).first()
+
+        # Is refresh token valid for the user
+        token_found = UsersAccessTokens.query.filter(
+            and_(
+                UsersAccessTokens.UserID == user_id,
+                UsersAccessTokens.RefreshToken == refresh_token,
+            )
+        ).first()
+
+        if user_found and token_found:
+            # Then update the access token for the current valid login
+            # NB: Refresh tokens never expire (standard practice), so don't create a new one.
+            token_found.AccessToken = str(uuid.uuid4())
+            token_found.ExpirationDate = get_datetime_one_hour_ahead()
+            db.session.commit()
+
+            status_code = 200
+            result = {
+                "success": True,
+                "accessToken": token_found.AccessToken,
+                "refreshToken": token_found.RefreshToken,
+                "expires_in": 3600,
+                "userID": user_id,
+            }
+        else:
+            # UserID and/or refresh token was missing from headers.
+            status_code = 404
+            result = {
+                "success": False,
+                "error": "Missing UserID or valid Token"
             }
 
         return make_response(jsonify(result), status_code)

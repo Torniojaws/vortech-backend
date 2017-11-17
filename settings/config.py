@@ -40,6 +40,7 @@ class Config(object):
     REGISTERED_LEVEL = 2
     MODERATOR_LEVEL = 3
     ADMIN_LEVEL = 4
+    CORS_HEADERS = ["Content-Type", "Authorization", "User"]
 
 
 class ProdConfig(Config):

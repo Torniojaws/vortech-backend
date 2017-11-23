@@ -6,6 +6,7 @@ from werkzeug import check_password_hash
 from app import app, db
 from apps.users.models import Users, UsersAccessLevels, UsersAccessMapping, UsersAccessTokens
 from apps.utils.time import get_datetime, get_datetime_one_hour_ahead
+from settings.config import CONFIG
 
 
 class TestUsersView(unittest.TestCase):
@@ -77,9 +78,10 @@ class TestUsersView(unittest.TestCase):
         self.assertEquals(1, len(user["users"]))
         self.assertEquals("unittester", user["users"][0]["username"])
         self.assertFalse("password" in user["users"][0])  # Should not be included
+        self.assertEquals(2, user["users"][0]["level"])
 
     def test_getting_all_users(self):
-        """Should return just one user's details"""
+        """Should return all users' details."""
         resp = self.app.get("/api/1.0/users/")
         user = json.loads(resp.get_data().decode())
 
@@ -89,6 +91,9 @@ class TestUsersView(unittest.TestCase):
         self.assertEquals("UnitTest2", user["users"][1]["name"])
         self.assertFalse("password" in user["users"][0])  # Should not be included
         self.assertFalse("password" in user["users"][1])  # Should not be included
+        self.assertEquals(CONFIG.REGISTERED_LEVEL, user["users"][0]["level"])
+        # This user is not mapped (exceptional case), so it should have guest level
+        self.assertEquals(CONFIG.GUEST_LEVEL, user["users"][1]["level"])
 
     def test_adding_user(self):
         """The user should be created and the password must be in hashed form. Note that all
@@ -162,3 +167,78 @@ class TestUsersView(unittest.TestCase):
 
         self.assertEquals(resp.status_code, 400)
         self.assertFalse(response["success"])
+
+    def test_updating_user(self):
+        """Should update the given entry with the data in the JSON."""
+        user_before = Users.query.filter_by(UserID=self.valid_users[0]).first()
+        password_before = user_before.Password
+
+        response = self.app.put(
+            "/api/1.0/users/{}".format(self.valid_users[0]),
+            data=json.dumps(
+                dict(
+                    name="UnitTest Update",
+                    email="unittest-update@example.com",
+                    username="UnitTesterUpdate",
+                    password="unittesting-update",
+                )
+            ),
+            content_type="application/json"
+        )
+
+        user_after = Users.query.filter_by(UserID=self.valid_users[0]).first()
+        password_after = user_after.Password
+
+        get_user = self.app.get(
+            "/api/1.0/users/{}".format(self.valid_users[0]),
+            headers={
+                'User': self.valid_users[0],
+                'Authorization': self.access_token
+            }
+        )
+        userdata = json.loads(get_user.get_data().decode())
+
+        self.assertEquals(200, response.status_code)
+        self.assertEquals(200, get_user.status_code)
+        self.assertEquals("UnitTest Update", userdata["users"][0]["name"])
+        self.assertEquals("unittest-update@example.com", userdata["users"][0]["email"])
+        self.assertEquals("UnitTesterUpdate", userdata["users"][0]["username"])
+        # Password should obviously not be in the response, but it should be updated.
+        self.assertFalse("password" in userdata["users"][0])
+        self.assertNotEquals(password_before, password_after)
+        self.assertNotEquals("unittesting-update", password_after)
+        # The hashed updated password must validate against the real cleartext password
+        self.assertTrue(check_password_hash(password_after, "unittesting-update"))
+
+    def test_updating_user_with_too_short_password(self):
+        """Should not update the user."""
+        response = self.app.put(
+            "/api/1.0/users/{}".format(self.valid_users[0]),
+            data=json.dumps(
+                dict(
+                    name="UnitTest Update",
+                    email="unittest-update@example.com",
+                    username="UnitTesterUpdate",
+                    password="short",
+                )
+            ),
+            content_type="application/json"
+        )
+
+        get_user = self.app.get(
+            "/api/1.0/users/{}".format(self.valid_users[0]),
+            headers={
+                'User': self.valid_users[0],
+                'Authorization': self.access_token
+            }
+        )
+        userdata = json.loads(get_user.get_data().decode())
+
+        self.assertEquals(400, response.status_code)
+        self.assertEquals(200, get_user.status_code)
+        self.assertEquals("UnitTest", userdata["users"][0]["name"])
+        # Should be none, since we never saved one originally
+        self.assertEquals(None, userdata["users"][0]["email"])
+        self.assertEquals("unittester", userdata["users"][0]["username"])
+        # Password should obviously not be in the response
+        self.assertFalse("password" in userdata["users"][0])

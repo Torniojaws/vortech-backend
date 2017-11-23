@@ -103,8 +103,8 @@ class TestAuthFunctions(unittest.TestCase):
         db.session.commit()
 
     def tearDown(self):
-        user = Users.query.filter_by(Name="UnitTest User").first()
-        db.session.delete(user)
+        for user in Users.query.filter(Users.Name.like("UnitTest%")).all():
+            db.session.delete(user)
         db.session.commit()
 
     def test_invalid_token_when_user_has_no_token(self):

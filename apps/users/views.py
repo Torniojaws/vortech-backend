@@ -24,6 +24,7 @@ class UsersView(FlaskView):
                 "name": user.Name,
                 "email": user.Email,
                 "username": user.Username,
+                "level": self.get_user_level(user.UserID),
                 "created": user.Created,
                 "updated": user.Updated,
             } for user in Users.query.order_by(Users.UserID).all()]
@@ -40,6 +41,7 @@ class UsersView(FlaskView):
                 "name": user.Name,
                 "email": user.Email,
                 "username": user.Username,
+                "level": self.get_user_level(user.UserID),
                 "created": user.Created,
                 "updated": user.Updated,
             }]
@@ -91,6 +93,49 @@ class UsersView(FlaskView):
             user.UserID
         )
         return make_response(jsonify(contents), 201)
+
+    def put(self, user_id):
+        """Update the data of a given user."""
+        user = Users.query.filter_by(UserID=user_id).first_or_404()
+        data = json.loads(request.data.decode())
+
+        # TODO: Move this to a separate method, since we use it a lot.
+        if (
+            not data["password"]
+            or len(data["password"]) < CONFIG.MIN_PASSWORD_LENGTH
+        ):
+            result = {
+                "success": False,
+                "result": "Password is missing or too short."
+            }
+            return make_response(jsonify(result), 400)
+
+        # Update the User
+        user.Name = data["name"]
+        user.Email = data["email"]
+        user.Username = data["username"]
+        user.Password = generate_password_hash(data["password"])
+        user.Updated = get_datetime()
+
+        db.session.commit()
+
+        return make_response("", 200)
+
+    def get_user_level(self, user_id):
+        """Get the given user's access level. This is used by the frontend to *display* the admin
+        features (mostly forms in the profile page) if the UserID is an admin.
+
+        If no mapping is found, we return the configured Guest Level (currently = 1).
+
+        If someone modifies the localStorage level, they will see the admin features. But, the
+        admin features have their own separate endpoint where the actual AccessToken and UserID
+        are validated, so only "true admins" can actually do actions."""
+        try:
+            level = UsersAccessMapping.query.filter_by(UserID=user_id).first().UsersAccessLevelID
+        except AttributeError:
+            # No mapping found - use guest level
+            level = CONFIG.GUEST_LEVEL
+        return level
 
 
 class UserLoginView(FlaskView):

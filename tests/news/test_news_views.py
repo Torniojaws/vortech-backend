@@ -110,7 +110,6 @@ class TestNewsView(unittest.TestCase):
         self.assertEquals(2, len([n for n in news["news"]]))
         self.assertEquals("UnitTest", news["news"][0]["title"])
         self.assertEquals(2, len(news["news"][0]["categories"]))
-        self.assertEquals(3, news["news"][0]["categories"][1])
 
     def test_getting_one_news(self):
         response = self.app.get("/api/1.0/news/{}".format(int(self.news_ids[1])))
@@ -120,7 +119,6 @@ class TestNewsView(unittest.TestCase):
         self.assertEquals(200, response.status_code)
         self.assertEquals("UnitTest2", news["news"][0]["title"])
         self.assertEquals(2, len(news["news"][0]["categories"]))
-        self.assertEquals(3, news["news"][0]["categories"][1])
 
     def test_adding_news(self):
         response = self.app.post(

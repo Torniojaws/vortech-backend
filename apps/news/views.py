@@ -7,7 +7,7 @@ from sqlalchemy import asc, desc
 from dictalchemy import make_class_dictable
 
 from app import db
-from apps.news.models import News, NewsComments, NewsCategoriesMapping
+from apps.news.models import News, NewsComments, NewsCategoriesMapping, NewsCategories
 from apps.news.patches import patch_item
 from apps.utils.time import get_datetime, get_iso_format
 
@@ -180,6 +180,11 @@ class NewsView(FlaskView):
         return make_response(contents, 200)
 
     def get_categories(self, news_id):
-        """Return a list of category IDs for the news_id"""
-        categories = NewsCategoriesMapping.query.filter_by(NewsID=news_id).all()
-        return [c.NewsCategoryID for c in categories]
+        """Return a list of categories for the news_id"""
+        mapped_ids = [
+            m.NewsCategoryID for m in NewsCategoriesMapping.query.filter_by(NewsID=news_id).all()
+        ]
+        categories = NewsCategories.query.filter(
+            NewsCategories.NewsCategoryID.in_(mapped_ids)
+        ).all()
+        return [c.NewsCategory for c in categories]

@@ -2,12 +2,12 @@ import json
 import socket
 
 from flask import jsonify, make_response, request, url_for
-from flask_classful import FlaskView
+from flask_classful import FlaskView, route
 from sqlalchemy import asc
 from dictalchemy import make_class_dictable
 
 from app import db
-from apps.songs.models import Songs
+from apps.songs.models import Songs, SongsLyrics
 from apps.songs.patches import patch_item
 
 make_class_dictable(Songs)
@@ -94,3 +94,17 @@ class SongsView(FlaskView):
         db.session.delete(song)
         db.session.commit()
         return make_response("", 204)
+
+    @route("/<int:song_id>/lyrics", methods=["GET"])
+    def song_lyrics(self, song_id):
+        """Return the lyrics to a given Song"""
+        song = Songs.query.filter_by(SongID=song_id).first_or_404()
+        lyrics = SongsLyrics.query.filter_by(SongID=song_id).first_or_404()
+        # Make sure we return <br /> instead \n or \r\n
+        br_lyrics = lyrics.Lyrics.replace('\r', '').replace('\n', '<br />')
+
+        contents = jsonify({
+            "songTitle": song.Title,
+            "lyrics": br_lyrics
+        })
+        return make_response(contents, 200)

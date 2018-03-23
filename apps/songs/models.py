@@ -25,3 +25,14 @@ class ReleasesSongsMapping(db.Model):
         db.Integer, db.ForeignKey("Songs.SongID", ondelete="CASCADE"), nullable=False
     )
     ReleaseSongDuration = db.Column(db.Integer, nullable=False)
+
+
+class SongsLyrics(db.Model):
+    """The lyrics for songs are stored here. The songs are referred to by the SongID. They are
+    expected to be stored with line breaks included. Eg. 'Song lyrics<br/>Some lyric<br/><br/>'"""
+    __tablename__ = "SongsLyrics"
+    SongsLyricsID = db.Column(db.Integer, primary_key=True)
+    Lyrics = db.Column(db.Text, nullable=False)
+    SongID = db.Column(
+        db.Integer, db.ForeignKey("Songs.SongID", ondelete="CASCADE"), nullable=False
+    )

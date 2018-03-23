@@ -4,7 +4,7 @@ import unittest
 from sqlalchemy import asc, or_
 
 from app import app, db
-from apps.songs.models import Songs
+from apps.songs.models import Songs, SongsLyrics
 
 
 class TestSongsViews(unittest.TestCase):
@@ -27,6 +27,14 @@ class TestSongsViews(unittest.TestCase):
         db.session.add(entry1)
         db.session.add(entry2)
         db.session.add(entry3)
+        db.session.commit()
+
+        # Add lyrics for the first song. This also tests changing linebreaks to <br />
+        lyrics = SongsLyrics(
+            Lyrics="My example lyrics\nAre here<br />\r\nNew paragraph",
+            SongID=entry1.SongID,
+        )
+        db.session.add(lyrics)
         db.session.commit()
 
         self.valid_song_ids = []
@@ -66,6 +74,26 @@ class TestSongsViews(unittest.TestCase):
         self.assertEquals(200, response.status_code)
         self.assertEquals(1, len(song["songs"]))
         self.assertEquals("UnitTest Song One", song["songs"][0]["title"])
+
+    def test_getting_lyrics(self):
+        """Should return the lyrics for the song with html line breaks."""
+        response = self.app.get("/api/1.0/songs/{}/lyrics".format(self.valid_song_ids[0]))
+
+        lyrics = json.loads(response.get_data().decode())
+
+        self.assertEquals(200, response.status_code)
+        self.assertTrue("songTitle" in lyrics)
+        self.assertEquals("UnitTest Song One", lyrics["songTitle"])
+        self.assertTrue("lyrics" in lyrics)
+        self.assertEquals("My example lyrics<br />Are here<br /><br />New paragraph", lyrics["lyrics"])
+
+    def test_getting_lyrics_to_nonexisting_song(self):
+        response = self.app.get("/api/1.0/songs/abc/lyrics")
+        self.assertEquals(404, response.status_code)
+
+    def test_getting_missing_lyrics_to_existing_song(self):
+        response = self.app.get("/api/1.0/songs/{}/lyrics".format(self.valid_song_ids[1]))
+        self.assertEquals(404, response.status_code)
 
     def test_adding_songs(self):
         """Should add a new entry to the table and then GET should return them."""

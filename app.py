@@ -7,6 +7,8 @@ from settings.config import CONFIG
 
 app = Flask(__name__)
 app.config.from_object(CONFIG)
+# Otherwise you will get a 404 if you open eg. site.com/path, when it is defined as site.com/path/
+app.url_map.strict_slashes = False
 db = SQLAlchemy(app)
 CORS(app)
 

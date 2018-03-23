@@ -187,7 +187,7 @@ class TestVideosViews(unittest.TestCase):
         """Should replace the existing data of the videos entry with the new data, but should
         skip the invalid category. Only the valid categories should be added."""
         response = self.app.put(
-            "/api/1.0/videos/{}".format(self.valid_video_ids[0]),
+            "/api/1.0/videos/{}/".format(self.valid_video_ids[0]),
             data=json.dumps(
                 dict(
                     title="UnitTest Updated Video",

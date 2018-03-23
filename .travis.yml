@@ -5,6 +5,7 @@ python:
 
 service:
 - mysql
+- redis-server
 
 before_install:
 - cp settings/secret.sample settings/secret.cfg
@@ -18,9 +19,6 @@ before_install:
 install:
 - pip install -r requirements/dev.txt
 - python manage.py db upgrade
-
-before_script:
-- sudo redis-server 
 
 script:
 - python -m pytest --cov-report= --cov=apps tests/

@@ -7,7 +7,7 @@ from flask_classful import FlaskView
 from sqlalchemy import and_
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from app import db
+from app import db, cache
 from apps.users.models import Users, UsersAccessTokens, UsersAccessMapping
 from apps.utils.auth import registered_only
 from apps.utils.time import get_datetime, get_datetime_one_hour_ahead
@@ -16,6 +16,7 @@ from settings.config import CONFIG
 
 class UsersView(FlaskView):
     """All things related to Users are handled here"""
+    @cache.cached(timeout=300)
     def index(self):
         """Return all users"""
         users = jsonify({
@@ -32,6 +33,7 @@ class UsersView(FlaskView):
         return make_response(users, 200)
 
     @registered_only
+    @cache.cached(timeout=300)
     def get(self, user_id):
         """Returns a specific user"""
         user = Users.query.filter_by(UserID=user_id).first_or_404()

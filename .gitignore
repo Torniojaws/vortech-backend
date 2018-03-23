@@ -57,3 +57,4 @@ ENV/
 
 # Project things
 secret.cfg
+logs/

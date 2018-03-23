@@ -8,6 +8,9 @@ Flask-Script==2.0.6
 Flask-SQLAlchemy==2.3.2
 werkzeug==0.12.2
 
+# Cache
+redis==2.10.6
+
 # Gateway
 uWSGI==2.0.17
 

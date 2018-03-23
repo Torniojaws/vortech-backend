@@ -6,7 +6,7 @@ from flask_classful import FlaskView
 from sqlalchemy import asc
 from dictalchemy import make_class_dictable
 
-from app import db
+from app import db, cache
 from apps.utils.time import get_datetime
 from apps.photos.add_ac import add_album, add_categories
 from apps.photos.models import Photos, PhotosAlbumsMapping, PhotosCategoriesMapping
@@ -16,6 +16,7 @@ make_class_dictable(Photos)
 
 
 class PhotosView(FlaskView):
+    @cache.cached(timeout=300)
     def index(self):
         """Return all photos in asc PhotoID order."""
         photos = Photos.query.order_by(asc(Photos.PhotoID)).all()
@@ -37,6 +38,7 @@ class PhotosView(FlaskView):
 
         return make_response(content, 200)
 
+    @cache.cached(timeout=300)
     def get(self, photo_id):
         """Return the details of the specified photo."""
         photo = Photos.query.filter_by(PhotoID=photo_id).first_or_404()

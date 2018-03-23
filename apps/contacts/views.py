@@ -6,7 +6,7 @@ from flask_classful import FlaskView
 from sqlalchemy import desc
 from dictalchemy import make_class_dictable
 
-from app import db
+from app import db, cache
 from apps.contacts.models import Contacts
 from apps.contacts.patches import patch_item
 from apps.utils.time import get_datetime
@@ -15,6 +15,7 @@ make_class_dictable(Contacts)
 
 
 class ContactsView(FlaskView):
+    @cache.cached(timeout=300)
     def index(self):
         """Return the newest Contacts entry."""
         contact = Contacts.query.order_by(desc(Contacts.Created)).first_or_404()

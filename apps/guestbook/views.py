@@ -6,7 +6,7 @@ from flask_classful import FlaskView
 from sqlalchemy import desc
 from dictalchemy import make_class_dictable
 
-from app import db
+from app import db, cache
 from apps.guestbook.models import Guestbook
 from apps.guestbook.patches import patch_item
 from apps.users.models import Users
@@ -16,6 +16,7 @@ make_class_dictable(Guestbook)
 
 
 class GuestbookView(FlaskView):
+    @cache.cached(timeout=60)
     def index(self):
         """Return all guestbook posts ordered by GuestbookID in reverse chronological order."""
         content = jsonify({
@@ -32,6 +33,7 @@ class GuestbookView(FlaskView):
 
         return make_response(content, 200)
 
+    @cache.cached(timeout=60)
     def get(self, book_id):
         """Return a specific guestbook post."""
         book = Guestbook.query.filter_by(GuestbookID=book_id).first_or_404()

@@ -6,7 +6,7 @@ from flask_classful import FlaskView
 from sqlalchemy import asc, desc
 from dictalchemy import make_class_dictable
 
-from app import db
+from app import db, cache
 from apps.utils.time import get_datetime
 from apps.videos.add_categories import add_categories
 from apps.videos.models import Videos, VideosCategoriesMapping
@@ -16,6 +16,7 @@ make_class_dictable(Videos)
 
 
 class VideosView(FlaskView):
+    @cache.cached(timeout=300)
     def index(self):
         """Return all videos in reverse chronological order."""
         videos = Videos.query.order_by(desc(Videos.VideoID)).all()
@@ -31,6 +32,7 @@ class VideosView(FlaskView):
 
         return make_response(content, 200)
 
+    @cache.cached(timeout=300)
     def get(self, video_id):
         """Return the details of the specified video."""
         video = Videos.query.filter_by(VideoID=video_id).first_or_404()

@@ -6,7 +6,7 @@ from flask_classful import FlaskView, route
 from sqlalchemy import asc
 from dictalchemy import make_class_dictable
 
-from app import db
+from app import db, cache
 from apps.songs.models import Songs, SongsLyrics
 from apps.songs.patches import patch_item
 
@@ -14,6 +14,7 @@ make_class_dictable(Songs)
 
 
 class SongsView(FlaskView):
+    @cache.cached(timeout=300)
     def index(self):
         """Return all songs ordered by SongID, ID=1 first"""
         songs = Songs.query.order_by(asc(Songs.SongID)).all()
@@ -26,6 +27,7 @@ class SongsView(FlaskView):
 
         return make_response(content, 200)
 
+    @cache.cached(timeout=300)
     def get(self, song_id):
         """Return the details of the specified song."""
         song = Songs.query.filter_by(SongID=song_id).first_or_404()
@@ -96,6 +98,7 @@ class SongsView(FlaskView):
         return make_response("", 204)
 
     @route("/<int:song_id>/lyrics", methods=["GET"])
+    @cache.cached(timeout=300)
     def song_lyrics(self, song_id):
         """Return the lyrics to a given Song"""
         song = Songs.query.filter_by(SongID=song_id).first_or_404()

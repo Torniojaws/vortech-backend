@@ -6,7 +6,7 @@ from flask_classful import FlaskView
 from sqlalchemy import asc
 from dictalchemy import make_class_dictable
 
-from app import db
+from app import db, cache
 from apps.shows.add_bps import add_bands, add_people, add_setlist
 from apps.shows.models import Shows, ShowsOtherBands, ShowsPeopleMapping, ShowsSongsMapping
 from apps.shows.patches import patch_item
@@ -16,6 +16,7 @@ make_class_dictable(Shows)
 
 
 class ShowsView(FlaskView):
+    @cache.cached(timeout=300)
     def index(self):
         """Return all shows ordered by ShowID, ID=1 first"""
         shows = Shows.query.order_by(asc(Shows.ShowID)).all()
@@ -34,6 +35,7 @@ class ShowsView(FlaskView):
 
         return make_response(content, 200)
 
+    @cache.cached(timeout=300)
     def get(self, show_id):
         """Return the details of the specified show."""
         show = Shows.query.filter_by(ShowID=show_id).first_or_404()

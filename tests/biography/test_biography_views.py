@@ -1,6 +1,7 @@
 import json
 import unittest
 
+from flask_caching import Cache
 from sqlalchemy import desc, or_
 
 from app import app, db
@@ -11,6 +12,13 @@ from apps.utils.time import get_datetime
 class TestBiographyViews(unittest.TestCase):
     def setUp(self):
         """Add some test entries to the database, so we can test getting the latest one."""
+
+        # Clear redis cache completely
+        cache = Cache()
+        cache.init_app(app, config={"CACHE_TYPE": "redis"})
+        with app.app_context():
+            cache.clear()
+
         self.app = app.test_client()
 
         entry1 = Biography(

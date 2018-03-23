@@ -6,7 +6,7 @@ from flask_classful import FlaskView
 from sqlalchemy import desc
 from dictalchemy import make_class_dictable
 
-from app import db
+from app import db, cache
 from apps.biography.models import Biography
 from apps.biography.patches import patch_item
 from apps.utils.time import get_datetime
@@ -15,6 +15,7 @@ make_class_dictable(Biography)
 
 
 class BiographyView(FlaskView):
+    @cache.cached(timeout=300)
     def index(self):
         """Return the newest Biography entry."""
         newest = Biography.query.order_by(desc(Biography.BiographyID)).first_or_404()

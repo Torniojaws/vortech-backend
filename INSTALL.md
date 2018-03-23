@@ -34,6 +34,7 @@ be deleted
 1. And the database of course: ``sudo apt install mariadb-server``
     1. Note that the install process is different in Ubuntu 16.04 than in previous versions. The
     installer will not prompt for root password. Instead, you access it using ``sudo mysql -u root``
+1. For caching, we use Redis. Install it with: ``sudo apt install redis-server``
 
 ## Setup the app
 

@@ -6,7 +6,7 @@ from flask_classful import FlaskView, route
 from sqlalchemy import asc, desc
 from dictalchemy import make_class_dictable
 
-from app import db
+from app import db, cache
 from apps.news.models import News, NewsComments, NewsCategoriesMapping, NewsCategories
 from apps.news.patches import patch_item
 from apps.utils.time import get_datetime, get_iso_format
@@ -16,6 +16,7 @@ make_class_dictable(NewsCategoriesMapping)
 
 
 class NewsView(FlaskView):
+    @cache.cached(timeout=300)
     def index(self):
         """Return all News items in reverse chronological order (newest first)"""
         contents = jsonify({
@@ -31,6 +32,7 @@ class NewsView(FlaskView):
         })
         return make_response(contents, 200)
 
+    @cache.cached(timeout=300)
     def get(self, news_id):
         """Get a specific News item"""
         news = News.query.filter_by(NewsID=news_id).first_or_404()
@@ -151,6 +153,7 @@ class NewsView(FlaskView):
         return make_response("", 204)
 
     @route("/<int:news_id>/comments/<int:comment_id>", methods=["GET"])
+    @cache.cached(timeout=300)
     def news_comment(self, news_id, comment_id):
         """Return a specific comment to a given News item"""
         comment = NewsComments.query.filter_by(
@@ -172,7 +175,8 @@ class NewsView(FlaskView):
 
     @route("/<int:news_id>/comments/", methods=["GET"])
     def news_comments(self, news_id):
-        """Return all comments for a given News item, in chronological order"""
+        """Return all comments for a given News item, in chronological order. Do not cache, since
+        these can get many comments in quick succession when discussing new news."""
         comments = NewsComments.query.filter_by(NewsID=news_id).order_by(
             asc(NewsComments.Created)
         ).all()

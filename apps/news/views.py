@@ -60,8 +60,19 @@ class NewsView(FlaskView):
         # Flush so that we can use the insert ID for the categories
         db.session.flush()
 
+        # News items can have an existing category (=int), or a brand new one to be added
         # There is almost always more than one category for a news item
         for category in data["categories"]:
+            if type(category) is not int:
+                # New category, add it
+                cat = NewsCategories(
+                    NewsCategoryID=0,
+                    Category=category
+                )
+                db.session.add(cat)
+                category = cat.NewsCategoryID
+
+            # Map to the news
             cm = NewsCategoriesMapping(
                 NewsID=news_item.NewsID,
                 NewsCategoryID=category,
@@ -124,8 +135,7 @@ class NewsView(FlaskView):
             result = patch_item(news_item, request.get_json())
             db.session.commit()
         except Exception as e:
-            print("News Patch threw error:")
-            print(e)
+            print("News Patch threw error:\n{}\nThe request was:\n{}".format(e, request.get_json()))
             # If any other exceptions happened during the patching, we'll return 422
             result = {"success": False, "error": "Could not apply patch"}
             status_code = 422
@@ -187,4 +197,4 @@ class NewsView(FlaskView):
         categories = NewsCategories.query.filter(
             NewsCategories.NewsCategoryID.in_(mapped_ids)
         ).all()
-        return [c.NewsCategory for c in categories]
+        return [c.Category for c in categories]

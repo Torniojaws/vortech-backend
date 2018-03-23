@@ -4,7 +4,7 @@ import unittest
 from sqlalchemy import asc
 
 from app import app, db
-from apps.news.models import News, NewsCategoriesMapping, NewsComments
+from apps.news.models import News, NewsCategoriesMapping, NewsComments, NewsCategories
 from apps.news.patches import patch_mapping
 from apps.users.models import Users
 from apps.utils.time import get_datetime
@@ -45,6 +45,24 @@ class TestNewsView(unittest.TestCase):
         # Get the added news IDs
         self.news_ids = []
         added_news = News.query.filter(News.Title.like("UnitTest%")).all()
+
+        # Add some News categories
+        ncat1 = NewsCategories(
+            NewsCategoryID=1,
+            Category="TestCategory1"
+        )
+        ncat2 = NewsCategories(
+            NewsCategoryID=2,
+            Category="TestCategory2"
+        )
+        ncat3 = NewsCategories(
+            NewsCategoryID=3,
+            Category="TestCategory3"
+        )
+        db.session.add(ncat1)
+        db.session.add(ncat2)
+        db.session.add(ncat3)
+        db.session.commit()
 
         # And create some Category mappings and comments for them
         for news in added_news:
@@ -94,6 +112,11 @@ class TestNewsView(unittest.TestCase):
         for comment in delete_comments:
             db.session.delete(comment)
 
+        # Delete news categories
+        ncats = NewsCategories.query.filter(NewsCategories.Category.like("TestCategory%")).all()
+        for cat in ncats:
+            db.session.delete(cat)
+
         # Delete user created for the unittest
         delete_user = Users.query.filter(Users.Name == "UnitTest").all()
         for user in delete_user:
@@ -110,6 +133,8 @@ class TestNewsView(unittest.TestCase):
         self.assertEquals(2, len([n for n in news["news"]]))
         self.assertEquals("UnitTest", news["news"][0]["title"])
         self.assertEquals(2, len(news["news"][0]["categories"]))
+        self.assertTrue("TestCategory1" in news["news"][0]["categories"])
+        self.assertTrue("TestCategory3" in news["news"][1]["categories"])
 
     def test_getting_one_news(self):
         response = self.app.get("/api/1.0/news/{}".format(int(self.news_ids[1])))
@@ -119,6 +144,8 @@ class TestNewsView(unittest.TestCase):
         self.assertEquals(200, response.status_code)
         self.assertEquals("UnitTest2", news["news"][0]["title"])
         self.assertEquals(2, len(news["news"][0]["categories"]))
+        self.assertTrue("TestCategory1" in news["news"][0]["categories"])
+        self.assertTrue("TestCategory3" in news["news"][0]["categories"])
 
     def test_adding_news(self):
         response = self.app.post(
@@ -128,7 +155,7 @@ class TestNewsView(unittest.TestCase):
                     title="UnitTest Post",
                     contents="UnitTest",
                     author="UnitTester",
-                    categories=[1, 3],
+                    categories=[1, 3, "TestCategoryNew"],
                 )
             ),
             content_type="application/json"
@@ -139,8 +166,11 @@ class TestNewsView(unittest.TestCase):
         self.assertEquals(201, response.status_code)
         self.assertTrue("Location" in response.get_data().decode())
         self.assertEquals("UnitTest", news.Contents)
-        self.assertEquals(2, len(cats))
-        self.assertEquals(3, cats[1].NewsCategoryID)
+        self.assertEquals(3, len(cats))
+        self.assertCountEqual([0, 1, 3], [c.NewsCategoryID for c in cats])
+        # When a new non-existing string category is given, it should be added to general NewsCategories
+        new_cat = NewsCategories.query.filter_by(Category="TestCategoryNew").first_or_404()
+        self.assertEquals("TestCategoryNew", new_cat.Category)
 
     def test_deleting_news(self):
         response = self.app.delete("/api/1.0/news/{}".format(int(self.news_ids[0])))

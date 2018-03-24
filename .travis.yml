@@ -3,8 +3,9 @@ language: python
 python:
 - '3.5'
 
-service:
+services:
 - mysql
+- redis-server
 
 before_install:
 - cp settings/secret.sample settings/secret.cfg
@@ -18,6 +19,9 @@ before_install:
 install:
 - pip install -r requirements/dev.txt
 - python manage.py db upgrade
+
+before_script:
+- redis-cli info
 
 script:
 - python -m pytest --cov-report= --cov=apps tests/

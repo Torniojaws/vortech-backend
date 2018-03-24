@@ -5,7 +5,7 @@ from flask import jsonify, make_response, request, url_for
 from flask_classful import FlaskView, route
 from sqlalchemy import asc, func
 
-from app import db
+from app import db, cache
 from apps.releases.models import Releases
 from apps.utils.time import get_datetime
 from apps.votes.models import VotesReleases
@@ -16,6 +16,7 @@ class VotesView(FlaskView):
     Instead, we'll have special routes for each type. Currently only Releases, though."""
 
     @route("/releases/", methods=["GET"])
+    @cache.cached(timeout=60)
     def all_release_votes(self):
         """Return the votes for all releases. Release 1 first. If a release does not have votes,
         we return zeroes."""
@@ -32,6 +33,7 @@ class VotesView(FlaskView):
         return make_response(contents, 200)
 
     @route("/releases/<int:release_id>", methods=["GET"])
+    @cache.cached(timeout=60)
     def release_votes(self, release_id):
         """Return the votes for a specific release."""
         contents = jsonify({

@@ -6,16 +6,18 @@ from flask_classful import FlaskView
 from sqlalchemy import asc
 from dictalchemy import make_class_dictable
 
-from app import db
+from app import db, cache
 from apps.shows.add_bps import add_bands, add_people, add_setlist
 from apps.shows.models import Shows, ShowsOtherBands, ShowsPeopleMapping, ShowsSongsMapping
 from apps.shows.patches import patch_item
+from apps.utils.auth import admin_only
 from apps.utils.time import get_iso_format
 
 make_class_dictable(Shows)
 
 
 class ShowsView(FlaskView):
+    @cache.cached(timeout=300)
     def index(self):
         """Return all shows ordered by ShowID, ID=1 first"""
         shows = Shows.query.order_by(asc(Shows.ShowID)).all()
@@ -34,6 +36,7 @@ class ShowsView(FlaskView):
 
         return make_response(content, 200)
 
+    @cache.cached(timeout=300)
     def get(self, show_id):
         """Return the details of the specified show."""
         show = Shows.query.filter_by(ShowID=show_id).first_or_404()
@@ -52,6 +55,7 @@ class ShowsView(FlaskView):
 
         return make_response(content, 200)
 
+    @admin_only
     def post(self):
         """Add a new Show."""
         # TODO: Maybe allow adding multiple shows at once?
@@ -86,6 +90,7 @@ class ShowsView(FlaskView):
 
         return make_response(jsonify(contents), 201)
 
+    @admin_only
     def put(self, show_id):
         """Overwrite all the data of the specified show."""
         data = json.loads(request.data.decode())
@@ -113,6 +118,7 @@ class ShowsView(FlaskView):
 
         return make_response("", 200)
 
+    @admin_only
     def patch(self, show_id):
         """Partially modify the specified show."""
         song = Shows.query.filter_by(ShowID=show_id).first_or_404()
@@ -129,6 +135,7 @@ class ShowsView(FlaskView):
 
         return make_response(jsonify(result), status_code)
 
+    @admin_only
     def delete(self, show_id):
         """Delete the specified show."""
         song = Shows.query.filter_by(ShowID=show_id).first_or_404()

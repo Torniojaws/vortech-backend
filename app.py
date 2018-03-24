@@ -1,12 +1,16 @@
 from flask import Flask
+from flask_caching import Cache
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 
 from apps.utils.register import register_views, register_models
-from settings.config import CONFIG
+from settings.config import CONFIG, CACHE_CONFIG
 
 app = Flask(__name__)
+cache = Cache(app, config=CACHE_CONFIG)
 app.config.from_object(CONFIG)
+# Otherwise you will get a 404 if you open eg. site.com/path, when it is defined as site.com/path/
+app.url_map.strict_slashes = False
 db = SQLAlchemy(app)
 CORS(app)
 

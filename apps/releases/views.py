@@ -6,7 +6,7 @@ from flask import jsonify, make_response, request, url_for
 from flask_classful import FlaskView
 from sqlalchemy import asc, desc
 
-from app import db
+from app import db, cache
 from apps.people.models import ReleasesPeopleMapping, People
 from apps.releases.add_cfps import add_categories, add_formats, add_people, add_songs
 from apps.releases.models import (
@@ -25,6 +25,7 @@ make_class_dictable(ReleasesSongsMapping)
 
 
 class ReleasesView(FlaskView):
+    @cache.cached(timeout=300)
     def index(self):
         """Return all releases in reverse chronological order."""
         contents = jsonify({
@@ -47,6 +48,7 @@ class ReleasesView(FlaskView):
         })
         return make_response(contents, 200)
 
+    @cache.cached(timeout=300)
     def get(self, release_id):
         """Return a specific release"""
         release = Releases.query.filter_by(ReleaseID=release_id).first_or_404()
@@ -101,6 +103,7 @@ class ReleasesView(FlaskView):
 
         return make_response(contents, 201)
 
+    @admin_only
     def put(self, release_id):
         """Replace the data of a specific release"""
         data = json.loads(request.data.decode())
@@ -136,6 +139,7 @@ class ReleasesView(FlaskView):
 
         return make_response("", 200)
 
+    @admin_only
     def patch(self, release_id):
         """Partially update a specific release"""
         release = Releases.query.get_or_404(release_id)
@@ -153,6 +157,7 @@ class ReleasesView(FlaskView):
 
         return make_response(jsonify(result), status_code)
 
+    @admin_only
     def delete(self, release_id):
         """Delete a Release"""
         release = Releases.query.filter_by(ReleaseID=release_id).first()

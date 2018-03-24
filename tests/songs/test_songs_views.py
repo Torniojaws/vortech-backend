@@ -1,15 +1,25 @@
 import json
 import unittest
 
+from flask_caching import Cache
 from sqlalchemy import asc, or_
 
 from app import app, db
-from apps.songs.models import Songs
+from apps.songs.models import Songs, SongsLyrics, SongsTabs
+from apps.users.models import Users, UsersAccessTokens, UsersAccessLevels, UsersAccessMapping
+from apps.utils.time import get_datetime_one_hour_ahead
 
 
 class TestSongsViews(unittest.TestCase):
     def setUp(self):
         """Add some test entries to the database, so we can test getting the latest one."""
+
+        # Clear redis cache completely
+        cache = Cache()
+        cache.init_app(app, config={"CACHE_TYPE": "redis"})
+        with app.app_context():
+            cache.clear()
+
         self.app = app.test_client()
 
         entry1 = Songs(
@@ -29,10 +39,77 @@ class TestSongsViews(unittest.TestCase):
         db.session.add(entry3)
         db.session.commit()
 
+        # Add lyrics for the first song. The mix of linebreaks is on purpose
+        lyrics = SongsLyrics(
+            Lyrics="My example lyrics\nAre here<br />\r\nNew paragraph\r",
+            Author="UnitTester",
+            SongID=entry1.SongID,
+        )
+        db.session.add(lyrics)
+        db.session.commit()
+
+        # Add tabs for the songs. Song 3 has no tabs on purpose.
+        tab1 = SongsTabs(
+            Title="Guitar Pro 5",
+            Filename="unittest1.gp5",
+            SongID=entry1.SongID
+        )
+        tab2 = SongsTabs(
+            Title="Guitar Pro 5",
+            Filename="unittest - song 2.gp5",
+            SongID=entry2.SongID
+        )
+        tab3 = SongsTabs(
+            Title="Text",
+            Filename="unittest2.txt",
+            SongID=entry2.SongID
+        )
+        db.session.add(tab1)
+        db.session.add(tab2)
+        db.session.add(tab3)
+        db.session.commit()
+
         self.valid_song_ids = []
         self.valid_song_ids.append(entry1.SongID)
         self.valid_song_ids.append(entry2.SongID)
         self.valid_song_ids.append(entry3.SongID)
+
+        # We also need a valid admin user for the add release endpoint test.
+        user = Users(
+            Name="UnitTest Admin",
+            Username="unittest",
+            Password="password"
+        )
+        db.session.add(user)
+        db.session.commit()
+
+        # This is non-standard, but is fine for testing.
+        self.access_token = "unittest-access-token"
+        user_token = UsersAccessTokens(
+            UserID=user.UserID,
+            AccessToken=self.access_token,
+            ExpirationDate=get_datetime_one_hour_ahead()
+        )
+        db.session.add(user_token)
+        db.session.commit()
+
+        # Define level for admin
+        if not UsersAccessLevels.query.filter_by(LevelName="Admin").first():
+            access_level = UsersAccessLevels(
+                UsersAccessLevelID=4,
+                LevelName="Admin"
+            )
+            db.session.add(access_level)
+            db.session.commit()
+
+        grant_admin = UsersAccessMapping(
+            UserID=user.UserID,
+            UsersAccessLevelID=4
+        )
+        db.session.add(grant_admin)
+        db.session.commit()
+
+        self.user_id = user.UserID
 
     def tearDown(self):
         """Clean up the test data we entered."""
@@ -44,6 +121,10 @@ class TestSongsViews(unittest.TestCase):
         ).all()
         for song in to_delete:
             db.session.delete(song)
+        db.session.commit()
+
+        user = Users.query.filter_by(UserID=self.user_id).first()
+        db.session.delete(user)
         db.session.commit()
 
     def test_getting_songs_gets_all(self):
@@ -67,6 +148,71 @@ class TestSongsViews(unittest.TestCase):
         self.assertEquals(1, len(song["songs"]))
         self.assertEquals("UnitTest Song One", song["songs"][0]["title"])
 
+    def test_getting_lyrics(self):
+        """Should return the lyrics for the song with html line breaks."""
+        response = self.app.get("/api/1.0/songs/{}/lyrics".format(self.valid_song_ids[0]))
+
+        lyrics = json.loads(response.get_data().decode())
+
+        self.assertEquals(200, response.status_code)
+        self.assertTrue("songTitle" in lyrics)
+        self.assertEquals("UnitTest Song One", lyrics["songTitle"])
+        self.assertTrue("author" in lyrics)
+        self.assertEquals(lyrics["author"], "UnitTester")
+        self.assertTrue("lyrics" in lyrics)
+        self.assertEquals("My example lyrics\nAre here\n\nNew paragraph\n", lyrics["lyrics"])
+
+    def test_getting_lyrics_to_nonexisting_song(self):
+        response = self.app.get("/api/1.0/songs/abc/lyrics")
+        self.assertEquals(404, response.status_code)
+
+    def test_getting_missing_lyrics_to_existing_song(self):
+        response = self.app.get("/api/1.0/songs/{}/lyrics".format(self.valid_song_ids[1]))
+        self.assertEquals(404, response.status_code)
+
+    def test_getting_tabs_with_one(self):
+        """Should return the only tab for the song."""
+        response = self.app.get("/api/1.0/songs/{}/tabs".format(self.valid_song_ids[0]))
+
+        tabs = json.loads(response.get_data().decode())
+
+        self.assertEquals(200, response.status_code)
+        self.assertTrue("songTitle" in tabs)
+        self.assertEquals("UnitTest Song One", tabs["songTitle"])
+        self.assertTrue("tabs" in tabs)
+        self.assertEquals(1, len(tabs["tabs"]))
+        expected = {"title": "Guitar Pro 5", "filename": "unittest1.gp5"}
+        self.assertEquals(expected, tabs["tabs"][0])
+
+    def test_getting_tabs_with_many(self):
+        """Should return all tabs for the song."""
+        response = self.app.get("/api/1.0/songs/{}/tabs".format(self.valid_song_ids[1]))
+
+        tabs = json.loads(response.get_data().decode())
+
+        self.assertEquals(200, response.status_code)
+        self.assertTrue("songTitle" in tabs)
+        self.assertEquals("UnitTest Song Two", tabs["songTitle"])
+        self.assertTrue("tabs" in tabs)
+        self.assertEquals(2, len(tabs["tabs"]))
+        expected = [
+            {"title": "Text", "filename": "unittest2.txt"},
+            {"title": "Guitar Pro 5", "filename": "unittest - song 2.gp5"}
+        ]
+        self.assertCountEqual(expected, tabs["tabs"])
+
+    def test_getting_tabs_to_nonexisting_song(self):
+        response = self.app.get("/api/1.0/songs/abc/tabs")
+        self.assertEquals(404, response.status_code)
+
+    def test_getting_missing_tabs_to_existing_song(self):
+        """Should return an empty array for tabs."""
+        response = self.app.get("/api/1.0/songs/{}/tabs".format(self.valid_song_ids[2]))
+        tabs = json.loads(response.get_data().decode())
+
+        self.assertEquals(200, response.status_code)
+        self.assertEquals([], tabs["tabs"])
+
     def test_adding_songs(self):
         """Should add a new entry to the table and then GET should return them."""
         response = self.app.post(
@@ -77,7 +223,11 @@ class TestSongsViews(unittest.TestCase):
                     duration=105,
                 ),
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
         songs = Songs.query.filter(Songs.Title.like("UnitTest%")).order_by(
             asc(Songs.SongID)
@@ -104,7 +254,11 @@ class TestSongsViews(unittest.TestCase):
                     duration=109,
                 )
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         get_song = self.app.get("/api/1.0/songs/{}".format(self.valid_song_ids[1]))
@@ -130,7 +284,11 @@ class TestSongsViews(unittest.TestCase):
                     ),
                 ]
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         song = Songs.query.filter_by(SongID=self.valid_song_ids[2]).first()
@@ -152,7 +310,11 @@ class TestSongsViews(unittest.TestCase):
                     })
                 ]
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         song = Songs.query.filter_by(SongID=self.valid_song_ids[0]).first()
@@ -174,7 +336,11 @@ class TestSongsViews(unittest.TestCase):
                     }),
                 ]
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         song = Songs.query.filter_by(SongID=self.valid_song_ids[1]).first()
@@ -196,7 +362,11 @@ class TestSongsViews(unittest.TestCase):
                     }),
                 ]
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         song = Songs.query.filter_by(SongID=self.valid_song_ids[0]).first()
@@ -218,7 +388,11 @@ class TestSongsViews(unittest.TestCase):
                     }),
                 ]
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         song = Songs.query.filter_by(SongID=self.valid_song_ids[1]).first()
@@ -230,7 +404,13 @@ class TestSongsViews(unittest.TestCase):
 
     def test_deleting_a_song(self):
         """Should delete the song."""
-        response = self.app.delete("/api/1.0/songs/{}".format(self.valid_song_ids[2]))
+        response = self.app.delete(
+            "/api/1.0/songs/{}".format(self.valid_song_ids[2]),
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
+        )
 
         song = Songs.query.filter_by(SongID=self.valid_song_ids[2]).first()
 

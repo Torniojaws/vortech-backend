@@ -2,18 +2,21 @@ import json
 import socket
 
 from flask import jsonify, make_response, request, url_for
-from flask_classful import FlaskView
+from flask_classful import FlaskView, route
 from sqlalchemy import asc
 from dictalchemy import make_class_dictable
 
-from app import db
-from apps.songs.models import Songs
+from app import db, cache
+from apps.songs.models import Songs, SongsLyrics, SongsTabs
 from apps.songs.patches import patch_item
+from apps.utils.auth import admin_only
+from apps.utils.strings import linux_linebreaks
 
 make_class_dictable(Songs)
 
 
 class SongsView(FlaskView):
+    @cache.cached(timeout=300)
     def index(self):
         """Return all songs ordered by SongID, ID=1 first"""
         songs = Songs.query.order_by(asc(Songs.SongID)).all()
@@ -26,6 +29,7 @@ class SongsView(FlaskView):
 
         return make_response(content, 200)
 
+    @cache.cached(timeout=300)
     def get(self, song_id):
         """Return the details of the specified song."""
         song = Songs.query.filter_by(SongID=song_id).first_or_404()
@@ -38,6 +42,7 @@ class SongsView(FlaskView):
 
         return make_response(content, 200)
 
+    @admin_only
     def post(self):
         """Add a new Song."""
         # TODO: Maybe allow adding multiple songs at once?
@@ -59,6 +64,7 @@ class SongsView(FlaskView):
 
         return make_response(jsonify(contents), 201)
 
+    @admin_only
     def put(self, song_id):
         """Overwrite all the data of the specified song."""
         data = json.loads(request.data.decode())
@@ -72,6 +78,7 @@ class SongsView(FlaskView):
 
         return make_response("", 200)
 
+    @admin_only
     def patch(self, song_id):
         """Partially modify the specified song."""
         song = Songs.query.filter_by(SongID=song_id).first_or_404()
@@ -88,9 +95,41 @@ class SongsView(FlaskView):
 
         return make_response(jsonify(result), status_code)
 
+    @admin_only
     def delete(self, song_id):
         """Delete the specified song."""
         song = Songs.query.filter_by(SongID=song_id).first_or_404()
         db.session.delete(song)
         db.session.commit()
         return make_response("", 204)
+
+    @route("/<int:song_id>/lyrics", methods=["GET"])
+    @cache.cached(timeout=300)
+    def song_lyrics(self, song_id):
+        """Return the lyrics to a given Song"""
+        song = Songs.query.filter_by(SongID=song_id).first_or_404()
+        lyrics = SongsLyrics.query.filter_by(SongID=song_id).first_or_404()
+
+        contents = jsonify({
+            "songTitle": song.Title,
+            "lyrics": linux_linebreaks(lyrics.Lyrics),
+            "author": lyrics.Author
+        })
+        return make_response(contents, 200)
+
+    @route("/<int:song_id>/tabs", methods=["GET"])
+    @cache.cached(timeout=300)
+    def song_tabs(self, song_id):
+        """Return the tabs to a given Song. Since there can be multiple tabs, we return an array of
+        objects, where each object is one tab. The link(s) will be generated in the frontend."""
+        song = Songs.query.filter_by(SongID=song_id).first_or_404()
+        tabs = SongsTabs.query.filter_by(SongID=song_id).all()
+
+        contents = jsonify({
+            "songTitle": song.Title,
+            "tabs": [{
+                "title": tab.Title,
+                "filename": tab.Filename,
+            } for tab in tabs]
+        })
+        return make_response(contents, 200)

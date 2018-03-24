@@ -5,12 +5,14 @@ from flask import jsonify, make_response, request, url_for
 from flask_classful import FlaskView
 from sqlalchemy import asc
 
-from app import db
+from app import db, cache
 from apps.people.models import People, ReleasesPeopleMapping
 from apps.shows.models import ShowsPeopleMapping
+from apps.utils.auth import admin_only
 
 
 class PeopleView(FlaskView):
+    @cache.cached(timeout=300)
     def index(self):
         """Return all people ordered by PersonID, ID=1 first"""
         people = People.query.order_by(asc(People.PersonID)).all()
@@ -24,6 +26,7 @@ class PeopleView(FlaskView):
 
         return make_response(content, 200)
 
+    @cache.cached(timeout=300)
     def get(self, person_id):
         """Return the details of the specified person."""
         person = People.query.filter_by(PersonID=person_id).first_or_404()
@@ -37,6 +40,7 @@ class PeopleView(FlaskView):
 
         return make_response(content, 200)
 
+    @admin_only
     def post(self):
         """Add a new Person."""
         data = json.loads(request.data.decode())
@@ -56,6 +60,7 @@ class PeopleView(FlaskView):
 
         return make_response(jsonify(contents), 201)
 
+    @admin_only
     def put(self, person_id):
         """Rename the specified person."""
         data = json.loads(request.data.decode())
@@ -67,6 +72,7 @@ class PeopleView(FlaskView):
 
         return make_response("", 200)
 
+    @admin_only
     def delete(self, person_id):
         """Delete the specified person."""
         person = People.query.filter_by(PersonID=person_id).first_or_404()

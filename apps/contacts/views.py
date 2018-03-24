@@ -6,15 +6,17 @@ from flask_classful import FlaskView
 from sqlalchemy import desc
 from dictalchemy import make_class_dictable
 
-from app import db
+from app import db, cache
 from apps.contacts.models import Contacts
 from apps.contacts.patches import patch_item
+from apps.utils.auth import admin_only
 from apps.utils.time import get_datetime
 
 make_class_dictable(Contacts)
 
 
 class ContactsView(FlaskView):
+    @cache.cached(timeout=300)
     def index(self):
         """Return the newest Contacts entry."""
         contact = Contacts.query.order_by(desc(Contacts.Created)).first_or_404()
@@ -32,6 +34,7 @@ class ContactsView(FlaskView):
 
         return make_response(content, 200)
 
+    @admin_only
     def post(self):
         """Add a new Contacts entry."""
         data = json.loads(request.data.decode())
@@ -55,6 +58,7 @@ class ContactsView(FlaskView):
 
         return make_response(jsonify(contents), 201)
 
+    @admin_only
     def patch(self):
         """Partially modify the newest contact."""
         contact = Contacts.query.order_by(desc(Contacts.Created)).first_or_404()

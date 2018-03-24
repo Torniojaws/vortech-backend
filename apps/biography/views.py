@@ -6,15 +6,17 @@ from flask_classful import FlaskView
 from sqlalchemy import desc
 from dictalchemy import make_class_dictable
 
-from app import db
+from app import db, cache
 from apps.biography.models import Biography
 from apps.biography.patches import patch_item
+from apps.utils.auth import admin_only
 from apps.utils.time import get_datetime
 
 make_class_dictable(Biography)
 
 
 class BiographyView(FlaskView):
+    @cache.cached(timeout=300)
     def index(self):
         """Return the newest Biography entry."""
         newest = Biography.query.order_by(desc(Biography.BiographyID)).first_or_404()
@@ -29,6 +31,7 @@ class BiographyView(FlaskView):
 
         return make_response(content, 200)
 
+    @admin_only
     def post(self):
         """Add a new Biography entry."""
         data = json.loads(request.data.decode())
@@ -50,6 +53,7 @@ class BiographyView(FlaskView):
 
         return make_response(jsonify(contents), 201)
 
+    @admin_only
     def put(self):
         """Overwrite the newest Biography with a new one."""
         data = json.loads(request.data.decode())
@@ -64,6 +68,7 @@ class BiographyView(FlaskView):
 
         return make_response("", 200)
 
+    @admin_only
     def patch(self):
         """Update the newest Biography entry partially."""
         bio = Biography.query.order_by(desc(Biography.BiographyID)).first_or_404()

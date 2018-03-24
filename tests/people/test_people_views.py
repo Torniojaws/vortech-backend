@@ -3,15 +3,24 @@
 import json
 import unittest
 
+from flask_caching import Cache
+
 from app import app, db
 from apps.people.models import People, ReleasesPeopleMapping
 from apps.releases.models import Releases
 from apps.shows.models import Shows, ShowsPeopleMapping
-from apps.utils.time import get_datetime
+from apps.users.models import Users, UsersAccessTokens, UsersAccessLevels, UsersAccessMapping
+from apps.utils.time import get_datetime, get_datetime_one_hour_ahead
 
 
 class TestPeopleViews(unittest.TestCase):
     def setUp(self):
+        # Clear redis cache completely
+        cache = Cache()
+        cache.init_app(app, config={"CACHE_TYPE": "redis"})
+        with app.app_context():
+            cache.clear()
+
         self.app = app.test_client()
 
         person1 = People(
@@ -80,6 +89,43 @@ class TestPeopleViews(unittest.TestCase):
         db.session.add(show_person2)
         db.session.commit()
 
+        # We also need a valid admin user for the add release endpoint test.
+        user = Users(
+            Name="UnitTest Admin",
+            Username="unittest",
+            Password="password"
+        )
+        db.session.add(user)
+        db.session.commit()
+
+        # This is non-standard, but is fine for testing.
+        self.access_token = "unittest-access-token"
+        user_token = UsersAccessTokens(
+            UserID=user.UserID,
+            AccessToken=self.access_token,
+            ExpirationDate=get_datetime_one_hour_ahead()
+        )
+        db.session.add(user_token)
+        db.session.commit()
+
+        # Define level for admin
+        if not UsersAccessLevels.query.filter_by(LevelName="Admin").first():
+            access_level = UsersAccessLevels(
+                UsersAccessLevelID=4,
+                LevelName="Admin"
+            )
+            db.session.add(access_level)
+            db.session.commit()
+
+        grant_admin = UsersAccessMapping(
+            UserID=user.UserID,
+            UsersAccessLevelID=4
+        )
+        db.session.add(grant_admin)
+        db.session.commit()
+
+        self.user_id = user.UserID
+
     def tearDown(self):
         for person in People.query.filter(People.Name.like("UnitTest%")).all():
             db.session.delete(person)
@@ -100,6 +146,10 @@ class TestPeopleViews(unittest.TestCase):
         ).all():
             db.session.delete(sp)
 
+        db.session.commit()
+
+        user = Users.query.filter_by(UserID=self.user_id).first()
+        db.session.delete(user)
         db.session.commit()
 
     def test_getting_all_people(self):
@@ -146,7 +196,11 @@ class TestPeopleViews(unittest.TestCase):
                     name="UnitTest Added"
                 )
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         person = People.query.filter_by(Name="UnitTest Added").first_or_404()
@@ -166,7 +220,11 @@ class TestPeopleViews(unittest.TestCase):
                     name="UnitTest Updated"
                 )
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         person = People.query.filter_by(PersonID=self.person2_id).first_or_404()
@@ -178,7 +236,13 @@ class TestPeopleViews(unittest.TestCase):
 
     def test_deleting_a_person(self):
         """Not much to it."""
-        response = self.app.delete("/api/1.0/people/{}".format(self.person1_id))
+        response = self.app.delete(
+            "/api/1.0/people/{}".format(self.person1_id),
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
+        )
 
         person = People.query.filter_by(PersonID=self.person1_id).first()
 

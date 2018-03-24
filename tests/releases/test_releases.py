@@ -425,7 +425,11 @@ class TestReleases(unittest.TestCase):
                     songs=[{"UnitTest Song 1": 89}],
                 )
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         release = Releases.query.get_or_404(self.release_ids[0])
@@ -540,7 +544,11 @@ class TestReleases(unittest.TestCase):
                     ),
                 ]
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         release = Releases.query.get_or_404(self.release_ids[0])
@@ -562,7 +570,11 @@ class TestReleases(unittest.TestCase):
                     ),
                 ]
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         cats = ReleasesCategoriesMapping.query.filter_by(ReleaseID=self.release_ids[0]).order_by(
@@ -591,7 +603,11 @@ class TestReleases(unittest.TestCase):
                     ),
                 ]
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         formats = ReleasesFormatsMapping.query.filter_by(ReleaseID=self.release_ids[0]).order_by(
@@ -619,7 +635,11 @@ class TestReleases(unittest.TestCase):
                     ),
                 ]
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         people = ReleasesPeopleMapping.query.filter_by(ReleaseID=self.release_ids[0]).order_by(
@@ -653,7 +673,11 @@ class TestReleases(unittest.TestCase):
                     ),
                 ]
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         songs = ReleasesSongsMapping.query.filter_by(ReleaseID=self.release_ids[0]).order_by(
@@ -685,7 +709,11 @@ class TestReleases(unittest.TestCase):
                     "path": "/title"
                 }]
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         release = Releases.query.get_or_404(self.release_ids[1])
@@ -705,7 +733,11 @@ class TestReleases(unittest.TestCase):
                     "path": "/categories"
                 }]
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         self.assertEquals(response.status_code, 204)
@@ -723,7 +755,11 @@ class TestReleases(unittest.TestCase):
                     "path": "/formats"
                 }]
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         self.assertEquals(response.status_code, 204)
@@ -742,7 +778,11 @@ class TestReleases(unittest.TestCase):
                     "path": "/people"
                 }]
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         self.assertEquals(response.status_code, 204)
@@ -761,7 +801,11 @@ class TestReleases(unittest.TestCase):
                     "path": "/songs"
                 }]
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         self.assertEquals(response.status_code, 204)
@@ -782,7 +826,11 @@ class TestReleases(unittest.TestCase):
                     "path": "/artist"
                 }]
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         release = Releases.query.get_or_404(self.release_ids[0])
@@ -802,7 +850,11 @@ class TestReleases(unittest.TestCase):
                     "path": "/categories"
                 }]
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         self.assertEquals(response.status_code, 204)
@@ -820,7 +872,11 @@ class TestReleases(unittest.TestCase):
                     "path": "/formats"
                 }]
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         self.assertEquals(response.status_code, 204)
@@ -838,7 +894,11 @@ class TestReleases(unittest.TestCase):
                     "path": "/people"
                 }]
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         self.assertEquals(response.status_code, 204)
@@ -856,7 +916,11 @@ class TestReleases(unittest.TestCase):
                     "path": "/songs"
                 }]
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         self.assertEquals(response.status_code, 204)
@@ -874,7 +938,11 @@ class TestReleases(unittest.TestCase):
                     "path": "/artist"
                 }]
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         release = Releases.query.get_or_404(self.release_ids[0])
@@ -892,7 +960,11 @@ class TestReleases(unittest.TestCase):
                     "path": "/categories"
                 }]
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         cats = ReleasesCategoriesMapping.query.filter_by(ReleaseID=self.release_ids[0]).all()
@@ -909,7 +981,11 @@ class TestReleases(unittest.TestCase):
                     "path": "/formats"
                 }]
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         formats = ReleasesFormatsMapping.query.filter_by(ReleaseID=self.release_ids[0]).all()
@@ -926,7 +1002,11 @@ class TestReleases(unittest.TestCase):
                     "path": "/people"
                 }]
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         people = ReleasesPeopleMapping.query.filter_by(ReleaseID=self.release_ids[0]).all()
@@ -943,7 +1023,11 @@ class TestReleases(unittest.TestCase):
                     "path": "/songs"
                 }]
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         songs = ReleasesSongsMapping.query.filter_by(ReleaseID=self.release_ids[0]).all()
@@ -961,7 +1045,11 @@ class TestReleases(unittest.TestCase):
                     "value": "UnitTest Patch Replace"
                 }]
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         release = Releases.query.get_or_404(self.release_ids[0])
@@ -980,7 +1068,11 @@ class TestReleases(unittest.TestCase):
                     "value": [self.valid_cats[1], self.valid_cats[2]]
                 }]
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         cats = ReleasesCategoriesMapping.query.filter_by(ReleaseID=self.release_ids[0]).order_by(
@@ -1004,7 +1096,11 @@ class TestReleases(unittest.TestCase):
                     "value": [self.valid_formats[0], self.valid_formats[1]]
                 }]
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         formats = ReleasesFormatsMapping.query.filter_by(ReleaseID=self.release_ids[0]).order_by(
@@ -1028,7 +1124,11 @@ class TestReleases(unittest.TestCase):
                     "value": [{self.valid_people[0]: "Bass"}, {self.valid_people[1]: "Triangle"}]
                 }]
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         people = ReleasesPeopleMapping.query.filter_by(ReleaseID=self.release_ids[0]).order_by(
@@ -1052,7 +1152,11 @@ class TestReleases(unittest.TestCase):
                     "value": [{self.valid_songs[0]: 55}, {self.valid_songs[1]: 167}]
                 }]
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         songs = ReleasesSongsMapping.query.filter_by(ReleaseID=self.release_ids[0]).order_by(
@@ -1081,14 +1185,24 @@ class TestReleases(unittest.TestCase):
                     "value": "I do not exist"
                 }]
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         self.assertEquals(422, response.status_code)
         self.assertFalse("", response.data.decode())
 
     def test_deleting_release(self):
-        response = self.app.delete("/api/1.0/releases/{}".format(int(self.release_ids[0])))
+        response = self.app.delete(
+            "/api/1.0/releases/{}".format(int(self.release_ids[0])),
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
+        )
         query_result = Releases.query.filter_by(ReleaseID=self.release_ids[0]).first()
         # On delete cascade should also remove the CFPS of the release ID
         cats = ReleasesCategoriesMapping.query.filter_by(ReleaseID=self.release_ids[0]).order_by(

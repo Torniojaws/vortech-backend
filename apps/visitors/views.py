@@ -5,12 +5,13 @@ from flask import jsonify, make_response, request, url_for
 from flask_classful import FlaskView
 from geolite2 import geolite2
 
-from app import db
+from app import db, cache
 from apps.utils.time import get_date, get_datetime, get_monday, get_first_day
 from apps.visitors.models import Visitors
 
 
 class VisitorsView(FlaskView):
+    @cache.cached(timeout=30)
     def index(self):
         """Return the amount of visits for today, this week, this month, and all time."""
         today = Visitors.query.filter(Visitors.VisitDate >= get_date()).count()

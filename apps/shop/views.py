@@ -6,7 +6,7 @@ from flask_classful import FlaskView, route
 from sqlalchemy import asc
 from dictalchemy import make_class_dictable
 
-from app import db
+from app import db, cache
 from apps.shop.add_cu import add_categories, add_urls
 from apps.shop.models import (
     ShopItems,
@@ -14,12 +14,14 @@ from apps.shop.models import (
     ShopItemsURLMapping,
 )
 from apps.shop.patches import patch_item
+from apps.utils.auth import admin_only
 from apps.utils.time import get_datetime
 
 make_class_dictable(ShopItems)
 
 
 class ShopItemsView(FlaskView):
+    @cache.cached(timeout=300)
     def index(self):
         """Return all shopitems ordered by ShopItemID, ID=1 first"""
         shopitems = ShopItems.query.order_by(asc(ShopItems.ShopItemID)).all()
@@ -40,6 +42,7 @@ class ShopItemsView(FlaskView):
 
         return make_response(content, 200)
 
+    @cache.cached(timeout=300)
     def get(self, item_id):
         """Return the details of the specified shop item."""
         item = ShopItems.query.filter_by(ShopItemID=item_id).first_or_404()
@@ -61,6 +64,7 @@ class ShopItemsView(FlaskView):
         return make_response(content, 200)
 
     @route("/category/<int:cat_id>/", methods=["GET"])
+    @cache.cached(timeout=300)
     def category(self, cat_id):
         """Return all items that match the category ID."""
         matches = [
@@ -88,6 +92,7 @@ class ShopItemsView(FlaskView):
 
         return make_response(content, 200)
 
+    @admin_only
     def post(self):
         """Add a new Shop Item."""
         data = json.loads(request.data.decode())
@@ -119,6 +124,7 @@ class ShopItemsView(FlaskView):
 
         return make_response(jsonify(contents), 201)
 
+    @admin_only
     def put(self, item_id):
         """Overwrite all the data of the specified shop item."""
         data = json.loads(request.data.decode())
@@ -154,6 +160,7 @@ class ShopItemsView(FlaskView):
 
         return make_response("", 200)
 
+    @admin_only
     def patch(self, item_id):
         """Partially modify the specified shopitem."""
         item = ShopItems.query.filter_by(ShopItemID=item_id).first_or_404()
@@ -165,6 +172,7 @@ class ShopItemsView(FlaskView):
 
         return make_response(jsonify(result), status_code)
 
+    @admin_only
     def delete(self, item_id):
         """Delete the specified item."""
         item = ShopItems.query.filter_by(ShopItemID=item_id).first_or_404()

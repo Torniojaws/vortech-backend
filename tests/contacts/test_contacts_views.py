@@ -5,14 +5,24 @@ they'll be in the DB."""
 import json
 import unittest
 
+from flask_caching import Cache
 from sqlalchemy import desc
 
 from app import app, db
 from apps.contacts.models import Contacts
+from apps.users.models import Users, UsersAccessTokens, UsersAccessLevels, UsersAccessMapping
+from apps.utils.time import get_datetime_one_hour_ahead
 
 
 class TestContactsViews(unittest.TestCase):
     def setUp(self):
+
+        # Clear redis cache completely
+        cache = Cache()
+        cache.init_app(app, config={"CACHE_TYPE": "redis"})
+        with app.app_context():
+            cache.clear()
+
         self.app = app.test_client()
 
         # Insert two contacts entries to test we get the newest by Created
@@ -34,9 +44,50 @@ class TestContactsViews(unittest.TestCase):
         db.session.add(c2)
         db.session.commit()
 
+        # We also need a valid admin user for the add release endpoint test.
+        user = Users(
+            Name="UnitTest Admin",
+            Username="unittest",
+            Password="password"
+        )
+        db.session.add(user)
+        db.session.commit()
+
+        # This is non-standard, but is fine for testing.
+        self.access_token = "unittest-access-token"
+        user_token = UsersAccessTokens(
+            UserID=user.UserID,
+            AccessToken=self.access_token,
+            ExpirationDate=get_datetime_one_hour_ahead()
+        )
+        db.session.add(user_token)
+        db.session.commit()
+
+        # Define level for admin
+        if not UsersAccessLevels.query.filter_by(LevelName="Admin").first():
+            access_level = UsersAccessLevels(
+                UsersAccessLevelID=4,
+                LevelName="Admin"
+            )
+            db.session.add(access_level)
+            db.session.commit()
+
+        grant_admin = UsersAccessMapping(
+            UserID=user.UserID,
+            UsersAccessLevelID=4
+        )
+        db.session.add(grant_admin)
+        db.session.commit()
+
+        self.user_id = user.UserID
+
     def tearDown(self):
         for contact in Contacts.query.filter(Contacts.Email.like("unittest%")).all():
             db.session.delete(contact)
+        db.session.commit()
+
+        user = Users.query.filter_by(UserID=self.user_id).first()
+        db.session.delete(user)
         db.session.commit()
 
     def test_getting_contacts_is_latest(self):
@@ -69,7 +120,11 @@ class TestContactsViews(unittest.TestCase):
                     backline="unittest-post-backline.pdf",
                 )
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         get_contacts = self.app.get("/api/1.0/contacts/")
@@ -103,7 +158,11 @@ class TestContactsViews(unittest.TestCase):
                     ),
                 ]
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         newest = Contacts.query.order_by(
@@ -127,7 +186,11 @@ class TestContactsViews(unittest.TestCase):
                     }),
                 ]
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         newest = Contacts.query.order_by(
@@ -154,7 +217,11 @@ class TestContactsViews(unittest.TestCase):
                     }),
                 ]
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         newest = Contacts.query.order_by(
@@ -176,7 +243,11 @@ class TestContactsViews(unittest.TestCase):
                     "value": "I do not exist"
                 }]
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         self.assertEquals(422, response.status_code)

@@ -57,3 +57,16 @@ if ENV == "prod":
     CONFIG = ProdConfig
 else:
     CONFIG = DevConfig
+
+
+# TODO: Can this be included into the Flask config above?
+CACHE_CONFIG = {
+    'CACHE_TYPE': 'redis',
+    'CACHE_DEFAULT_TIMEOUT': 60,  # seconds
+    'CACHE_REDIS_HOST': '127.0.0.1',
+    'CACHE_REDIS_PORT': '6379',
+    'CACHE_REDIS_PASSWORD': '',
+    'CACHE_REDIS_DB': 0,
+    'CACHE_OPTIONS': '',
+    'CACHE_REDIS_URL': 'redis://127.0.0.1:6379/0'
+}

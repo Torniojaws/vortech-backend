@@ -6,6 +6,8 @@ from sqlalchemy import asc, or_
 
 from app import app, db
 from apps.songs.models import Songs, SongsLyrics
+from apps.users.models import Users, UsersAccessTokens, UsersAccessLevels, UsersAccessMapping
+from apps.utils.time import get_datetime_one_hour_ahead
 
 
 class TestSongsViews(unittest.TestCase):
@@ -51,6 +53,43 @@ class TestSongsViews(unittest.TestCase):
         self.valid_song_ids.append(entry2.SongID)
         self.valid_song_ids.append(entry3.SongID)
 
+        # We also need a valid admin user for the add release endpoint test.
+        user = Users(
+            Name="UnitTest Admin",
+            Username="unittest",
+            Password="password"
+        )
+        db.session.add(user)
+        db.session.commit()
+
+        # This is non-standard, but is fine for testing.
+        self.access_token = "unittest-access-token"
+        user_token = UsersAccessTokens(
+            UserID=user.UserID,
+            AccessToken=self.access_token,
+            ExpirationDate=get_datetime_one_hour_ahead()
+        )
+        db.session.add(user_token)
+        db.session.commit()
+
+        # Define level for admin
+        if not UsersAccessLevels.query.filter_by(LevelName="Admin").first():
+            access_level = UsersAccessLevels(
+                UsersAccessLevelID=4,
+                LevelName="Admin"
+            )
+            db.session.add(access_level)
+            db.session.commit()
+
+        grant_admin = UsersAccessMapping(
+            UserID=user.UserID,
+            UsersAccessLevelID=4
+        )
+        db.session.add(grant_admin)
+        db.session.commit()
+
+        self.user_id = user.UserID
+
     def tearDown(self):
         """Clean up the test data we entered."""
         to_delete = Songs.query.filter(
@@ -61,6 +100,10 @@ class TestSongsViews(unittest.TestCase):
         ).all()
         for song in to_delete:
             db.session.delete(song)
+        db.session.commit()
+
+        user = Users.query.filter_by(UserID=self.user_id).first()
+        db.session.delete(user)
         db.session.commit()
 
     def test_getting_songs_gets_all(self):
@@ -116,7 +159,11 @@ class TestSongsViews(unittest.TestCase):
                     duration=105,
                 ),
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
         songs = Songs.query.filter(Songs.Title.like("UnitTest%")).order_by(
             asc(Songs.SongID)
@@ -127,7 +174,6 @@ class TestSongsViews(unittest.TestCase):
 
         self.assertEquals(201, response.status_code)
         self.assertTrue("Location" in response.get_data().decode())
-        print([(s.Title, s.Duration) for s in songs])
         self.assertEquals("UnitTest Song Four", songs[3].Title)
 
         # Verify the result of GET after the POST
@@ -144,7 +190,11 @@ class TestSongsViews(unittest.TestCase):
                     duration=109,
                 )
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         get_song = self.app.get("/api/1.0/songs/{}".format(self.valid_song_ids[1]))
@@ -170,7 +220,11 @@ class TestSongsViews(unittest.TestCase):
                     ),
                 ]
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         song = Songs.query.filter_by(SongID=self.valid_song_ids[2]).first()
@@ -192,7 +246,11 @@ class TestSongsViews(unittest.TestCase):
                     })
                 ]
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         song = Songs.query.filter_by(SongID=self.valid_song_ids[0]).first()
@@ -214,7 +272,11 @@ class TestSongsViews(unittest.TestCase):
                     }),
                 ]
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         song = Songs.query.filter_by(SongID=self.valid_song_ids[1]).first()
@@ -236,7 +298,11 @@ class TestSongsViews(unittest.TestCase):
                     }),
                 ]
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         song = Songs.query.filter_by(SongID=self.valid_song_ids[0]).first()
@@ -258,7 +324,11 @@ class TestSongsViews(unittest.TestCase):
                     }),
                 ]
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         song = Songs.query.filter_by(SongID=self.valid_song_ids[1]).first()
@@ -270,7 +340,13 @@ class TestSongsViews(unittest.TestCase):
 
     def test_deleting_a_song(self):
         """Should delete the song."""
-        response = self.app.delete("/api/1.0/songs/{}".format(self.valid_song_ids[2]))
+        response = self.app.delete(
+            "/api/1.0/songs/{}".format(self.valid_song_ids[2]),
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
+        )
 
         song = Songs.query.filter_by(SongID=self.valid_song_ids[2]).first()
 

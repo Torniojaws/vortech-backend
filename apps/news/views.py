@@ -9,6 +9,7 @@ from dictalchemy import make_class_dictable
 from app import db, cache
 from apps.news.models import News, NewsComments, NewsCategoriesMapping, NewsCategories
 from apps.news.patches import patch_item
+from apps.utils.auth import admin_only
 from apps.utils.time import get_datetime, get_iso_format
 
 make_class_dictable(News)
@@ -49,6 +50,7 @@ class NewsView(FlaskView):
         })
         return make_response(contents, 200)
 
+    @admin_only
     def post(self):
         """Add a new News item"""
         data = json.loads(request.data.decode())
@@ -93,6 +95,7 @@ class NewsView(FlaskView):
         )
         return make_response(jsonify(contents), 201)
 
+    @admin_only
     def put(self, news_id):
         """Replace an existing News item with new data"""
         data = json.loads(request.data.decode())
@@ -118,6 +121,7 @@ class NewsView(FlaskView):
 
         return make_response("", 200)
 
+    @admin_only
     def patch(self, news_id):
         """Change an existing News item partially using an instruction-based JSON, as defined by:
         https://tools.ietf.org/html/rfc6902

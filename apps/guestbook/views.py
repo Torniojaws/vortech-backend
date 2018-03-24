@@ -10,6 +10,7 @@ from app import db, cache
 from apps.guestbook.models import Guestbook
 from apps.guestbook.patches import patch_item
 from apps.users.models import Users
+from apps.utils.auth import admin_only
 from apps.utils.time import get_datetime
 
 make_class_dictable(Guestbook)
@@ -87,9 +88,9 @@ class GuestbookView(FlaskView):
 
         return make_response(jsonify(contents), 201)
 
+    @admin_only
     def patch(self, book_id):
-        """Admin-only. Partially modify the specified song."""
-        # TODO: Add Authentication
+        """Admin-only. Partially modify the specified guestbook post."""
         book = Guestbook.query.filter_by(GuestbookID=book_id).first_or_404()
         result = []
         status_code = 204
@@ -105,9 +106,9 @@ class GuestbookView(FlaskView):
 
         return make_response(jsonify(result), status_code)
 
+    @admin_only
     def delete(self, book_id):
         """Admin-only. Delete the specified guestbook post."""
-        # TODO: Authentication must be implemented
         book = Guestbook.query.filter_by(GuestbookID=book_id).first_or_404()
         db.session.delete(book)
         db.session.commit()

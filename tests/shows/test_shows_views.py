@@ -8,7 +8,8 @@ from app import app, db
 from apps.people.models import People
 from apps.shows.models import Shows, ShowsOtherBands, ShowsPeopleMapping, ShowsSongsMapping
 from apps.songs.models import Songs
-from apps.utils.time import get_datetime
+from apps.users.models import Users, UsersAccessTokens, UsersAccessLevels, UsersAccessMapping
+from apps.utils.time import get_datetime, get_datetime_one_hour_ahead
 
 
 class TestShowsViews(unittest.TestCase):
@@ -136,6 +137,43 @@ class TestShowsViews(unittest.TestCase):
         db.session.add(songs_show3)
         db.session.commit()
 
+        # We also need a valid admin user for the add release endpoint test.
+        user = Users(
+            Name="UnitTest Admin",
+            Username="unittest",
+            Password="password"
+        )
+        db.session.add(user)
+        db.session.commit()
+
+        # This is non-standard, but is fine for testing.
+        self.access_token = "unittest-access-token"
+        user_token = UsersAccessTokens(
+            UserID=user.UserID,
+            AccessToken=self.access_token,
+            ExpirationDate=get_datetime_one_hour_ahead()
+        )
+        db.session.add(user_token)
+        db.session.commit()
+
+        # Define level for admin
+        if not UsersAccessLevels.query.filter_by(LevelName="Admin").first():
+            access_level = UsersAccessLevels(
+                UsersAccessLevelID=4,
+                LevelName="Admin"
+            )
+            db.session.add(access_level)
+            db.session.commit()
+
+        grant_admin = UsersAccessMapping(
+            UserID=user.UserID,
+            UsersAccessLevelID=4
+        )
+        db.session.add(grant_admin)
+        db.session.commit()
+
+        self.user_id = user.UserID
+
     def tearDown(self):
         """Clean up the test data we entered."""
         for show in Shows.query.filter(
@@ -157,6 +195,10 @@ class TestShowsViews(unittest.TestCase):
             ShowsOtherBands.BandName.like("UnitTest%")
         ).all():
             db.session.delete(band)
+        db.session.commit()
+
+        user = Users.query.filter_by(UserID=self.user_id).first()
+        db.session.delete(user)
         db.session.commit()
 
     def test_getting_shows_gets_all(self):
@@ -200,7 +242,11 @@ class TestShowsViews(unittest.TestCase):
                     venue="UnitTest 4",
                 ),
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
         shows = Shows.query.filter(Shows.Venue.like("UnitTest%")).order_by(
             asc(Shows.ShowID)
@@ -230,7 +276,11 @@ class TestShowsViews(unittest.TestCase):
                     venue="UnitTest 5",
                 )
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         get_show = self.app.get("/api/1.0/shows/{}".format(self.valid_show_ids[1]))
@@ -280,7 +330,11 @@ class TestShowsViews(unittest.TestCase):
                     ),
                 ]
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         show = Shows.query.filter_by(ShowID=self.valid_show_ids[2]).first()
@@ -303,7 +357,11 @@ class TestShowsViews(unittest.TestCase):
                     })
                 ]
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         show = Shows.query.filter_by(ShowID=self.valid_show_ids[0]).first()
@@ -324,7 +382,11 @@ class TestShowsViews(unittest.TestCase):
                     }),
                 ]
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         show = Shows.query.filter_by(ShowID=self.valid_show_ids[1]).first()
@@ -344,7 +406,11 @@ class TestShowsViews(unittest.TestCase):
                     }),
                 ]
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         self.assertEquals(204, response.status_code)
@@ -362,7 +428,11 @@ class TestShowsViews(unittest.TestCase):
                     }),
                 ]
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         show = Shows.query.filter_by(ShowID=self.valid_show_ids[1]).first()
@@ -374,7 +444,13 @@ class TestShowsViews(unittest.TestCase):
 
     def test_deleting_a_show(self):
         """Should delete the show."""
-        response = self.app.delete("/api/1.0/shows/{}".format(self.valid_show_ids[2]))
+        response = self.app.delete(
+            "/api/1.0/shows/{}".format(self.valid_show_ids[2]),
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
+        )
 
         show = Shows.query.filter_by(ShowID=self.valid_show_ids[2]).first()
 
@@ -404,7 +480,11 @@ class TestShowsViews(unittest.TestCase):
                     ]
                 ),
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
         shows = Shows.query.filter(Shows.Venue.like("UnitTest%")).order_by(
             asc(Shows.ShowID)
@@ -450,7 +530,11 @@ class TestShowsViews(unittest.TestCase):
                     ]
                 )
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         get_show = self.app.get("/api/1.0/shows/{}".format(self.valid_show_ids[1]))
@@ -477,7 +561,11 @@ class TestShowsViews(unittest.TestCase):
                     "value": "I do not exist"
                 }]
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         self.assertEquals(422, response.status_code)

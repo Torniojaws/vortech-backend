@@ -9,6 +9,7 @@ from dictalchemy import make_class_dictable
 from app import db, cache
 from apps.songs.models import Songs, SongsLyrics
 from apps.songs.patches import patch_item
+from apps.utils.auth import admin_only
 from apps.utils.strings import linux_linebreaks
 
 make_class_dictable(Songs)
@@ -41,6 +42,7 @@ class SongsView(FlaskView):
 
         return make_response(content, 200)
 
+    @admin_only
     def post(self):
         """Add a new Song."""
         # TODO: Maybe allow adding multiple songs at once?
@@ -62,6 +64,7 @@ class SongsView(FlaskView):
 
         return make_response(jsonify(contents), 201)
 
+    @admin_only
     def put(self, song_id):
         """Overwrite all the data of the specified song."""
         data = json.loads(request.data.decode())
@@ -75,6 +78,7 @@ class SongsView(FlaskView):
 
         return make_response("", 200)
 
+    @admin_only
     def patch(self, song_id):
         """Partially modify the specified song."""
         song = Songs.query.filter_by(SongID=song_id).first_or_404()
@@ -91,6 +95,7 @@ class SongsView(FlaskView):
 
         return make_response(jsonify(result), status_code)
 
+    @admin_only
     def delete(self, song_id):
         """Delete the specified song."""
         song = Songs.query.filter_by(SongID=song_id).first_or_404()

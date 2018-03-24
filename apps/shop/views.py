@@ -14,6 +14,7 @@ from apps.shop.models import (
     ShopItemsURLMapping,
 )
 from apps.shop.patches import patch_item
+from apps.utils.auth import admin_only
 from apps.utils.time import get_datetime
 
 make_class_dictable(ShopItems)
@@ -91,6 +92,7 @@ class ShopItemsView(FlaskView):
 
         return make_response(content, 200)
 
+    @admin_only
     def post(self):
         """Add a new Shop Item."""
         data = json.loads(request.data.decode())
@@ -122,6 +124,7 @@ class ShopItemsView(FlaskView):
 
         return make_response(jsonify(contents), 201)
 
+    @admin_only
     def put(self, item_id):
         """Overwrite all the data of the specified shop item."""
         data = json.loads(request.data.decode())
@@ -157,6 +160,7 @@ class ShopItemsView(FlaskView):
 
         return make_response("", 200)
 
+    @admin_only
     def patch(self, item_id):
         """Partially modify the specified shopitem."""
         item = ShopItems.query.filter_by(ShopItemID=item_id).first_or_404()
@@ -168,6 +172,7 @@ class ShopItemsView(FlaskView):
 
         return make_response(jsonify(result), status_code)
 
+    @admin_only
     def delete(self, item_id):
         """Delete the specified item."""
         item = ShopItems.query.filter_by(ShopItemID=item_id).first_or_404()

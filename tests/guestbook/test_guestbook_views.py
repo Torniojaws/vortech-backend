@@ -8,8 +8,8 @@ import unittest
 
 from app import app, db
 from apps.guestbook.models import Guestbook
-from apps.users.models import Users
-from apps.utils.time import get_datetime
+from apps.users.models import Users, UsersAccessTokens, UsersAccessLevels, UsersAccessMapping
+from apps.utils.time import get_datetime, get_datetime_one_hour_ahead
 
 
 class TestGuestbookViews(unittest.TestCase):
@@ -65,6 +65,43 @@ class TestGuestbookViews(unittest.TestCase):
         self.valid_post = post1.GuestbookID
         # This is used in patch add test to add an admin comment
         self.admin_valid_post = post2.GuestbookID
+
+        # We also need a valid admin user for the add release endpoint test.
+        user = Users(
+            Name="UnitTest Admin",
+            Username="unittest",
+            Password="password"
+        )
+        db.session.add(user)
+        db.session.commit()
+
+        # This is non-standard, but is fine for testing.
+        self.access_token = "unittest-access-token"
+        user_token = UsersAccessTokens(
+            UserID=user.UserID,
+            AccessToken=self.access_token,
+            ExpirationDate=get_datetime_one_hour_ahead()
+        )
+        db.session.add(user_token)
+        db.session.commit()
+
+        # Define level for admin
+        if not UsersAccessLevels.query.filter_by(LevelName="Admin").first():
+            access_level = UsersAccessLevels(
+                UsersAccessLevelID=4,
+                LevelName="Admin"
+            )
+            db.session.add(access_level)
+            db.session.commit()
+
+        grant_admin = UsersAccessMapping(
+            UserID=user.UserID,
+            UsersAccessLevelID=4
+        )
+        db.session.add(grant_admin)
+        db.session.commit()
+
+        self.user_id = user.UserID
 
     def tearDown(self):
         for post in Guestbook.query.filter(Guestbook.Author.like("UnitTest%")).all():
@@ -194,7 +231,11 @@ class TestGuestbookViews(unittest.TestCase):
                     })
                 ]
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         book = Guestbook.query.filter_by(GuestbookID=self.admin_valid_post).first()
@@ -217,7 +258,11 @@ class TestGuestbookViews(unittest.TestCase):
                     })
                 ]
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         book = Guestbook.query.filter_by(GuestbookID=self.valid_post).first()
@@ -242,7 +287,11 @@ class TestGuestbookViews(unittest.TestCase):
                     })
                 ]
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         book = Guestbook.query.filter_by(GuestbookID=self.valid_post).first()
@@ -265,7 +314,11 @@ class TestGuestbookViews(unittest.TestCase):
                     })
                 ]
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         self.assertEquals(422, response.status_code)
@@ -273,7 +326,13 @@ class TestGuestbookViews(unittest.TestCase):
 
     def test_deleting_guestbook_post(self):
         """Should delete the post."""
-        response = self.app.delete("/api/1.0/guestbook/{}".format(self.valid_post))
+        response = self.app.delete(
+            "/api/1.0/guestbook/{}".format(self.valid_post),
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
+        )
 
         book = Guestbook.query.filter_by(GuestbookID=self.valid_post).first()
 

@@ -11,6 +11,7 @@ from apps.utils.time import get_datetime
 from apps.photos.add_ac import add_album, add_categories
 from apps.photos.models import Photos, PhotosAlbumsMapping, PhotosCategoriesMapping
 from apps.photos.patches import patch_item
+from apps.utils.auth import admin_only
 
 make_class_dictable(Photos)
 
@@ -112,6 +113,7 @@ class PhotosView(FlaskView):
 
         return make_response(content, 200)
 
+    @admin_only
     def post(self):
         """Add a new Photo."""
         # TODO: Maybe allow adding multiple photos at once?
@@ -146,6 +148,7 @@ class PhotosView(FlaskView):
 
         return make_response(jsonify(contents), 201)
 
+    @admin_only
     def patch(self, photo_id):
         """Partially modify the specified photo."""
         photo = Photos.query.filter_by(PhotoID=photo_id).first_or_404()
@@ -162,6 +165,7 @@ class PhotosView(FlaskView):
 
         return make_response(jsonify(result), status_code)
 
+    @admin_only
     def delete(self, photo_id):
         """Delete the specified photo."""
         photo = Photos.query.filter_by(PhotoID=photo_id).first_or_404()

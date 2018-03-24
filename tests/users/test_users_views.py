@@ -1,6 +1,7 @@
 import json
 import unittest
 
+from flask_caching import Cache
 from werkzeug import check_password_hash
 
 from app import app, db
@@ -11,6 +12,12 @@ from settings.config import CONFIG
 
 class TestUsersView(unittest.TestCase):
     def setUp(self):
+        # Clear redis cache completely
+        cache = Cache()
+        cache.init_app(app, config={"CACHE_TYPE": "redis"})
+        with app.app_context():
+            cache.clear()
+
         self.app = app.test_client()
 
         user1 = Users(
@@ -56,11 +63,45 @@ class TestUsersView(unittest.TestCase):
 
         self.valid_users = [user1.UserID, user2.UserID]
 
+        # We also need a valid admin user for the add release endpoint test.
+        user = Users(
+            Name="UnitTest Admin",
+            Username="unittest",
+            Password="password"
+        )
+        db.session.add(user)
+        db.session.commit()
+
+        user_token = UsersAccessTokens(
+            UserID=user.UserID,
+            AccessToken=self.access_token,
+            ExpirationDate=get_datetime_one_hour_ahead()
+        )
+        db.session.add(user_token)
+        db.session.commit()
+
+        # Define level for admin
+        if not UsersAccessLevels.query.filter_by(LevelName="Admin").first():
+            access_level = UsersAccessLevels(
+                UsersAccessLevelID=4,
+                LevelName="Admin"
+            )
+            db.session.add(access_level)
+            db.session.commit()
+
+        grant_admin = UsersAccessMapping(
+            UserID=user.UserID,
+            UsersAccessLevelID=4
+        )
+        db.session.add(grant_admin)
+        db.session.commit()
+
+        self.user_id = user.UserID
+
     def tearDown(self):
         delete_user = Users.query.filter(Users.Name.like("UnitTest%")).all()
-        for user in delete_user:
-            db.session.delete(user)
-
+        for u in delete_user:
+            db.session.delete(u)
         db.session.commit()
 
     def test_getting_one_user(self):
@@ -86,7 +127,7 @@ class TestUsersView(unittest.TestCase):
         user = json.loads(resp.get_data().decode())
 
         self.assertEquals(resp.status_code, 200)
-        self.assertEquals(2, len(user["users"]))
+        self.assertEquals(3, len(user["users"]))
         self.assertEquals("unittester", user["users"][0]["username"])
         self.assertEquals("UnitTest2", user["users"][1]["name"])
         self.assertFalse("password" in user["users"][0])  # Should not be included
@@ -108,7 +149,11 @@ class TestUsersView(unittest.TestCase):
                     password="unittesting",
                 )
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         user = Users.query.filter_by(Name="UnitTest Post").first_or_404()
@@ -139,7 +184,11 @@ class TestUsersView(unittest.TestCase):
                     password="",
                 )
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         response = json.loads(resp.get_data().decode())
@@ -160,7 +209,11 @@ class TestUsersView(unittest.TestCase):
                     password="short",
                 )
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         response = json.loads(resp.get_data().decode())
@@ -183,7 +236,11 @@ class TestUsersView(unittest.TestCase):
                     password="unittesting-update",
                 )
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         user_after = Users.query.filter_by(UserID=self.valid_users[0]).first()
@@ -222,7 +279,11 @@ class TestUsersView(unittest.TestCase):
                     password="short",
                 )
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         get_user = self.app.get(

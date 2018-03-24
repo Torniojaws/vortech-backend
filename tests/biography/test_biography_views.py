@@ -6,7 +6,8 @@ from sqlalchemy import desc, or_
 
 from app import app, db
 from apps.biography.models import Biography
-from apps.utils.time import get_datetime
+from apps.users.models import Users, UsersAccessTokens, UsersAccessLevels, UsersAccessMapping
+from apps.utils.time import get_datetime, get_datetime_one_hour_ahead
 
 
 class TestBiographyViews(unittest.TestCase):
@@ -41,6 +42,43 @@ class TestBiographyViews(unittest.TestCase):
         db.session.add(entry3)
         db.session.commit()
 
+        # We also need a valid admin user for the add release endpoint test.
+        user = Users(
+            Name="UnitTest Admin",
+            Username="unittest",
+            Password="password"
+        )
+        db.session.add(user)
+        db.session.commit()
+
+        # This is non-standard, but is fine for testing.
+        self.access_token = "unittest-access-token"
+        user_token = UsersAccessTokens(
+            UserID=user.UserID,
+            AccessToken=self.access_token,
+            ExpirationDate=get_datetime_one_hour_ahead()
+        )
+        db.session.add(user_token)
+        db.session.commit()
+
+        # Define level for admin
+        if not UsersAccessLevels.query.filter_by(LevelName="Admin").first():
+            access_level = UsersAccessLevels(
+                UsersAccessLevelID=4,
+                LevelName="Admin"
+            )
+            db.session.add(access_level)
+            db.session.commit()
+
+        grant_admin = UsersAccessMapping(
+            UserID=user.UserID,
+            UsersAccessLevelID=4
+        )
+        db.session.add(grant_admin)
+        db.session.commit()
+
+        self.user_id = user.UserID
+
     def tearDown(self):
         """Clean up the test data we entered."""
         to_delete = Biography.query.filter(
@@ -51,6 +89,10 @@ class TestBiographyViews(unittest.TestCase):
         ).all()
         for bio in to_delete:
             db.session.delete(bio)
+        db.session.commit()
+
+        user = Users.query.filter_by(UserID=self.user_id).first()
+        db.session.delete(user)
         db.session.commit()
 
     def test_getting_biography_gets_newest(self):
@@ -71,7 +113,11 @@ class TestBiographyViews(unittest.TestCase):
                     full="UnitTest fourth full",
                 )
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
         bio = Biography.query.filter(Biography.Short.like("%fourth%")).first()
 
@@ -97,7 +143,11 @@ class TestBiographyViews(unittest.TestCase):
                     full="UnitTest Updated newest full",
                 )
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         get_bio = self.app.get("/api/1.0/biography/")
@@ -129,7 +179,11 @@ class TestBiographyViews(unittest.TestCase):
                     ),
                 ]
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         current_bio = Biography.query.order_by(desc(Biography.BiographyID)).first()
@@ -151,7 +205,11 @@ class TestBiographyViews(unittest.TestCase):
                     })
                 ]
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         current_bio = Biography.query.order_by(desc(Biography.BiographyID)).first()
@@ -173,7 +231,11 @@ class TestBiographyViews(unittest.TestCase):
                     }),
                 ]
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         current_bio = Biography.query.order_by(desc(Biography.BiographyID)).first()
@@ -195,7 +257,11 @@ class TestBiographyViews(unittest.TestCase):
                     }),
                 ]
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         current_bio = Biography.query.order_by(desc(Biography.BiographyID)).first()
@@ -217,7 +283,11 @@ class TestBiographyViews(unittest.TestCase):
                     }),
                 ]
             ),
-            content_type="application/json"
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
         )
 
         current_bio = Biography.query.order_by(desc(Biography.BiographyID)).first()

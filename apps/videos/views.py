@@ -7,6 +7,7 @@ from sqlalchemy import asc, desc
 from dictalchemy import make_class_dictable
 
 from app import db, cache
+from apps.utils.auth import admin_only
 from apps.utils.time import get_datetime
 from apps.videos.add_categories import add_categories
 from apps.videos.models import Videos, VideosCategoriesMapping
@@ -48,6 +49,7 @@ class VideosView(FlaskView):
 
         return make_response(content, 200)
 
+    @admin_only
     def post(self):
         """Add a new Video."""
         # TODO: Maybe allow adding multiple videos at once?
@@ -74,6 +76,7 @@ class VideosView(FlaskView):
 
         return make_response(jsonify(contents), 201)
 
+    @admin_only
     def put(self, video_id):
         """Overwrite all the data of the specified video."""
         data = json.loads(request.data.decode())
@@ -98,6 +101,7 @@ class VideosView(FlaskView):
 
         return make_response("", 200)
 
+    @admin_only
     def patch(self, video_id):
         """Partially modify the specified video."""
         video = Videos.query.filter_by(VideoID=video_id).first_or_404()
@@ -114,6 +118,7 @@ class VideosView(FlaskView):
 
         return make_response(jsonify(result), status_code)
 
+    @admin_only
     def delete(self, video_id):
         """Delete the specified video."""
         video = Videos.query.filter_by(VideoID=video_id).first_or_404()

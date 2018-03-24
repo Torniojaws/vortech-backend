@@ -3,13 +3,14 @@ import socket
 
 from flask import jsonify, make_response, request, url_for
 from flask_classful import FlaskView, route
-from sqlalchemy import asc, desc
+from sqlalchemy import asc, desc, and_
 from dictalchemy import make_class_dictable
 
 from app import db, cache
 from apps.news.models import News, NewsComments, NewsCategoriesMapping, NewsCategories
 from apps.news.patches import patch_item
 from apps.utils.auth import admin_only
+from apps.utils.strings import linux_linebreaks
 from apps.utils.time import get_datetime, get_iso_format
 
 make_class_dictable(News)
@@ -24,7 +25,7 @@ class NewsView(FlaskView):
             "news": [{
                 "id": news.NewsID,
                 "title": news.Title,
-                "contents": news.Contents,
+                "contents": linux_linebreaks(news.Contents),
                 "author": news.Author,
                 "created": get_iso_format(news.Created),
                 "updated": get_iso_format(news.Updated),
@@ -41,7 +42,7 @@ class NewsView(FlaskView):
             "news": [{
                 "id": news.NewsID,
                 "title": news.Title,
-                "contents": news.Contents,
+                "contents": linux_linebreaks(news.Contents),
                 "author": news.Author,
                 "created": get_iso_format(news.Created),
                 "updated": get_iso_format(news.Updated),
@@ -67,24 +68,41 @@ class NewsView(FlaskView):
         # News items can have an existing category (=int), or a brand new one to be added
         # There is almost always more than one category for a news item
         for category in data["categories"]:
+            # Skip empty values
+            if not category:
+                continue
+
             if type(category) is not int:
-                # New category, add it
-                cat = NewsCategories(
-                    NewsCategoryID=0,
-                    Category=category
-                )
-                db.session.add(cat)
-                category = cat.NewsCategoryID
+                # Only add new category if it doesn't exist
+                exists = NewsCategories.query.filter_by(Category=category).first()
+                if not exists:
+                    # New category, add it
+                    cat = NewsCategories(
+                        Category=category
+                    )
+                    db.session.add(cat)
+                    db.session.commit()
+                    category = cat.NewsCategoryID
+                else:
+                    # Reuse existing category
+                    category = exists.NewsCategoryID
 
             # Map to the news
-            cm = NewsCategoriesMapping(
-                NewsID=news_item.NewsID,
-                NewsCategoryID=category,
-            )
-            db.session.add(cm)
+            # Don't map duplicate IDs, eg. when the same value or ID is twice in the request
+            already_mapped = NewsCategoriesMapping.query.filter(
+                and_(
+                    NewsCategoriesMapping.NewsID == news_item.NewsID,
+                    NewsCategoriesMapping.NewsCategoryID == category
+                )
+            ).first()
 
-        # Finally, commit all the inserts above
-        db.session.commit()
+            if not already_mapped:
+                cm = NewsCategoriesMapping(
+                    NewsID=news_item.NewsID,
+                    NewsCategoryID=category,
+                )
+                db.session.add(cm)
+                db.session.commit()
 
         # The RFC 7231 spec says a 201 Created should return an absolute full path
         server = socket.gethostname()

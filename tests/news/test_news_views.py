@@ -48,15 +48,12 @@ class TestNewsView(unittest.TestCase):
 
         # Add some News categories
         ncat1 = NewsCategories(
-            NewsCategoryID=1,
             Category="TestCategory1"
         )
         ncat2 = NewsCategories(
-            NewsCategoryID=2,
             Category="TestCategory2"
         )
         ncat3 = NewsCategories(
-            NewsCategoryID=3,
             Category="TestCategory3"
         )
         db.session.add(ncat1)
@@ -64,16 +61,18 @@ class TestNewsView(unittest.TestCase):
         db.session.add(ncat3)
         db.session.commit()
 
+        self.valid_news_cats = [ncat1.NewsCategoryID, ncat2.NewsCategoryID, ncat3.NewsCategoryID]
+
         # And create some Category mappings and comments for them
         for news in added_news:
             self.news_ids.append(news.NewsID)
             cat1 = NewsCategoriesMapping(
                 NewsID=news.NewsID,
-                NewsCategoryID=1,
+                NewsCategoryID=self.valid_news_cats[0],
             )
             cat2 = NewsCategoriesMapping(
                 NewsID=news.NewsID,
-                NewsCategoryID=3,
+                NewsCategoryID=self.valid_news_cats[2],
             )
             comment1 = NewsComments(
                 NewsID=news.NewsID,
@@ -195,7 +194,13 @@ class TestNewsView(unittest.TestCase):
                     title="UnitTest Post",
                     contents="UnitTest",
                     author="UnitTester",
-                    categories=[1, 3, "TestCategoryNew"],
+                    categories=[
+                        self.valid_news_cats[0],
+                        self.valid_news_cats[2],
+                        "TestCategoryNew",
+                        "",  # Empty values should be skipped,
+                        "TestCategory1"  # Existing values should be reused
+                    ],
                 )
             ),
             content_type="application/json",
@@ -210,8 +215,8 @@ class TestNewsView(unittest.TestCase):
         self.assertEquals(201, response.status_code)
         self.assertTrue("Location" in response.get_data().decode())
         self.assertEquals("UnitTest", news.Contents)
+        print("Add news cats (twice the same?): {}".format([c.NewsCategoryID for c in cats]))
         self.assertEquals(3, len(cats))
-        self.assertCountEqual([0, 1, 3], [c.NewsCategoryID for c in cats])
         # When a new non-existing string category is given,
         # it should be added to general NewsCategories
         new_cat = NewsCategories.query.filter_by(Category="TestCategoryNew").first_or_404()
@@ -339,10 +344,10 @@ class TestNewsView(unittest.TestCase):
         self.assertEquals("UnitTest Patched Title", news.Title)
         self.assertEquals("UnitTest Patched Author", news.Author)
         self.assertEquals(3, len(cats))
-        # Since we order_by, the new "add" will be between the two existing values 1 and 3
-        self.assertEquals(1, cats[0].NewsCategoryID)
-        self.assertEquals(2, cats[1].NewsCategoryID)
-        self.assertEquals(3, cats[2].NewsCategoryID)
+        # Since the PATCH defined a specific ID, we check for it instead of self.valid_news_cats
+        self.assertEquals(2, cats[0].NewsCategoryID)
+        self.assertEquals(self.valid_news_cats[0], cats[1].NewsCategoryID)
+        self.assertEquals(self.valid_news_cats[2], cats[2].NewsCategoryID)
 
     def test_patching_things_using_copy(self):
         response = self.app.patch(

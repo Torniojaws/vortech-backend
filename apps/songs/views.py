@@ -7,7 +7,7 @@ from sqlalchemy import asc
 from dictalchemy import make_class_dictable
 
 from app import db, cache
-from apps.songs.models import Songs, SongsLyrics
+from apps.songs.models import Songs, SongsLyrics, SongsTabs
 from apps.songs.patches import patch_item
 from apps.utils.auth import admin_only
 from apps.utils.strings import linux_linebreaks
@@ -114,5 +114,22 @@ class SongsView(FlaskView):
             "songTitle": song.Title,
             "lyrics": linux_linebreaks(lyrics.Lyrics),
             "author": lyrics.Author
+        })
+        return make_response(contents, 200)
+
+    @route("/<int:song_id>/tabs", methods=["GET"])
+    @cache.cached(timeout=300)
+    def song_tabs(self, song_id):
+        """Return the tabs to a given Song. Since there can be multiple tabs, we return an array of
+        objects, where each object is one tab. The link(s) will be generated in the frontend."""
+        song = Songs.query.filter_by(SongID=song_id).first_or_404()
+        tabs = SongsTabs.query.filter_by(SongID=song_id).all()
+
+        contents = jsonify({
+            "songTitle": song.Title,
+            "tabs": [{
+                "title": tab.Title,
+                "filename": tab.Filename,
+            } for tab in tabs]
         })
         return make_response(contents, 200)

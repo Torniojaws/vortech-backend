@@ -5,7 +5,7 @@ from flask_caching import Cache
 from sqlalchemy import asc, or_
 
 from app import app, db
-from apps.songs.models import Songs, SongsLyrics
+from apps.songs.models import Songs, SongsLyrics, SongsTabs
 from apps.users.models import Users, UsersAccessTokens, UsersAccessLevels, UsersAccessMapping
 from apps.utils.time import get_datetime_one_hour_ahead
 
@@ -46,6 +46,27 @@ class TestSongsViews(unittest.TestCase):
             SongID=entry1.SongID,
         )
         db.session.add(lyrics)
+        db.session.commit()
+
+        # Add tabs for the songs. Song 3 has no tabs on purpose.
+        tab1 = SongsTabs(
+            Title="Guitar Pro 5",
+            Filename="unittest1.gp5",
+            SongID=entry1.SongID
+        )
+        tab2 = SongsTabs(
+            Title="Guitar Pro 5",
+            Filename="unittest - song 2.gp5",
+            SongID=entry2.SongID
+        )
+        tab3 = SongsTabs(
+            Title="Text",
+            Filename="unittest2.txt",
+            SongID=entry2.SongID
+        )
+        db.session.add(tab1)
+        db.session.add(tab2)
+        db.session.add(tab3)
         db.session.commit()
 
         self.valid_song_ids = []
@@ -148,6 +169,49 @@ class TestSongsViews(unittest.TestCase):
     def test_getting_missing_lyrics_to_existing_song(self):
         response = self.app.get("/api/1.0/songs/{}/lyrics".format(self.valid_song_ids[1]))
         self.assertEquals(404, response.status_code)
+
+    def test_getting_tabs_with_one(self):
+        """Should return the only tab for the song."""
+        response = self.app.get("/api/1.0/songs/{}/tabs".format(self.valid_song_ids[0]))
+
+        tabs = json.loads(response.get_data().decode())
+
+        self.assertEquals(200, response.status_code)
+        self.assertTrue("songTitle" in tabs)
+        self.assertEquals("UnitTest Song One", tabs["songTitle"])
+        self.assertTrue("tabs" in tabs)
+        self.assertEquals(1, len(tabs["tabs"]))
+        expected = {"title": "Guitar Pro 5", "filename": "unittest1.gp5"}
+        self.assertEquals(expected, tabs["tabs"][0])
+
+    def test_getting_tabs_with_many(self):
+        """Should return all tabs for the song."""
+        response = self.app.get("/api/1.0/songs/{}/tabs".format(self.valid_song_ids[1]))
+
+        tabs = json.loads(response.get_data().decode())
+
+        self.assertEquals(200, response.status_code)
+        self.assertTrue("songTitle" in tabs)
+        self.assertEquals("UnitTest Song Two", tabs["songTitle"])
+        self.assertTrue("tabs" in tabs)
+        self.assertEquals(2, len(tabs["tabs"]))
+        expected = [
+            {"title": "Text", "filename": "unittest2.txt"},
+            {"title": "Guitar Pro 5", "filename": "unittest - song 2.gp5"}
+        ]
+        self.assertCountEqual(expected, tabs["tabs"])
+
+    def test_getting_tabs_to_nonexisting_song(self):
+        response = self.app.get("/api/1.0/songs/abc/tabs")
+        self.assertEquals(404, response.status_code)
+
+    def test_getting_missing_tabs_to_existing_song(self):
+        """Should return an empty array for tabs."""
+        response = self.app.get("/api/1.0/songs/{}/tabs".format(self.valid_song_ids[2]))
+        tabs = json.loads(response.get_data().decode())
+
+        self.assertEquals(200, response.status_code)
+        self.assertEquals([], tabs["tabs"])
 
     def test_adding_songs(self):
         """Should add a new entry to the table and then GET should return them."""

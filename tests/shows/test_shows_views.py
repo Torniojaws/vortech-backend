@@ -409,7 +409,6 @@ class TestShowsViews(unittest.TestCase):
         shows = Shows.query.filter(Shows.Venue.like("UnitTest%")).order_by(
             asc(Shows.ShowID)
         ).all()
-        print("Shows are: {}".format([s.Venue for s in shows]))
 
         get_shows = self.app.get("/api/1.0/shows/")
         showdata = json.loads(get_shows.get_data().decode())

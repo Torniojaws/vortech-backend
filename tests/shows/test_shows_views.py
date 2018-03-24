@@ -1,6 +1,7 @@
 import json
 import unittest
 
+from flask_caching import Cache
 from sqlalchemy import asc, or_
 
 from app import app, db
@@ -13,6 +14,13 @@ from apps.utils.time import get_datetime
 class TestShowsViews(unittest.TestCase):
     def setUp(self):
         """Add some test entries to the database, so we can test getting the latest one."""
+
+        # Clear redis cache completely
+        cache = Cache()
+        cache.init_app(app, config={"CACHE_TYPE": "redis"})
+        with app.app_context():
+            cache.clear()
+
         self.app = app.test_client()
 
         entry1 = Shows(
@@ -58,7 +66,7 @@ class TestShowsViews(unittest.TestCase):
         # And a valid Song
         song = Songs(
             Title="UnitTest Song",
-            Duration=234,
+            Duration=235,
         )
         db.session.add(song)
         db.session.commit()
@@ -139,7 +147,7 @@ class TestShowsViews(unittest.TestCase):
             db.session.delete(show)
         db.session.commit()
 
-        for person in People.query.filter(People.Name.like("UnitTest%")).all():
+        for person in People.query.filter_by(PersonID=self.valid_person_id).all():
             db.session.delete(person)
 
         for song in Songs.query.filter(Songs.Title.like("UnitTest%")).all():
@@ -149,6 +157,7 @@ class TestShowsViews(unittest.TestCase):
             ShowsOtherBands.BandName.like("UnitTest%")
         ).all():
             db.session.delete(band)
+        db.session.commit()
 
     def test_getting_shows_gets_all(self):
         """When you use GET /shows, it should return all shows in the DB in insert order."""
@@ -400,10 +409,10 @@ class TestShowsViews(unittest.TestCase):
         shows = Shows.query.filter(Shows.Venue.like("UnitTest%")).order_by(
             asc(Shows.ShowID)
         ).all()
+        print("Shows are: {}".format([s.Venue for s in shows]))
 
         get_shows = self.app.get("/api/1.0/shows/")
         showdata = json.loads(get_shows.get_data().decode())
-        print(showdata)
 
         self.assertEquals(201, response.status_code)
         self.assertTrue("Location" in response.get_data().decode())
@@ -447,7 +456,6 @@ class TestShowsViews(unittest.TestCase):
 
         get_show = self.app.get("/api/1.0/shows/{}".format(self.valid_show_ids[1]))
         showdata = json.loads(get_show.get_data().decode())
-        print(showdata)
 
         self.assertEquals(200, response.status_code)
         self.assertEquals(200, get_show.status_code)

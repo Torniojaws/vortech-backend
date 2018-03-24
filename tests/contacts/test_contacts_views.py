@@ -5,6 +5,7 @@ they'll be in the DB."""
 import json
 import unittest
 
+from flask_caching import Cache
 from sqlalchemy import desc
 
 from app import app, db
@@ -13,6 +14,13 @@ from apps.contacts.models import Contacts
 
 class TestContactsViews(unittest.TestCase):
     def setUp(self):
+
+        # Clear redis cache completely
+        cache = Cache()
+        cache.init_app(app, config={"CACHE_TYPE": "redis"})
+        with app.app_context():
+            cache.clear()
+
         self.app = app.test_client()
 
         # Insert two contacts entries to test we get the newest by Created

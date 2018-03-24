@@ -33,6 +33,7 @@ class SongsLyrics(db.Model):
     __tablename__ = "SongsLyrics"
     SongsLyricsID = db.Column(db.Integer, primary_key=True)
     Lyrics = db.Column(db.Text, nullable=False)
+    Author = db.Column(db.String(190), nullable=False)
     SongID = db.Column(
         db.Integer, db.ForeignKey("Songs.SongID", ondelete="CASCADE"), nullable=False
     )

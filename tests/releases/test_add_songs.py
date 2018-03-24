@@ -38,10 +38,7 @@ class TestAddPeople(unittest.TestCase):
         self.existing_song_id = song.SongID
 
     def tearDown(self):
-        songs = Songs.query.filter(
-            Songs.Title.like("UnitTest%")
-        ).all()
-        for song in songs:
+        for song in Songs.query.filter(Songs.Title.like("UnitTest%")).all():
             db.session.delete(song)
         db.session.commit()
 

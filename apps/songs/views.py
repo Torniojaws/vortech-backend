@@ -9,6 +9,7 @@ from dictalchemy import make_class_dictable
 from app import db, cache
 from apps.songs.models import Songs, SongsLyrics
 from apps.songs.patches import patch_item
+from apps.utils.strings import linux_linebreaks
 
 make_class_dictable(Songs)
 
@@ -103,11 +104,10 @@ class SongsView(FlaskView):
         """Return the lyrics to a given Song"""
         song = Songs.query.filter_by(SongID=song_id).first_or_404()
         lyrics = SongsLyrics.query.filter_by(SongID=song_id).first_or_404()
-        # Make sure we return <br /> instead \n or \r\n
-        br_lyrics = lyrics.Lyrics.replace('\r', '').replace('\n', '<br />')
 
         contents = jsonify({
             "songTitle": song.Title,
-            "lyrics": br_lyrics
+            "lyrics": linux_linebreaks(lyrics.Lyrics),
+            "author": lyrics.Author
         })
         return make_response(contents, 200)

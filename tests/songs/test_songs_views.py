@@ -1,6 +1,7 @@
 import json
 import unittest
 
+from flask_caching import Cache
 from sqlalchemy import asc, or_
 
 from app import app, db
@@ -10,6 +11,13 @@ from apps.songs.models import Songs, SongsLyrics
 class TestSongsViews(unittest.TestCase):
     def setUp(self):
         """Add some test entries to the database, so we can test getting the latest one."""
+
+        # Clear redis cache completely
+        cache = Cache()
+        cache.init_app(app, config={"CACHE_TYPE": "redis"})
+        with app.app_context():
+            cache.clear()
+
         self.app = app.test_client()
 
         entry1 = Songs(
@@ -29,9 +37,10 @@ class TestSongsViews(unittest.TestCase):
         db.session.add(entry3)
         db.session.commit()
 
-        # Add lyrics for the first song. This also tests changing linebreaks to <br />
+        # Add lyrics for the first song. The mix of linebreaks is on purpose
         lyrics = SongsLyrics(
-            Lyrics="My example lyrics\nAre here<br />\r\nNew paragraph",
+            Lyrics="My example lyrics\nAre here<br />\r\nNew paragraph\r",
+            Author="UnitTester",
             SongID=entry1.SongID,
         )
         db.session.add(lyrics)
@@ -84,8 +93,10 @@ class TestSongsViews(unittest.TestCase):
         self.assertEquals(200, response.status_code)
         self.assertTrue("songTitle" in lyrics)
         self.assertEquals("UnitTest Song One", lyrics["songTitle"])
+        self.assertTrue("author" in lyrics)
+        self.assertEquals(lyrics["author"], "UnitTester")
         self.assertTrue("lyrics" in lyrics)
-        self.assertEquals("My example lyrics<br />Are here<br /><br />New paragraph", lyrics["lyrics"])
+        self.assertEquals("My example lyrics\nAre here\n\nNew paragraph\n", lyrics["lyrics"])
 
     def test_getting_lyrics_to_nonexisting_song(self):
         response = self.app.get("/api/1.0/songs/abc/lyrics")
@@ -116,6 +127,7 @@ class TestSongsViews(unittest.TestCase):
 
         self.assertEquals(201, response.status_code)
         self.assertTrue("Location" in response.get_data().decode())
+        print([(s.Title, s.Duration) for s in songs])
         self.assertEquals("UnitTest Song Four", songs[3].Title)
 
         # Verify the result of GET after the POST

@@ -241,6 +241,7 @@ class ReleasesView(FlaskView):
                 dict(
                     title=song.Title,
                     duration=song.Duration,
+                    id=song.SongID,
                 )
             )
 

@@ -8,10 +8,11 @@ from sqlalchemy import asc, func, and_
 from app import db, cache
 from apps.photos.models import Photos
 from apps.releases.models import Releases
+from apps.shop.models import ShopItems
 from apps.songs.models import Songs
 from apps.utils.auth import validate_user
 from apps.utils.time import get_datetime
-from apps.votes.models import VotesReleases, VotesPhotos, VotesSongs
+from apps.votes.models import VotesReleases, VotesPhotos, VotesShopItems, VotesSongs
 
 
 class ReleaseVotesView(FlaskView):
@@ -279,6 +280,96 @@ class SongsVotesView(FlaskView):
         ).filter_by(SongID=song_id).first()
 
         voteCount = self.get_vote_count(song_id)
+        rating = float(votes.sumVotes) / voteCount
+
+        return round(rating, 2)
+
+
+class ShopItemsVotesView(FlaskView):
+    @cache.cached(timeout=60)
+    def index(self):
+        """Return the votes for all shopitems. Item 1 first. If a shopitem does not have votes,
+        we return zeroes."""
+        shopitems = ShopItems.query.order_by(asc(ShopItems.ShopItemID)).all()
+
+        contents = jsonify({
+            "votes": [{
+                "shopitemID": shopitem.ShopItemID,
+                "voteCount": self.get_vote_count(shopitem.ShopItemID),
+                "rating": self.get_rating(shopitem.ShopItemID),
+            } for shopitem in shopitems]
+        })
+
+        return make_response(contents, 200)
+
+    @cache.cached(timeout=60)
+    def get(self, shopitem_id):
+        """Return the votes for a specific shopitem."""
+        contents = jsonify({
+            "votes": [{
+                "shopitemID": int(shopitem_id),
+                "voteCount": self.get_vote_count(shopitem_id),
+                "rating": self.get_rating(shopitem_id),
+            }]
+        })
+
+        return make_response(contents, 200)
+
+    def post(self):
+        """Add a vote to a shopitem specified in the payload."""
+        data = json.loads(request.data.decode())
+        valid_user_id, registered, invalid_token = validate_user(request.headers)
+
+        existing_vote = None
+        shopitem_id = int(data["shopitemID"])
+        vote = data["rating"]
+
+        if registered:
+            if invalid_token:
+                abort(401)
+            else:
+                # Check if the current registered user has already voted on the shopitem.
+                existing_vote = VotesShopItems.query.filter(
+                    and_(
+                        VotesShopItems.ShopItemID == shopitem_id,
+                        VotesShopItems.UserID == valid_user_id
+                    )
+                ).first()
+
+        if existing_vote:
+            existing_vote.Vote = vote
+            existing_vote.Updated = get_datetime()
+        else:
+            new_vote = VotesShopItems(
+                ShopItemID=shopitem_id,
+                Vote=vote,
+                UserID=valid_user_id,
+                Created=get_datetime(),
+            )
+            db.session.add(new_vote)
+        db.session.commit()
+
+        # The RFC 7231 spec says a 201 Created should return an absolute full path
+        server = socket.gethostname()
+        contents = "Location: {}{}{}".format(
+            server,
+            url_for("ShopItemsVotesView:index"),
+            data["shopitemID"]
+        )
+
+        return make_response(contents, 201)
+
+    def get_vote_count(self, shopitem_id):
+        """Return the amount of votes the shopitem has."""
+        return VotesShopItems.query.filter_by(ShopItemID=shopitem_id).count()
+
+    def get_rating(self, shopitem_id):
+        """Calculate the song rating to 2 decimals with: SUM(votes) / COUNT(votes)"""
+        votes = VotesShopItems.query.with_entities(
+            func.sum(VotesShopItems.Vote).label("sumVotes")
+        ).filter_by(ShopItemID=shopitem_id).first()
+
+        voteCount = self.get_vote_count(shopitem_id)
         rating = float(votes.sumVotes) / voteCount
 
         return round(rating, 2)

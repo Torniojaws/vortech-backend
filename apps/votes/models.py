@@ -68,3 +68,25 @@ class VotesSongs(db.Model):
     )
     Created = db.Column(db.DateTime)
     Updated = db.Column(db.DateTime)
+
+
+class VotesShopItems(db.Model):
+    """All votes for shopitems are in this model."""
+    __tablename__ = "VotesShopItems"
+    VoteID = db.Column(db.Integer, primary_key=True)
+    ShopItemID = db.Column(
+        db.Integer,
+        db.ForeignKey("ShopItems.ShopItemID", ondelete="CASCADE"),
+        nullable=False
+    )
+    Vote = db.Column(
+        db.Float(precision=2, asdecimal=True, decimal_return_scale=2),
+        nullable=False
+    )
+    UserID = db.Column(
+        db.Integer,
+        db.ForeignKey("Users.UserID", ondelete="CASCADE"),
+        nullable=False
+    )
+    Created = db.Column(db.DateTime)
+    Updated = db.Column(db.DateTime)

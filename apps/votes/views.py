@@ -2,7 +2,7 @@ import json
 import socket
 
 from flask import abort, jsonify, make_response, request, url_for
-from flask_classful import FlaskView, route
+from flask_classful import FlaskView
 from sqlalchemy import asc, func, and_
 
 from app import db, cache
@@ -12,13 +12,9 @@ from apps.utils.time import get_datetime
 from apps.votes.models import VotesReleases
 
 
-class VotesView(FlaskView):
-    """This is a bit special, since the base route will not really make sense for any situation.
-    Instead, we'll have special routes for each type. Currently only Releases, though."""
-
-    @route("/releases/", methods=["GET"])
+class ReleaseVotesView(FlaskView):
     @cache.cached(timeout=60)
-    def all_release_votes(self):
+    def index(self):
         """Return the votes for all releases. Release 1 first. If a release does not have votes,
         we return zeroes."""
         releases = Releases.query.order_by(asc(Releases.ReleaseID)).all()
@@ -33,13 +29,12 @@ class VotesView(FlaskView):
 
         return make_response(contents, 200)
 
-    @route("/releases/<int:release_id>", methods=["GET"])
     @cache.cached(timeout=60)
-    def release_votes(self, release_id):
+    def get(self, release_id):
         """Return the votes for a specific release."""
         contents = jsonify({
             "votes": [{
-                "releaseID": release_id,
+                "releaseID": int(release_id),
                 "voteCount": self.get_vote_count(release_id),
                 "rating": self.get_rating(release_id),
             }]
@@ -47,8 +42,7 @@ class VotesView(FlaskView):
 
         return make_response(contents, 200)
 
-    @route("/releases/", methods=["POST"])
-    def add_release_vote(self):
+    def post(self):
         """Add a vote to a release specified in the payload."""
         data = json.loads(request.data.decode())
         valid_user_id, registered, invalid_token = self.validate_user(request.headers)
@@ -86,7 +80,7 @@ class VotesView(FlaskView):
         server = socket.gethostname()
         contents = "Location: {}{}{}".format(
             server,
-            url_for("VotesView:add_release_vote"),
+            url_for("ReleaseVotesView:index"),
             data["releaseID"]
         )
 

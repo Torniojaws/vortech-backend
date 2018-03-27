@@ -50,8 +50,8 @@ def register_views(app):
     from apps.visitors.views import VisitorsView
     VisitorsView.register(app, route_base="{}/visits/".format(api_path))
 
-    from apps.votes.views import VotesView
-    VotesView.register(app, route_base="{}/votes/".format(api_path))
+    from apps.votes.views import ReleaseVotesView
+    ReleaseVotesView.register(app, route_base="{}/votes/releases/".format(api_path))
 
 
 def register_models(app):

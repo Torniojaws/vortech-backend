@@ -8,9 +8,10 @@ from sqlalchemy import asc, func, and_
 from app import db, cache
 from apps.photos.models import Photos
 from apps.releases.models import Releases
+from apps.songs.models import Songs
 from apps.utils.auth import validate_user
 from apps.utils.time import get_datetime
-from apps.votes.models import VotesReleases, VotesPhotos
+from apps.votes.models import VotesReleases, VotesPhotos, VotesSongs
 
 
 class ReleaseVotesView(FlaskView):
@@ -188,6 +189,96 @@ class PhotosVotesView(FlaskView):
         ).filter_by(PhotoID=photo_id).first()
 
         voteCount = self.get_vote_count(photo_id)
+        rating = float(votes.sumVotes) / voteCount
+
+        return round(rating, 2)
+
+
+class SongsVotesView(FlaskView):
+    @cache.cached(timeout=60)
+    def index(self):
+        """Return the votes for all songs. Song 1 first. If a song does not have votes,
+        we return zeroes."""
+        songs = Songs.query.order_by(asc(Songs.SongID)).all()
+
+        contents = jsonify({
+            "votes": [{
+                "songID": song.SongID,
+                "voteCount": self.get_vote_count(song.SongID),
+                "rating": self.get_rating(song.SongID),
+            } for song in songs]
+        })
+
+        return make_response(contents, 200)
+
+    @cache.cached(timeout=60)
+    def get(self, song_id):
+        """Return the votes for a specific song."""
+        contents = jsonify({
+            "votes": [{
+                "songID": int(song_id),
+                "voteCount": self.get_vote_count(song_id),
+                "rating": self.get_rating(song_id),
+            }]
+        })
+
+        return make_response(contents, 200)
+
+    def post(self):
+        """Add a vote to a song specified in the payload."""
+        data = json.loads(request.data.decode())
+        valid_user_id, registered, invalid_token = validate_user(request.headers)
+
+        existing_vote = None
+        song_id = int(data["songID"])
+        vote = data["rating"]
+
+        if registered:
+            if invalid_token:
+                abort(401)
+            else:
+                # Check if the current registered user has already voted on the song.
+                existing_vote = VotesSongs.query.filter(
+                    and_(
+                        VotesSongs.SongID == song_id,
+                        VotesSongs.UserID == valid_user_id
+                    )
+                ).first()
+
+        if existing_vote:
+            existing_vote.Vote = vote
+            existing_vote.Updated = get_datetime()
+        else:
+            new_vote = VotesSongs(
+                SongID=song_id,
+                Vote=vote,
+                UserID=valid_user_id,
+                Created=get_datetime(),
+            )
+            db.session.add(new_vote)
+        db.session.commit()
+
+        # The RFC 7231 spec says a 201 Created should return an absolute full path
+        server = socket.gethostname()
+        contents = "Location: {}{}{}".format(
+            server,
+            url_for("SongsVotesView:index"),
+            data["songID"]
+        )
+
+        return make_response(contents, 201)
+
+    def get_vote_count(self, song_id):
+        """Return the amount of votes the song has."""
+        return VotesSongs.query.filter_by(SongID=song_id).count()
+
+    def get_rating(self, song_id):
+        """Calculate the song rating to 2 decimals with: SUM(votes) / COUNT(votes)"""
+        votes = VotesSongs.query.with_entities(
+            func.sum(VotesSongs.Vote).label("sumVotes")
+        ).filter_by(SongID=song_id).first()
+
+        voteCount = self.get_vote_count(song_id)
         rating = float(votes.sumVotes) / voteCount
 
         return round(rating, 2)

@@ -3,47 +3,32 @@ import unittest
 from sqlalchemy import asc
 
 from app import app, db
-from apps.photos.models import Photos
+from apps.songs.models import Songs
 from apps.users.models import Users, UsersAccessLevels, UsersAccessMapping, UsersAccessTokens
-from apps.votes.models import VotesPhotos
+from apps.votes.models import VotesSongs
 from apps.utils.time import get_datetime, get_datetime_one_hour_ahead
 
 
-class TestVotePhotosView(unittest.TestCase):
+class TestVoteSongsView(unittest.TestCase):
     def setUp(self):
         self.app = app.test_client()
 
-        # Add three photos
-        photo1 = Photos(
-            Image="unittest1.jpg",
-            Caption="UnitTest1",
-            TakenBy="Unittester",
-            Country="Finland",
-            CountryCode="FI",
-            City="Espoo",
-            Created=get_datetime(),
+        # Add three songs
+        song1 = Songs(
+            Title="UnitTest1",
+            Duration=123,
         )
-        photo2 = Photos(
-            Image="unittest2.jpg",
-            Caption="UnitTest2",
-            TakenBy="Unittester",
-            Country="Finland",
-            CountryCode="FI",
-            City="Espoo",
-            Created=get_datetime(),
+        song2 = Songs(
+            Title="UnitTest2",
+            Duration=123,
         )
-        photo3 = Photos(
-            Image="unittest3.jpg",
-            Caption="UnitTest3",
-            TakenBy="Unittester",
-            Country="Finland",
-            CountryCode="FI",
-            City="Espoo",
-            Created=get_datetime(),
+        song3 = Songs(
+            Title="UnitTest3",
+            Duration=123,
         )
-        db.session.add(photo1)
-        db.session.add(photo2)
-        db.session.add(photo3)
+        db.session.add(song1)
+        db.session.add(song2)
+        db.session.add(song3)
         db.session.commit()
 
         # Add a guest and registered user, and a test token for the registered
@@ -94,42 +79,42 @@ class TestVotePhotosView(unittest.TestCase):
         self.valid_token = self.access_token
         self.guest_id = user_guest.UserID
 
-        self.photo_ids = [photo1.PhotoID, photo2.PhotoID, photo3.PhotoID]
+        self.song_ids = [song1.SongID, song2.SongID, song3.SongID]
 
-        # Add some votes for each photo - minimum is 1.0, maximum is 5.0. The real steps will be
+        # Add some votes for each song - minimum is 1.0, maximum is 5.0. The real steps will be
         # in 0.5 increments. However, any 2 decimal float between 1.00 and 5.00 is technically ok.
-        p1_vote1 = VotesPhotos(
-            PhotoID=self.photo_ids[0], Vote=4, UserID=self.guest_id, Created=get_datetime())
-        p1_vote2 = VotesPhotos(
-            PhotoID=self.photo_ids[0], Vote=3.0, UserID=self.guest_id, Created=get_datetime())
-        p1_vote3 = VotesPhotos(
-            PhotoID=self.photo_ids[0], Vote=3.00, UserID=self.guest_id, Created=get_datetime())
-        p2_vote1 = VotesPhotos(
-            PhotoID=self.photo_ids[1], Vote=5, UserID=self.guest_id, Created=get_datetime())
-        p3_vote1 = VotesPhotos(
-            PhotoID=self.photo_ids[2], Vote=4, UserID=self.guest_id, Created=get_datetime())
-        p3_vote2 = VotesPhotos(
-            PhotoID=self.photo_ids[2], Vote=1, UserID=self.guest_id, Created=get_datetime())
+        s1_vote1 = VotesSongs(
+            SongID=self.song_ids[0], Vote=4, UserID=self.guest_id, Created=get_datetime())
+        s1_vote2 = VotesSongs(
+            SongID=self.song_ids[0], Vote=3.0, UserID=self.guest_id, Created=get_datetime())
+        s1_vote3 = VotesSongs(
+            SongID=self.song_ids[0], Vote=3.00, UserID=self.guest_id, Created=get_datetime())
+        s2_vote1 = VotesSongs(
+            SongID=self.song_ids[1], Vote=5, UserID=self.guest_id, Created=get_datetime())
+        s3_vote1 = VotesSongs(
+            SongID=self.song_ids[2], Vote=4, UserID=self.guest_id, Created=get_datetime())
+        s3_vote2 = VotesSongs(
+            SongID=self.song_ids[2], Vote=1, UserID=self.guest_id, Created=get_datetime())
 
         # Add an existing vote for the registered user
-        p3_reg_vote = VotesPhotos(
-            PhotoID=self.photo_ids[2], Vote=4, UserID=self.valid_reg_user,
+        s3_reg_vote = VotesSongs(
+            SongID=self.song_ids[2], Vote=4, UserID=self.valid_reg_user,
             Created=get_datetime()
         )
 
-        db.session.add(p1_vote1)
-        db.session.add(p1_vote2)
-        db.session.add(p1_vote3)
-        db.session.add(p2_vote1)
-        db.session.add(p3_vote1)
-        db.session.add(p3_vote2)
-        db.session.add(p3_reg_vote)
+        db.session.add(s1_vote1)
+        db.session.add(s1_vote2)
+        db.session.add(s1_vote3)
+        db.session.add(s2_vote1)
+        db.session.add(s3_vote1)
+        db.session.add(s3_vote2)
+        db.session.add(s3_reg_vote)
         db.session.commit()
 
     def tearDown(self):
-        # Deleting a photo will also delete the votes for it
-        for photo in Photos.query.filter(Photos.Caption.like("UnitTest%")).all():
-            db.session.delete(photo)
+        # Deleting a song will also delete the votes for it
+        for song in Songs.query.filter(Songs.Title.like("UnitTest%")).all():
+            db.session.delete(song)
         db.session.commit()
 
         for user in Users.query.filter(Users.Username.like("unittest%")).all():
@@ -141,48 +126,48 @@ class TestVotePhotosView(unittest.TestCase):
         db.session.commit()
 
     def test_getting_all_votes(self):
-        """Should return the current votes for all Photos."""
-        response = self.app.get("/api/1.0/votes/photos/")
+        """Should return the current votes for all Songs."""
+        response = self.app.get("/api/1.0/votes/songs/")
         data = json.loads(response.data.decode())
 
         self.assertEquals(200, response.status_code)
         self.assertNotEquals(None, data)
         self.assertEquals(3, len(data["votes"]))
-        self.assertEquals(self.photo_ids[0], data["votes"][0]["photoID"])
+        self.assertEquals(self.song_ids[0], data["votes"][0]["songID"])
         self.assertEquals(3, data["votes"][0]["voteCount"])
         self.assertEquals(3.33, data["votes"][0]["rating"])
 
-        self.assertEquals(self.photo_ids[2], data["votes"][2]["photoID"])
+        self.assertEquals(self.song_ids[2], data["votes"][2]["songID"])
         self.assertEquals(3, data["votes"][2]["voteCount"])
         self.assertEquals(3, data["votes"][2]["rating"])
 
-    def test_getting_votes_for_one_photo(self):
-        """Should return the votes for the specified photo."""
-        response = self.app.get("/api/1.0/votes/photos/{}".format(self.photo_ids[1]))
+    def test_getting_votes_for_one_song(self):
+        """Should return the votes for the specified song."""
+        response = self.app.get("/api/1.0/votes/songs/{}".format(self.song_ids[1]))
         data = json.loads(response.data.decode())
 
         self.assertEquals(200, response.status_code)
         self.assertNotEquals(None, data)
         self.assertEquals(1, len(data["votes"]))
-        self.assertEquals(self.photo_ids[1], data["votes"][0]["photoID"])
+        self.assertEquals(self.song_ids[1], data["votes"][0]["songID"])
         self.assertEquals(1, data["votes"][0]["voteCount"])
         self.assertEquals(5, data["votes"][0]["rating"])
 
     def test_adding_a_vote_as_guest(self):
-        """Should add a new vote for the specified photo, which is given in the JSON."""
+        """Should add a new vote for the specified song, which is given in the JSON."""
         response = self.app.post(
-            "/api/1.0/votes/photos/",
+            "/api/1.0/votes/songs/",
             data=json.dumps(
                 dict(
-                    photoID=self.photo_ids[1],
+                    songID=self.song_ids[1],
                     rating=4,
                 )
             ),
             content_type="application/json"
         )
 
-        votes = VotesPhotos.query.filter_by(PhotoID=self.photo_ids[1]).order_by(
-            asc(VotesPhotos.VoteID)
+        votes = VotesSongs.query.filter_by(SongID=self.song_ids[1]).order_by(
+            asc(VotesSongs.VoteID)
         ).all()
 
         self.assertEquals(201, response.status_code)
@@ -194,10 +179,10 @@ class TestVotePhotosView(unittest.TestCase):
     def test_adding_a_vote_as_registered_user(self):
         """Should add a new vote with the userID."""
         response = self.app.post(
-            "/api/1.0/votes/photos/",
+            "/api/1.0/votes/songs/",
             data=json.dumps(
                 dict(
-                    photoID=self.photo_ids[1],
+                    songID=self.song_ids[1],
                     rating=3.5,
                 )
             ),
@@ -208,8 +193,8 @@ class TestVotePhotosView(unittest.TestCase):
             }
         )
 
-        votes = VotesPhotos.query.filter_by(PhotoID=self.photo_ids[1]).order_by(
-            asc(VotesPhotos.VoteID)
+        votes = VotesSongs.query.filter_by(SongID=self.song_ids[1]).order_by(
+            asc(VotesSongs.VoteID)
         ).all()
 
         self.assertEquals(201, response.status_code)
@@ -220,10 +205,10 @@ class TestVotePhotosView(unittest.TestCase):
     def test_adding_a_vote_as_registered_user_with_invalid_token(self):
         """Should throw a 401, since it is an invalid case."""
         response = self.app.post(
-            "/api/1.0/votes/photos/",
+            "/api/1.0/votes/songs/",
             data=json.dumps(
                 dict(
-                    photoID=self.photo_ids[1],
+                    songID=self.song_ids[1],
                     rating=3.5,
                 )
             ),
@@ -234,21 +219,21 @@ class TestVotePhotosView(unittest.TestCase):
             }
         )
 
-        votes = VotesPhotos.query.filter_by(PhotoID=self.photo_ids[1]).order_by(
-            asc(VotesPhotos.VoteID)
+        votes = VotesSongs.query.filter_by(SongID=self.song_ids[1]).order_by(
+            asc(VotesSongs.VoteID)
         ).all()
 
         self.assertEquals(401, response.status_code)
         self.assertEquals(1, len(votes))
         self.assertEquals(5.00, float(votes[0].Vote))
 
-    def test_adding_another_vote_as_registered_user_for_same_photo(self):
+    def test_adding_another_vote_as_registered_user_for_same_song(self):
         """Should replace the existing vote with the new one."""
         response = self.app.post(
-            "/api/1.0/votes/photos/",
+            "/api/1.0/votes/songs/",
             data=json.dumps(
                 dict(
-                    photoID=self.photo_ids[2],
+                    songID=self.song_ids[2],
                     rating=3,
                 )
             ),
@@ -259,15 +244,15 @@ class TestVotePhotosView(unittest.TestCase):
             }
         )
 
-        votes = VotesPhotos.query.filter_by(PhotoID=self.photo_ids[2]).order_by(
-            asc(VotesPhotos.VoteID)
+        votes = VotesSongs.query.filter_by(SongID=self.song_ids[2]).order_by(
+            asc(VotesSongs.VoteID)
         ).all()
 
-        votes_by_reg = VotesPhotos.query.filter(
-            VotesPhotos.PhotoID == self.photo_ids[2],
-            VotesPhotos.UserID == self.valid_reg_user
+        votes_by_reg = VotesSongs.query.filter(
+            VotesSongs.SongID == self.song_ids[2],
+            VotesSongs.UserID == self.valid_reg_user
         ).order_by(
-            asc(VotesPhotos.VoteID)
+            asc(VotesSongs.VoteID)
         ).all()
 
         self.assertEquals(201, response.status_code)

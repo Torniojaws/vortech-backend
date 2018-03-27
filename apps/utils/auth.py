@@ -98,3 +98,20 @@ def user_id_or_guest(user_id):
         valid_id = 1
 
     return valid_id
+
+
+def validate_user(headers):
+    """Validate the user and return the results."""
+    user_id = headers.get("User", "")
+    token = headers.get("Authorization", "")
+    registered = False
+
+    if user_id:
+        valid_user_id = user_id_or_guest(user_id)
+        registered = valid_user_id > 1
+    else:
+        valid_user_id = 1
+
+    is_token_invalid = invalid_token(user_id, token)
+
+    return valid_user_id, registered, is_token_invalid

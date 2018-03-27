@@ -50,7 +50,6 @@ class UsersView(FlaskView):
         })
         return make_response(contents, 200)
 
-    @admin_only
     def post(self):
         """Add a new User. All new users start at normal level. Any promotions to eg. moderator,
         admin, or something else happens separately after the user is added. Passwords will be

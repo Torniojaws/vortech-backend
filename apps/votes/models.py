@@ -17,4 +17,76 @@ class VotesReleases(db.Model):
         db.Float(precision=2, asdecimal=True, decimal_return_scale=2),
         nullable=False
     )
+    UserID = db.Column(
+        db.Integer,
+        db.ForeignKey("Users.UserID", ondelete="CASCADE"),
+        nullable=False
+    )
     Created = db.Column(db.DateTime)
+    Updated = db.Column(db.DateTime)
+
+
+class VotesPhotos(db.Model):
+    """All votes for photos are in this model."""
+    __tablename__ = "VotesPhotos"
+    VoteID = db.Column(db.Integer, primary_key=True)
+    PhotoID = db.Column(
+        db.Integer,
+        db.ForeignKey("Photos.PhotoID", ondelete="CASCADE"),
+        nullable=False
+    )
+    Vote = db.Column(
+        db.Float(precision=2, asdecimal=True, decimal_return_scale=2),
+        nullable=False
+    )
+    UserID = db.Column(
+        db.Integer,
+        db.ForeignKey("Users.UserID", ondelete="CASCADE"),
+        nullable=False
+    )
+    Created = db.Column(db.DateTime)
+    Updated = db.Column(db.DateTime)
+
+
+class VotesSongs(db.Model):
+    """All votes for songs are in this model."""
+    __tablename__ = "VotesSongs"
+    VoteID = db.Column(db.Integer, primary_key=True)
+    SongID = db.Column(
+        db.Integer,
+        db.ForeignKey("Songs.SongID", ondelete="CASCADE"),
+        nullable=False
+    )
+    Vote = db.Column(
+        db.Float(precision=2, asdecimal=True, decimal_return_scale=2),
+        nullable=False
+    )
+    UserID = db.Column(
+        db.Integer,
+        db.ForeignKey("Users.UserID", ondelete="CASCADE"),
+        nullable=False
+    )
+    Created = db.Column(db.DateTime)
+    Updated = db.Column(db.DateTime)
+
+
+class VotesShopItems(db.Model):
+    """All votes for shopitems are in this model."""
+    __tablename__ = "VotesShopItems"
+    VoteID = db.Column(db.Integer, primary_key=True)
+    ShopItemID = db.Column(
+        db.Integer,
+        db.ForeignKey("ShopItems.ShopItemID", ondelete="CASCADE"),
+        nullable=False
+    )
+    Vote = db.Column(
+        db.Float(precision=2, asdecimal=True, decimal_return_scale=2),
+        nullable=False
+    )
+    UserID = db.Column(
+        db.Integer,
+        db.ForeignKey("Users.UserID", ondelete="CASCADE"),
+        nullable=False
+    )
+    Created = db.Column(db.DateTime)
+    Updated = db.Column(db.DateTime)

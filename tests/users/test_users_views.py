@@ -149,11 +149,7 @@ class TestUsersView(unittest.TestCase):
                     password="unittesting",
                 )
             ),
-            content_type="application/json",
-            headers={
-                'User': self.user_id,
-                'Authorization': self.access_token
-            }
+            content_type="application/json"
         )
 
         user = Users.query.filter_by(Name="UnitTest Post").first_or_404()
@@ -184,11 +180,7 @@ class TestUsersView(unittest.TestCase):
                     password="",
                 )
             ),
-            content_type="application/json",
-            headers={
-                'User': self.user_id,
-                'Authorization': self.access_token
-            }
+            content_type="application/json"
         )
 
         response = json.loads(resp.get_data().decode())
@@ -209,11 +201,7 @@ class TestUsersView(unittest.TestCase):
                     password="short",
                 )
             ),
-            content_type="application/json",
-            headers={
-                'User': self.user_id,
-                'Authorization': self.access_token
-            }
+            content_type="application/json"
         )
 
         response = json.loads(resp.get_data().decode())

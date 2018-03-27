@@ -3,43 +3,47 @@ import unittest
 from sqlalchemy import asc
 
 from app import app, db
-from apps.releases.models import Releases
+from apps.photos.models import Photos
 from apps.users.models import Users, UsersAccessLevels, UsersAccessMapping, UsersAccessTokens
-from apps.votes.models import VotesReleases
+from apps.votes.models import VotesPhotos
 from apps.utils.time import get_datetime, get_datetime_one_hour_ahead
 
 
-class TestVoteReleasesView(unittest.TestCase):
+class TestVotePhotosView(unittest.TestCase):
     def setUp(self):
         self.app = app.test_client()
-        # Add three releases
-        release1 = Releases(
-            Title="UnitTest 1",
-            Date=get_datetime(),
-            Artist="UnitTest Arts 1",
-            Credits="UnitTest is a good and fun activity",
+
+        # Add three photos
+        photo1 = Photos(
+            Image="unittest1.jpg",
+            Caption="UnitTest1",
+            TakenBy="Unittester",
+            Country="Finland",
+            CountryCode="FI",
+            City="Espoo",
             Created=get_datetime(),
-            ReleaseCode="TEST001"
         )
-        release2 = Releases(
-            Title="UnitTest 2",
-            Date=get_datetime(),
-            Artist="UnitTest 2 Arts",
-            Credits="UnitTest too is good for testing",
+        photo2 = Photos(
+            Image="unittest2.jpg",
+            Caption="UnitTest2",
+            TakenBy="Unittester",
+            Country="Finland",
+            CountryCode="FI",
+            City="Espoo",
             Created=get_datetime(),
-            ReleaseCode="TEST002"
         )
-        release3 = Releases(
-            Title="UnitTest 3",
-            Date=get_datetime(),
-            Artist="UnitTest 3 Arts",
-            Credits="UnitTest three's a crowd",
+        photo3 = Photos(
+            Image="unittest3.jpg",
+            Caption="UnitTest3",
+            TakenBy="Unittester",
+            Country="Finland",
+            CountryCode="FI",
+            City="Espoo",
             Created=get_datetime(),
-            ReleaseCode="TEST003"
         )
-        db.session.add(release1)
-        db.session.add(release2)
-        db.session.add(release3)
+        db.session.add(photo1)
+        db.session.add(photo2)
+        db.session.add(photo3)
         db.session.commit()
 
         # Add a guest and registered user, and a test token for the registered
@@ -90,43 +94,42 @@ class TestVoteReleasesView(unittest.TestCase):
         self.valid_token = self.access_token
         self.guest_id = user_guest.UserID
 
-        self.release_ids = [release1.ReleaseID, release2.ReleaseID, release3.ReleaseID]
+        self.photo_ids = [photo1.PhotoID, photo2.PhotoID, photo3.PhotoID]
 
-        # Add some votes for each release - minimum is 1.0, maximum is 5.0. The real steps will be
+        # Add some votes for each photo - minimum is 1.0, maximum is 5.0. The real steps will be
         # in 0.5 increments. However, any 2 decimal float between 1.00 and 5.00 is technically ok.
-        rel1_vote1 = VotesReleases(
-            ReleaseID=self.release_ids[0], Vote=4, UserID=self.guest_id, Created=get_datetime())
-        rel1_vote2 = VotesReleases(
-            ReleaseID=self.release_ids[0], Vote=3.0, UserID=self.guest_id, Created=get_datetime())
-        rel1_vote3 = VotesReleases(
-            ReleaseID=self.release_ids[0], Vote=3.00, UserID=self.guest_id, Created=get_datetime()
-        )
-        rel2_vote1 = VotesReleases(
-            ReleaseID=self.release_ids[1], Vote=5, UserID=self.guest_id, Created=get_datetime())
-        rel3_vote1 = VotesReleases(
-            ReleaseID=self.release_ids[2], Vote=4, UserID=self.guest_id, Created=get_datetime())
-        rel3_vote2 = VotesReleases(
-            ReleaseID=self.release_ids[2], Vote=1, UserID=self.guest_id, Created=get_datetime())
+        p1_vote1 = VotesPhotos(
+            PhotoID=self.photo_ids[0], Vote=4, UserID=self.guest_id, Created=get_datetime())
+        p1_vote2 = VotesPhotos(
+            PhotoID=self.photo_ids[0], Vote=3.0, UserID=self.guest_id, Created=get_datetime())
+        p1_vote3 = VotesPhotos(
+            PhotoID=self.photo_ids[0], Vote=3.00, UserID=self.guest_id, Created=get_datetime())
+        p2_vote1 = VotesPhotos(
+            PhotoID=self.photo_ids[1], Vote=5, UserID=self.guest_id, Created=get_datetime())
+        p3_vote1 = VotesPhotos(
+            PhotoID=self.photo_ids[2], Vote=4, UserID=self.guest_id, Created=get_datetime())
+        p3_vote2 = VotesPhotos(
+            PhotoID=self.photo_ids[2], Vote=1, UserID=self.guest_id, Created=get_datetime())
 
         # Add an existing vote for the registered user
-        rel3_reg_vote = VotesReleases(
-            ReleaseID=self.release_ids[2], Vote=4, UserID=self.valid_reg_user,
+        p3_reg_vote = VotesPhotos(
+            PhotoID=self.photo_ids[2], Vote=4, UserID=self.valid_reg_user,
             Created=get_datetime()
         )
 
-        db.session.add(rel1_vote1)
-        db.session.add(rel1_vote2)
-        db.session.add(rel1_vote3)
-        db.session.add(rel2_vote1)
-        db.session.add(rel3_vote1)
-        db.session.add(rel3_vote2)
-        db.session.add(rel3_reg_vote)
+        db.session.add(p1_vote1)
+        db.session.add(p1_vote2)
+        db.session.add(p1_vote3)
+        db.session.add(p2_vote1)
+        db.session.add(p3_vote1)
+        db.session.add(p3_vote2)
+        db.session.add(p3_reg_vote)
         db.session.commit()
 
     def tearDown(self):
-        # Deleting a release will also delete the votes for it
-        for release in Releases.query.filter(Releases.Title.like("UnitTest%")).all():
-            db.session.delete(release)
+        # Deleting a photo will also delete the votes for it
+        for photo in Photos.query.filter(Photos.Caption.like("UnitTest%")).all():
+            db.session.delete(photo)
         db.session.commit()
 
         for user in Users.query.filter(Users.Username.like("unittest%")).all():
@@ -138,48 +141,48 @@ class TestVoteReleasesView(unittest.TestCase):
         db.session.commit()
 
     def test_getting_all_votes(self):
-        """Should return the current votes for all releases."""
-        response = self.app.get("/api/1.0/votes/releases/")
+        """Should return the current votes for all Photos."""
+        response = self.app.get("/api/1.0/votes/photos/")
         data = json.loads(response.data.decode())
 
         self.assertEquals(200, response.status_code)
         self.assertNotEquals(None, data)
         self.assertEquals(3, len(data["votes"]))
-        self.assertEquals(self.release_ids[0], data["votes"][0]["releaseID"])
+        self.assertEquals(self.photo_ids[0], data["votes"][0]["photoID"])
         self.assertEquals(3, data["votes"][0]["voteCount"])
         self.assertEquals(3.33, data["votes"][0]["rating"])
 
-        self.assertEquals(self.release_ids[2], data["votes"][2]["releaseID"])
+        self.assertEquals(self.photo_ids[2], data["votes"][2]["photoID"])
         self.assertEquals(3, data["votes"][2]["voteCount"])
         self.assertEquals(3, data["votes"][2]["rating"])
 
-    def test_getting_votes_for_one_release(self):
-        """Should return the votes for the specified release."""
-        response = self.app.get("/api/1.0/votes/releases/{}".format(self.release_ids[1]))
+    def test_getting_votes_for_one_photo(self):
+        """Should return the votes for the specified photo."""
+        response = self.app.get("/api/1.0/votes/photos/{}".format(self.photo_ids[1]))
         data = json.loads(response.data.decode())
 
         self.assertEquals(200, response.status_code)
         self.assertNotEquals(None, data)
         self.assertEquals(1, len(data["votes"]))
-        self.assertEquals(self.release_ids[1], data["votes"][0]["releaseID"])
+        self.assertEquals(self.photo_ids[1], data["votes"][0]["photoID"])
         self.assertEquals(1, data["votes"][0]["voteCount"])
         self.assertEquals(5, data["votes"][0]["rating"])
 
     def test_adding_a_vote_as_guest(self):
-        """Should add a new vote for the specified release, which is given in the JSON."""
+        """Should add a new vote for the specified photo, which is given in the JSON."""
         response = self.app.post(
-            "/api/1.0/votes/releases/",
+            "/api/1.0/votes/photos/",
             data=json.dumps(
                 dict(
-                    releaseID=self.release_ids[1],
+                    photoID=self.photo_ids[1],
                     rating=4,
                 )
             ),
             content_type="application/json"
         )
 
-        votes = VotesReleases.query.filter_by(ReleaseID=self.release_ids[1]).order_by(
-            asc(VotesReleases.VoteID)
+        votes = VotesPhotos.query.filter_by(PhotoID=self.photo_ids[1]).order_by(
+            asc(VotesPhotos.VoteID)
         ).all()
 
         self.assertEquals(201, response.status_code)
@@ -191,10 +194,10 @@ class TestVoteReleasesView(unittest.TestCase):
     def test_adding_a_vote_as_registered_user(self):
         """Should add a new vote with the userID."""
         response = self.app.post(
-            "/api/1.0/votes/releases/",
+            "/api/1.0/votes/photos/",
             data=json.dumps(
                 dict(
-                    releaseID=self.release_ids[1],
+                    photoID=self.photo_ids[1],
                     rating=3.5,
                 )
             ),
@@ -205,8 +208,8 @@ class TestVoteReleasesView(unittest.TestCase):
             }
         )
 
-        votes = VotesReleases.query.filter_by(ReleaseID=self.release_ids[1]).order_by(
-            asc(VotesReleases.VoteID)
+        votes = VotesPhotos.query.filter_by(PhotoID=self.photo_ids[1]).order_by(
+            asc(VotesPhotos.VoteID)
         ).all()
 
         self.assertEquals(201, response.status_code)
@@ -217,10 +220,10 @@ class TestVoteReleasesView(unittest.TestCase):
     def test_adding_a_vote_as_registered_user_with_invalid_token(self):
         """Should throw a 401, since it is an invalid case."""
         response = self.app.post(
-            "/api/1.0/votes/releases/",
+            "/api/1.0/votes/photos/",
             data=json.dumps(
                 dict(
-                    releaseID=self.release_ids[1],
+                    photoID=self.photo_ids[1],
                     rating=3.5,
                 )
             ),
@@ -231,21 +234,21 @@ class TestVoteReleasesView(unittest.TestCase):
             }
         )
 
-        votes = VotesReleases.query.filter_by(ReleaseID=self.release_ids[1]).order_by(
-            asc(VotesReleases.VoteID)
+        votes = VotesPhotos.query.filter_by(PhotoID=self.photo_ids[1]).order_by(
+            asc(VotesPhotos.VoteID)
         ).all()
 
         self.assertEquals(401, response.status_code)
         self.assertEquals(1, len(votes))
         self.assertEquals(5.00, float(votes[0].Vote))
 
-    def test_adding_another_vote_as_registered_user_for_same_release(self):
+    def test_adding_another_vote_as_registered_user_for_same_photo(self):
         """Should replace the existing vote with the new one."""
         response = self.app.post(
-            "/api/1.0/votes/releases/",
+            "/api/1.0/votes/photos/",
             data=json.dumps(
                 dict(
-                    releaseID=self.release_ids[2],
+                    photoID=self.photo_ids[2],
                     rating=3,
                 )
             ),
@@ -256,15 +259,15 @@ class TestVoteReleasesView(unittest.TestCase):
             }
         )
 
-        votes = VotesReleases.query.filter_by(ReleaseID=self.release_ids[2]).order_by(
-            asc(VotesReleases.VoteID)
+        votes = VotesPhotos.query.filter_by(PhotoID=self.photo_ids[2]).order_by(
+            asc(VotesPhotos.VoteID)
         ).all()
 
-        votes_by_reg = VotesReleases.query.filter(
-            VotesReleases.ReleaseID == self.release_ids[2],
-            VotesReleases.UserID == self.valid_reg_user
+        votes_by_reg = VotesPhotos.query.filter(
+            VotesPhotos.PhotoID == self.photo_ids[2],
+            VotesPhotos.UserID == self.valid_reg_user
         ).order_by(
-            asc(VotesReleases.VoteID)
+            asc(VotesPhotos.VoteID)
         ).all()
 
         self.assertEquals(201, response.status_code)

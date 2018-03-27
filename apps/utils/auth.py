@@ -86,3 +86,32 @@ def registered_only(f):
             abort(401)
         return f(*args, **kwargs)  # pragma: no cover
     return check_user_level
+
+
+def user_id_or_guest(user_id):
+    """Validate the input and return the userID, or the guest userID (= 1)"""
+    try:
+        valid_id = int(user_id)
+    except (ValueError, TypeError):
+        valid_id = 1
+    if valid_id <= 0:
+        valid_id = 1
+
+    return valid_id
+
+
+def validate_user(headers):
+    """Validate the user and return the results."""
+    user_id = headers.get("User", "")
+    token = headers.get("Authorization", "")
+    registered = False
+
+    if user_id:
+        valid_user_id = user_id_or_guest(user_id)
+        registered = valid_user_id > 1
+    else:
+        valid_user_id = 1
+
+    is_token_invalid = invalid_token(user_id, token)
+
+    return valid_user_id, registered, is_token_invalid

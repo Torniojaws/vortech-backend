@@ -7,6 +7,8 @@ from apps.utils.auth import (
     invalid_token,
     user_is_admin,
     user_is_registered_or_more,
+    user_id_or_guest,
+    validate_user,
 )
 
 
@@ -100,6 +102,16 @@ class TestAuthFunctions(unittest.TestCase):
             ExpirationDate="2015-01-01 00:00:00"  # NB: This is expired on purpose
         )
         db.session.add(user_token)
+        db.session.commit()
+
+        # Add valid token for mapped user
+        self.valid_token = "unittest-valid-token"
+        valid_token = UsersAccessTokens(
+            UserID=self.mapped_user_id,
+            AccessToken=self.valid_token,
+            ExpirationDate=get_datetime_one_hour_ahead()
+        )
+        db.session.add(valid_token)
         db.session.commit()
 
     def tearDown(self):
@@ -234,3 +246,46 @@ class TestAuthFunctions(unittest.TestCase):
             }
         )
         self.assertEquals(401, response.status_code)
+
+    def test_user_id_with_valid_registered_id(self):
+        self.assertEquals(2, user_id_or_guest("2"))
+
+    def test_user_id_with_valid_guest_id(self):
+        self.assertEquals(1, user_id_or_guest(1))
+
+    def test_user_id_with_invalid_values(self):
+        self.assertEquals(1, user_id_or_guest(""))
+        self.assertEquals(1, user_id_or_guest(None))
+        self.assertEquals(1, user_id_or_guest("test"))
+        self.assertEquals(1, user_id_or_guest(0))
+        self.assertEquals(1, user_id_or_guest(-2))
+
+    def test_validate_valid_user(self):
+        headers = {
+            "User": self.mapped_user_id,
+            "Authorization": self.valid_token
+        }
+        user_id, registered, token_invalid = validate_user(headers)
+        self.assertEquals(self.mapped_user_id, user_id)
+        self.assertTrue(registered)
+        self.assertFalse(token_invalid)
+
+    def test_validate_invalid_user(self):
+        headers = {
+            "User": -5,
+            "Authorization": self.access_token
+        }
+        user_id, registered, token_invalid = validate_user(headers)
+        self.assertEquals(1, user_id)
+        self.assertFalse(registered)
+        self.assertTrue(token_invalid)
+
+    def test_validate_valid_user_with_invalid_token(self):
+        headers = {
+            "User": self.user_id,
+            "Authorization": "wrong"
+        }
+        user_id, registered, token_invalid = validate_user(headers)
+        self.assertEquals(self.user_id, user_id)
+        self.assertTrue(registered)
+        self.assertTrue(token_invalid)

@@ -1,6 +1,7 @@
 import json
 import unittest
 
+from flask_caching import Cache
 from sqlalchemy import asc
 
 from app import app, db
@@ -28,6 +29,12 @@ class TestReleases(unittest.TestCase):
     """
 
     def setUp(self):
+        # Clear redis cache completely
+        cache = Cache()
+        cache.init_app(app, config={"CACHE_TYPE": "redis"})
+        with app.app_context():
+            cache.clear()
+
         self.app = app.test_client()
 
         # Add two test releases
@@ -318,6 +325,9 @@ class TestReleases(unittest.TestCase):
         self.assertEquals(1, len(release["releases"][0]["formats"]))
         self.assertEquals(1, len(release["releases"][0]["people"]))
         self.assertEquals(3, len(release["releases"][0]["songs"]))
+        # SongID is used for lyrics and tabs
+        self.assertTrue("id" in release["releases"][0]["songs"][0])
+        self.assertTrue(type(int(release["releases"][0]["songs"][0]["id"])) == int)
 
     def test_getting_all_releases(self):
         """Should return all the releases and all their details, including CFPS, in reverse
@@ -339,6 +349,11 @@ class TestReleases(unittest.TestCase):
         self.assertEquals(1, len(releases["releases"][1]["formats"]))
         self.assertEquals(1, len(releases["releases"][1]["people"]))
         self.assertEquals(3, len(releases["releases"][1]["songs"]))
+        # SongID is used for lyrics and tabs
+        self.assertTrue("id" in releases["releases"][0]["songs"][0])
+        self.assertTrue(type(int(releases["releases"][0]["songs"][0]["id"])) == int)
+        self.assertTrue("id" in releases["releases"][1]["songs"][0])
+        self.assertTrue(type(int(releases["releases"][1]["songs"][0]["id"])) == int)
 
     def test_adding_a_release(self):
         """Should insert the release and all it's related data.

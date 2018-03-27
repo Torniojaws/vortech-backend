@@ -7,6 +7,7 @@ from apps.utils.auth import (
     invalid_token,
     user_is_admin,
     user_is_registered_or_more,
+    user_id_or_guest,
 )
 
 
@@ -234,3 +235,16 @@ class TestAuthFunctions(unittest.TestCase):
             }
         )
         self.assertEquals(401, response.status_code)
+
+    def test_user_id_with_valid_registered_id(self):
+        self.assertEquals(2, user_id_or_guest("2"))
+
+    def test_user_id_with_valid_guest_id(self):
+        self.assertEquals(1, user_id_or_guest(1))
+
+    def test_user_id_with_invalid_values(self):
+        self.assertEquals(1, user_id_or_guest(""))
+        self.assertEquals(1, user_id_or_guest(None))
+        self.assertEquals(1, user_id_or_guest("test"))
+        self.assertEquals(1, user_id_or_guest(0))
+        self.assertEquals(1, user_id_or_guest(-2))

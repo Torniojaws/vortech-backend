@@ -1,12 +1,13 @@
 import json
 import socket
 
-from flask import jsonify, make_response, request, url_for
+from flask import abort, jsonify, make_response, request, url_for
 from flask_classful import FlaskView, route
-from sqlalchemy import asc, func
+from sqlalchemy import asc, func, and_
 
 from app import db, cache
 from apps.releases.models import Releases
+from apps.utils.auth import user_id_or_guest, invalid_token
 from apps.utils.time import get_datetime
 from apps.votes.models import VotesReleases
 
@@ -47,23 +48,45 @@ class VotesView(FlaskView):
         return make_response(contents, 200)
 
     @route("/releases/", methods=["POST"])
-    def add_vote(self):
+    def add_release_vote(self):
         """Add a vote to a release specified in the payload."""
         data = json.loads(request.data.decode())
+        valid_user_id, registered, invalid_token = self.validate_user(request.headers)
 
-        vote = VotesReleases(
-            ReleaseID=data["releaseID"],
-            Vote=data["rating"],
-            Created=get_datetime(),
-        )
-        db.session.add(vote)
+        existing_vote = None
+        release_id = int(data["releaseID"])
+        vote = data["rating"]
+
+        if registered:
+            if invalid_token:
+                abort(401)
+            else:
+                # Check if the current registered user has already voted on the release.
+                existing_vote = VotesReleases.query.filter(
+                    and_(
+                        VotesReleases.ReleaseID == release_id,
+                        VotesReleases.UserID == valid_user_id
+                    )
+                ).first()
+
+        if existing_vote:
+            existing_vote.Vote = vote
+            existing_vote.Updated = get_datetime()
+        else:
+            new_vote = VotesReleases(
+                ReleaseID=release_id,
+                Vote=vote,
+                UserID=valid_user_id,
+                Created=get_datetime(),
+            )
+            db.session.add(new_vote)
         db.session.commit()
 
         # The RFC 7231 spec says a 201 Created should return an absolute full path
         server = socket.gethostname()
         contents = "Location: {}{}{}".format(
             server,
-            url_for("VotesView:add_vote"),
+            url_for("VotesView:add_release_vote"),
             data["releaseID"]
         )
 
@@ -83,3 +106,19 @@ class VotesView(FlaskView):
         rating = float(votes.sumVotes) / voteCount
 
         return round(rating, 2)
+
+    def validate_user(self, headers):
+        """Validate the user and return the results."""
+        user_id = headers.get("User", "")
+        token = headers.get("Authorization", "")
+        registered = False
+
+        if user_id:
+            valid_user_id = user_id_or_guest(user_id)
+            registered = valid_user_id > 1
+        else:
+            valid_user_id = 1
+
+        is_token_invalid = invalid_token(user_id, token)
+
+        return valid_user_id, registered, is_token_invalid

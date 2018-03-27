@@ -86,3 +86,15 @@ def registered_only(f):
             abort(401)
         return f(*args, **kwargs)  # pragma: no cover
     return check_user_level
+
+
+def user_id_or_guest(user_id):
+    """Validate the input and return the userID, or the guest userID (= 1)"""
+    try:
+        valid_id = int(user_id)
+    except (ValueError, TypeError):
+        valid_id = 1
+    if valid_id <= 0:
+        valid_id = 1
+
+    return valid_id

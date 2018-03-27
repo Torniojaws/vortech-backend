@@ -4,8 +4,9 @@ from sqlalchemy import asc
 
 from app import app, db
 from apps.releases.models import Releases
+from apps.users.models import Users, UsersAccessLevels, UsersAccessMapping, UsersAccessTokens
 from apps.votes.models import VotesReleases
-from apps.utils.time import get_datetime
+from apps.utils.time import get_datetime, get_datetime_one_hour_ahead
 
 
 class TestVoteReleasesView(unittest.TestCase):
@@ -41,18 +42,69 @@ class TestVoteReleasesView(unittest.TestCase):
         db.session.add(release3)
         db.session.commit()
 
+        # Add a guest and registered user, and a test token for the registered
+        user_guest = Users(
+            Name="UnitTest guest",
+            Username="unittester-guest",
+            Password="unittest",
+            Created=get_datetime(),
+        )
+        user_reg = Users(
+            Name="UnitTest2 reg",
+            Username="unittester2-reg",
+            Password="unittest2",
+            Created=get_datetime(),
+        )
+        db.session.add(user_guest)
+        db.session.add(user_reg)
+        db.session.commit()
+
+        # Make user_reg a registered user with a token
+        if not UsersAccessLevels.query.filter_by(LevelName="Registered").first():
+            registered = UsersAccessLevels(
+                UsersAccessLevelID=2,
+                LevelName="Registered"
+            )
+            db.session.add(registered)
+            db.session.commit()
+
+        grant_registered = UsersAccessMapping(
+            UserID=user_reg.UserID,
+            UsersAccessLevelID=2
+        )
+
+        self.access_token = "unittest-access-token"
+        user_token = UsersAccessTokens(
+            UserID=user_reg.UserID,
+            AccessToken=self.access_token,
+            ExpirationDate=get_datetime_one_hour_ahead()
+        )
+
+        db.session.add(grant_registered)
+        db.session.add(user_token)
+        db.session.commit()
+
+        self.valid_reg_user = user_reg.UserID
+        self.valid_token = self.access_token
+        self.guest_id = user_guest.UserID
+
         self.release_ids = [release1.ReleaseID, release2.ReleaseID, release3.ReleaseID]
 
         # Add some votes for each release - minimum is 1.0, maximum is 5.0. The real steps will be
         # in 0.5 increments. However, any 2 decimal float between 1.00 and 5.00 is technically ok.
-        rel1_vote1 = VotesReleases(ReleaseID=self.release_ids[0], Vote=4, Created=get_datetime())
-        rel1_vote2 = VotesReleases(ReleaseID=self.release_ids[0], Vote=3.0, Created=get_datetime())
-        rel1_vote3 = VotesReleases(ReleaseID=self.release_ids[0], Vote=3.00, Created=get_datetime())
-
-        rel2_vote1 = VotesReleases(ReleaseID=self.release_ids[1], Vote=5, Created=get_datetime())
-
-        rel3_vote1 = VotesReleases(ReleaseID=self.release_ids[2], Vote=4, Created=get_datetime())
-        rel3_vote2 = VotesReleases(ReleaseID=self.release_ids[2], Vote=1, Created=get_datetime())
+        rel1_vote1 = VotesReleases(
+            ReleaseID=self.release_ids[0], Vote=4, UserID=self.guest_id, Created=get_datetime())
+        rel1_vote2 = VotesReleases(
+            ReleaseID=self.release_ids[0], Vote=3.0, UserID=self.guest_id, Created=get_datetime())
+        rel1_vote3 = VotesReleases(
+            ReleaseID=self.release_ids[0], Vote=3.00, UserID=self.guest_id, Created=get_datetime()
+        )
+        rel2_vote1 = VotesReleases(
+            ReleaseID=self.release_ids[1], Vote=5, UserID=self.guest_id, Created=get_datetime())
+        rel3_vote1 = VotesReleases(
+            ReleaseID=self.release_ids[2], Vote=4, UserID=self.guest_id, Created=get_datetime())
+        rel3_vote2 = VotesReleases(
+            ReleaseID=self.release_ids[2], Vote=1, UserID=self.guest_id, Created=get_datetime())
 
         db.session.add(rel1_vote1)
         db.session.add(rel1_vote2)
@@ -66,6 +118,14 @@ class TestVoteReleasesView(unittest.TestCase):
         # Deleting a release will also delete the votes for it
         for release in Releases.query.filter(Releases.Title.like("UnitTest%")).all():
             db.session.delete(release)
+        db.session.commit()
+
+        for user in Users.query.filter(Users.Username.like("unittest%")).all():
+            db.session.delete(user)
+        db.session.commit()
+
+        access = UsersAccessLevels.query.filter_by(LevelName="Registered").first()
+        db.session.delete(access)
         db.session.commit()
 
     def test_getting_all_votes(self):
@@ -96,7 +156,7 @@ class TestVoteReleasesView(unittest.TestCase):
         self.assertEquals(1, data["votes"][0]["voteCount"])
         self.assertEquals(5, data["votes"][0]["rating"])
 
-    def test_adding_a_vote(self):
+    def test_adding_a_vote_as_guest(self):
         """Should add a new vote for the specified release, which is given in the JSON."""
         response = self.app.post(
             "/api/1.0/votes/releases/",
@@ -118,3 +178,29 @@ class TestVoteReleasesView(unittest.TestCase):
         self.assertEquals(2, len(votes))
         self.assertEquals(5.00, float(votes[0].Vote))
         self.assertEquals(4.00, float(votes[1].Vote))
+
+    def test_adding_a_vote_as_registered_user(self):
+        """Should add a new vote with the userID."""
+        response = self.app.post(
+            "/api/1.0/votes/releases/",
+            data=json.dumps(
+                dict(
+                    releaseID=self.release_ids[1],
+                    rating=3.5,
+                )
+            ),
+            content_type="application/json",
+            headers={
+                "User": self.valid_reg_user,
+                "Authorization": self.valid_token
+            }
+        )
+
+        votes = VotesReleases.query.filter_by(ReleaseID=self.release_ids[1]).order_by(
+            asc(VotesReleases.VoteID)
+        ).all()
+
+        self.assertEquals(201, response.status_code)
+        self.assertEquals(2, len(votes))
+        self.assertEquals(5.00, float(votes[0].Vote))
+        self.assertEquals(3.50, float(votes[1].Vote))

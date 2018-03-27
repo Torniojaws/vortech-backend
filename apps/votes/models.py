@@ -17,4 +17,10 @@ class VotesReleases(db.Model):
         db.Float(precision=2, asdecimal=True, decimal_return_scale=2),
         nullable=False
     )
+    UserID = db.Column(
+        db.Integer,
+        db.ForeignKey("Users.UserID", ondelete="CASCADE"),
+        nullable=False
+    )
     Created = db.Column(db.DateTime)
+    Updated = db.Column(db.DateTime)

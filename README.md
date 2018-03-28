@@ -16,6 +16,7 @@ separate repository.
 - **Database:** MariaDB
 - **Language:** Python 3
 - **Framework:** Flask
+- **Cache:** Redis
 
 ## Install
 

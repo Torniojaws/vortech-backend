@@ -8,7 +8,8 @@ def register_views(app):
     from apps.biography.views import BiographyView
     BiographyView.register(app, route_base="{}/biography/".format(api_path))
 
-    from apps.comments.views import ReleaseCommentsView
+    from apps.comments.views import NewsCommentsView, ReleaseCommentsView
+    NewsCommentsView.register(app, route_base="{}/comments/news/".format(api_path))
     ReleaseCommentsView.register(app, route_base="{}/comments/releases/".format(api_path))
 
     from apps.contacts.views import ContactsView

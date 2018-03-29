@@ -23,6 +23,25 @@ class CommentsNews(db.Model):
     Updated = db.Column(db.DateTime)
 
 
+class CommentsPhotos(db.Model):
+    """All comments for photos are in this model."""
+    __tablename__ = "CommentsPhotos"
+    CommentID = db.Column(db.Integer, primary_key=True)
+    PhotoID = db.Column(
+        db.Integer,
+        db.ForeignKey("Photos.PhotoID", ondelete="CASCADE"),
+        nullable=False
+    )
+    Comment = db.Column(db.Text, nullable=False)
+    UserID = db.Column(
+        db.Integer,
+        db.ForeignKey("Users.UserID", ondelete="CASCADE"),
+        nullable=False
+    )
+    Created = db.Column(db.DateTime)
+    Updated = db.Column(db.DateTime)
+
+
 class CommentsReleases(db.Model):
     """All comments for releases are in this model."""
     __tablename__ = "CommentsReleases"

@@ -59,3 +59,22 @@ class CommentsReleases(db.Model):
     )
     Created = db.Column(db.DateTime)
     Updated = db.Column(db.DateTime)
+
+
+class CommentsShopItems(db.Model):
+    """All comments for shopitems are in this model."""
+    __tablename__ = "CommentsShopItems"
+    CommentID = db.Column(db.Integer, primary_key=True)
+    ShopItemID = db.Column(
+        db.Integer,
+        db.ForeignKey("ShopItems.ShopItemID", ondelete="CASCADE"),
+        nullable=False
+    )
+    Comment = db.Column(db.Text, nullable=False)
+    UserID = db.Column(
+        db.Integer,
+        db.ForeignKey("Users.UserID", ondelete="CASCADE"),
+        nullable=False
+    )
+    Created = db.Column(db.DateTime)
+    Updated = db.Column(db.DateTime)

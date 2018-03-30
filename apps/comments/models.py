@@ -97,3 +97,22 @@ class CommentsShows(db.Model):
     )
     Created = db.Column(db.DateTime)
     Updated = db.Column(db.DateTime)
+
+
+class CommentsSongs(db.Model):
+    """All comments for songs are in this model."""
+    __tablename__ = "CommentsSongs"
+    CommentID = db.Column(db.Integer, primary_key=True)
+    SongID = db.Column(
+        db.Integer,
+        db.ForeignKey("Songs.SongID", ondelete="CASCADE"),
+        nullable=False
+    )
+    Comment = db.Column(db.Text, nullable=False)
+    UserID = db.Column(
+        db.Integer,
+        db.ForeignKey("Users.UserID", ondelete="CASCADE"),
+        nullable=False
+    )
+    Created = db.Column(db.DateTime)
+    Updated = db.Column(db.DateTime)

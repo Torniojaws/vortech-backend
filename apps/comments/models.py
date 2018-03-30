@@ -116,3 +116,22 @@ class CommentsSongs(db.Model):
     )
     Created = db.Column(db.DateTime)
     Updated = db.Column(db.DateTime)
+
+
+class CommentsVideos(db.Model):
+    """All comments for videos are in this model."""
+    __tablename__ = "CommentsVideos"
+    CommentID = db.Column(db.Integer, primary_key=True)
+    VideoID = db.Column(
+        db.Integer,
+        db.ForeignKey("Videos.VideoID", ondelete="CASCADE"),
+        nullable=False
+    )
+    Comment = db.Column(db.Text, nullable=False)
+    UserID = db.Column(
+        db.Integer,
+        db.ForeignKey("Users.UserID", ondelete="CASCADE"),
+        nullable=False
+    )
+    Created = db.Column(db.DateTime)
+    Updated = db.Column(db.DateTime)

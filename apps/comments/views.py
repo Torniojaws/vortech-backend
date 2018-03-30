@@ -7,7 +7,8 @@ from sqlalchemy import asc
 
 from app import db, cache
 from apps.comments.models import (
-    CommentsNews, CommentsPhotos, CommentsReleases, CommentsShopItems, CommentsShows, CommentsSongs
+    CommentsNews, CommentsPhotos, CommentsReleases, CommentsShopItems, CommentsShows,
+    CommentsSongs, CommentsVideos
 )
 from apps.utils.auth import registered_only
 from apps.utils.users import get_username
@@ -682,6 +683,119 @@ class SongCommentsView(FlaskView):
             abort(400)
 
         comment = CommentsSongs.query.filter_by(CommentID=comment_id).first_or_404()
+        if user_id == comment.UserID:
+            # All OK, we can delete the comment
+            db.session.delete(comment)
+            db.session.commit()
+        else:
+            abort(401)
+
+        return make_response("", 204)
+
+
+class VideoCommentsView(FlaskView):
+    @cache.cached(timeout=60)
+    def index(self):
+        """Return all comments for all videos."""
+        comments = CommentsVideos.query.order_by(
+            asc(CommentsVideos.VideoID),
+            asc(CommentsVideos.Created)
+        ).all()
+
+        contents = jsonify({
+            "comments": [{
+                "commentID": comment.CommentID,
+                "videoID": comment.VideoID,
+                "userID": comment.UserID,
+                "name": get_username(comment.UserID),
+                "comment": comment.Comment,
+                "createdAt": get_iso_format(comment.Created),
+                "updatedAt": get_iso_format(comment.Updated),
+            } for comment in comments]
+        })
+
+        return make_response(contents, 200)
+
+    @cache.cached(timeout=60)
+    def get(self, video_id):
+        """Return the comments for a specific video."""
+        comments = CommentsVideos.query.filter_by(VideoID=video_id).order_by(
+            asc(CommentsVideos.Created)
+        ).all()
+
+        contents = jsonify({
+            "comments": [{
+                "commentID": comment.CommentID,
+                "videoID": comment.VideoID,
+                "userID": comment.UserID,
+                "name": get_username(comment.UserID),
+                "comment": comment.Comment,
+                "createdAt": get_iso_format(comment.Created),
+                "updatedAt": get_iso_format(comment.Updated),
+            } for comment in comments]
+        })
+
+        return make_response(contents, 200)
+
+    @registered_only
+    def post(self):
+        """Add a comment to a video specified in the payload."""
+        data = json.loads(request.data.decode())
+
+        new_comment = CommentsVideos(
+            VideoID=int(data["videoID"]),
+            Comment=data["comment"],
+            UserID=int(request.headers.get("User", "")),
+            Created=get_datetime(),
+        )
+        db.session.add(new_comment)
+        db.session.commit()
+
+        # The RFC 7231 spec says a 201 Created should return an absolute full path
+        server = socket.gethostname()
+        contents = "Location: {}{}{}".format(
+            server,
+            url_for("VideoCommentsView:index"),
+            data["videoID"]
+        )
+
+        return make_response(contents, 201)
+
+    @registered_only
+    def put(self, video_id):
+        """Edit a comment. Verify that UserID matches original, otherwise 401."""
+        data = json.loads(request.data.decode())
+
+        comment_id = data.get("commentID", "")
+        comment = data.get("comment", "")
+        user_id = int(request.headers.get("User", ""))
+
+        if not comment_id or not comment:
+            abort(400)
+
+        original_comment = CommentsVideos.query.filter_by(CommentID=comment_id).first_or_404()
+        if user_id == original_comment.UserID:
+            # All OK, we can update the comment
+            original_comment.Comment = comment
+            original_comment.Updatd = get_datetime()
+            db.session.commit()
+        else:
+            abort(401)
+
+        return make_response("", 200)
+
+    @registered_only
+    def delete(self, video_id):
+        """Delete a comment. This is kinda hairy in regards to idempotency."""
+        data = json.loads(request.data.decode())
+
+        comment_id = data.get("commentID", "")
+        user_id = int(request.headers.get("User", ""))
+
+        if not comment_id:
+            abort(400)
+
+        comment = CommentsVideos.query.filter_by(CommentID=comment_id).first_or_404()
         if user_id == comment.UserID:
             # All OK, we can delete the comment
             db.session.delete(comment)

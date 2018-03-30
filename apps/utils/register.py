@@ -10,7 +10,7 @@ def register_views(app):
 
     from apps.comments.views import (
         NewsCommentsView, PhotoCommentsView, ReleaseCommentsView, ShopItemCommentsView,
-        ShowCommentsView, SongCommentsView
+        ShowCommentsView, SongCommentsView, VideoCommentsView
     )
     NewsCommentsView.register(app, route_base="{}/comments/news/".format(api_path))
     PhotoCommentsView.register(app, route_base="{}/comments/photos/".format(api_path))
@@ -18,6 +18,7 @@ def register_views(app):
     ShopItemCommentsView.register(app, route_base="{}/comments/shopitems/".format(api_path))
     ShowCommentsView.register(app, route_base="{}/comments/shows/".format(api_path))
     SongCommentsView.register(app, route_base="{}/comments/songs/".format(api_path))
+    VideoCommentsView.register(app, route_base="{}/comments/videos/".format(api_path))
 
     from apps.contacts.views import ContactsView
     ContactsView.register(app, route_base="{}/contacts/".format(api_path))

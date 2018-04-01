@@ -37,7 +37,7 @@ def patch_item(photo, patchdata, **kwargs):
     photo.fromdict(data)
 
     # Apply album patches separately
-    if [cat for cat in mapped_patchdata if "/Album" in cat.values()]:
+    if [a for a in mapped_patchdata if "/Album" in a.values()]:
         patch_album(mapped_patchdata, photo.PhotoID)
 
     # Apply category patches separately

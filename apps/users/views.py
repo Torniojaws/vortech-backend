@@ -2,6 +2,7 @@ import json
 import socket
 import uuid
 
+from dictalchemy import make_class_dictable
 from flask import jsonify, make_response, request, url_for
 from flask_classful import FlaskView
 from sqlalchemy import and_
@@ -9,9 +10,12 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from app import db, cache
 from apps.users.models import Users, UsersAccessTokens, UsersAccessMapping
+from apps.users.patches import patch_item
 from apps.utils.auth import registered_only, admin_only
 from apps.utils.time import get_datetime, get_datetime_one_hour_ahead
 from settings.config import CONFIG
+
+make_class_dictable(Users)
 
 
 class UsersView(FlaskView):
@@ -123,6 +127,41 @@ class UsersView(FlaskView):
         db.session.commit()
 
         return make_response("", 200)
+
+    @registered_only
+    def patch(self, user_id):
+        """Patch the user."""
+        user = Users.query.filter_by(UserID=user_id).first_or_404()
+        result = []
+        status_code = 204
+        data = request.get_json()
+        # If any password updates, verify the length in advance
+        for p in data:
+            if type(p) == dict and "/password" in p.values():
+                if len(p["value"]) < CONFIG.MIN_PASSWORD_LENGTH:
+                    result = {
+                        "success": False,
+                        "result": "Password is missing or too short."
+                    }
+                    return make_response(jsonify(result), 400)
+        try:
+            # This only returns a value (boolean) for "op": "test"
+            result = patch_item(user, data)
+            db.session.commit()
+        except Exception as e:
+            # If any other exceptions happened during the patching, we'll return 422
+            result = {"success": False, "error": "Could not apply patch"}
+            status_code = 422
+
+        return make_response(jsonify(result), status_code)
+
+    @registered_only
+    def delete(self, user_id):
+        """Delete the specified user."""
+        user = Users.query.filter_by(UserID=user_id).first_or_404()
+        db.session.delete(user)
+        db.session.commit()
+        return make_response("", 204)
 
     def get_user_level(self, user_id):
         """Get the given user's access level. This is used by the frontend to *display* the admin

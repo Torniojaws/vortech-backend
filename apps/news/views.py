@@ -67,12 +67,9 @@ class NewsView(FlaskView):
 
         # News items can have an existing category (=int), or a brand new one to be added
         # There is almost always more than one category for a news item
-        for category in data["categories"]:
-            # Skip empty values
-            if not category:
-                continue
-
+        for category in self.convert_categories(data["categories"]):
             if type(category) is not int:
+                print("Adding new newscat for value: {}".format(category))
                 # Only add new category if it doesn't exist
                 exists = NewsCategories.query.filter_by(Category=category).first()
                 if not exists:
@@ -129,7 +126,7 @@ class NewsView(FlaskView):
         db.session.query(NewsCategoriesMapping).filter_by(NewsID=news_id).delete()
         db.session.commit()
 
-        for category in data["categories"]:
+        for category in self.convert_categories(data["categories"]):
             cm = NewsCategoriesMapping(
                 NewsID=news_id,
                 NewsCategoryID=category,
@@ -183,3 +180,21 @@ class NewsView(FlaskView):
             NewsCategories.NewsCategoryID.in_(mapped_ids)
         ).all()
         return [c.Category for c in categories]
+
+    def convert_categories(self, categories):
+        """Make sure that the received categories are a valid list."""
+        if type(categories) == str:
+            categories = [cat.strip() for cat in categories.split(",")]
+
+        result = []
+        # Clean up the list. Numbers will be int(), empty values removed.
+        for c in categories:
+            try:
+                current = int(c)
+            except ValueError:
+                if not c:
+                    continue
+                else:
+                    current = c
+            result.append(current)
+        return result

@@ -117,23 +117,16 @@ class TestNewsView(unittest.TestCase):
 
     def tearDown(self):
         # Delete news items created for the unittest
-        to_delete = News.query.filter(News.Title.like("UnitTest%")).all()
-        for news in to_delete:
+        for news in News.query.all():
             db.session.delete(news)
 
         # Delete news categories
-        ncats = NewsCategories.query.filter(NewsCategories.Category.like("TestCategory%")).all()
-        for cat in ncats:
+        for cat in NewsCategories.query.all():
             db.session.delete(cat)
 
         # Delete user created for the unittest
-        delete_user = Users.query.filter(Users.Name == "UnitTest").all()
-        for user in delete_user:
+        for user in Users.query.all():
             db.session.delete(user)
-        db.session.commit()
-
-        user = Users.query.filter_by(UserID=self.user_id).first()
-        db.session.delete(user)
         db.session.commit()
 
     def test_getting_all_news(self):
@@ -188,6 +181,43 @@ class TestNewsView(unittest.TestCase):
         self.assertEquals(201, response.status_code)
         self.assertTrue("Location" in response.get_data().decode())
         self.assertEquals("UnitTest", news.Contents)
+        self.assertEquals(3, len(cats))
+        # When a new non-existing string category is given,
+        # it should be added to general NewsCategories
+        new_cat = NewsCategories.query.filter_by(Category="TestCategoryNew").first_or_404()
+        self.assertEquals("TestCategoryNew", new_cat.Category)
+
+    def test_adding_news_with_string_categories(self):
+        """If a string of categories is given, it should be split into a list by commas."""
+        response = self.app.post(
+            "/api/1.0/news/",
+            data=json.dumps(
+                dict(
+                    title="UnitTest Post",
+                    contents="UnitTest",
+                    author="UnitTester",
+                    categories="{}, {}, {}, {}, {}".format(
+                        self.valid_news_cats[0],
+                        self.valid_news_cats[2],
+                        "TestCategoryNew",
+                        "",  # Empty values should be skipped,
+                        "TestCategory1"  # Existing values should be reused
+                    ),
+                )
+            ),
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
+        )
+        news = News.query.filter_by(Title="UnitTest Post").first_or_404()
+        cats = NewsCategoriesMapping.query.filter_by(NewsID=news.NewsID).order_by(
+            asc(NewsCategoriesMapping.NewsCategoryID)).all()
+        self.assertEquals(201, response.status_code)
+        self.assertTrue("Location" in response.get_data().decode())
+        self.assertEquals("UnitTest", news.Contents)
+        # Should be 3 out of 5, because one item is an empty string, and one is pre-existing
         self.assertEquals(3, len(cats))
         # When a new non-existing string category is given,
         # it should be added to general NewsCategories

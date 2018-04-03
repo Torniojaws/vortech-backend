@@ -30,7 +30,7 @@ be deleted
 1. Apache seems to run by default in Ubuntu 16.04, so stop it: ``sudo systemctl stop apache2.service``
 1. Update apt: ``sudo apt-get update``
 1. Then install the first pieces:
-``sudo apt install virtualenv python3 uwsgi uwsgi-emperor uwsgi-plugin-python3 nginx-full git``
+``sudo apt install virtualenv python3 uwsgi uwsgi-emperor uwsgi-plugin-python3 nginx-full git zip``
 1. And the database of course: ``sudo apt install mariadb-server``
     1. Note that the install process is different in Ubuntu 16.04 than in previous versions. The
     installer will not prompt for root password. Instead, you access it using ``sudo mysql -u root``

@@ -5,9 +5,9 @@ class Users(db.Model):
     """All users' information is stored here"""
     __tablename__ = "Users"
     UserID = db.Column(db.Integer(), primary_key=True)
-    Name = db.Column(db.String(200), nullable=False)
-    Email = db.Column(db.String(200))
-    Username = db.Column(db.String(200), nullable=False)
+    Name = db.Column(db.String(50), nullable=False, unique=True)
+    Email = db.Column(db.String(100), unique=True)
+    Username = db.Column(db.String(50), nullable=False, unique=True)
     Password = db.Column(db.Text, nullable=False)
     Created = db.Column(db.DateTime)
     Updated = db.Column(db.DateTime)

@@ -66,7 +66,7 @@ class TestUsersView(unittest.TestCase):
         # We also need a valid admin user for the add release endpoint test.
         user = Users(
             Name="UnitTest Admin",
-            Username="unittest",
+            Username="unittest-admin",
             Password="password"
         )
         db.session.add(user)
@@ -145,7 +145,7 @@ class TestUsersView(unittest.TestCase):
                 dict(
                     name="UnitTest Post",
                     email="unittest@example.com",
-                    username="UnitTester",
+                    username="UnitTesterPost",
                     password="unittesting",
                 )
             ),
@@ -176,7 +176,7 @@ class TestUsersView(unittest.TestCase):
                 dict(
                     name="UnitTest Post",
                     email="unittest@example.com",
-                    username="UnitTester",
+                    username="UnitTesterPost",
                     password="",
                 )
             ),
@@ -197,7 +197,7 @@ class TestUsersView(unittest.TestCase):
                 dict(
                     name="UnitTest Post",
                     email="unittest@example.com",
-                    username="UnitTester",
+                    username="UnitTesterPost",
                     password="short",
                 )
             ),

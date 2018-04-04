@@ -20,16 +20,16 @@ class TestGuestbookViews(unittest.TestCase):
         user1 = Users(
             UserID=1,
             Name="UnitTest Guest",
-            Email="unittest@email.com",
-            Username="unittest",
+            Email="unittest-guest@email.com",
+            Username="unittest-guest",
             Password="asdasd",
             Created=get_datetime(),
         )
         user2 = Users(
             UserID=3,
             Name="UnitTest User",
-            Email="unittest@email.com",
-            Username="unittest",
+            Email="unittest-user@email.com",
+            Username="unittest-user",
             Password="asdasd",
             Created=get_datetime(),
         )
@@ -69,7 +69,7 @@ class TestGuestbookViews(unittest.TestCase):
         # We also need a valid admin user for the add release endpoint test.
         user = Users(
             Name="UnitTest Admin",
-            Username="unittest",
+            Username="unittest-admin",
             Password="password"
         )
         db.session.add(user)

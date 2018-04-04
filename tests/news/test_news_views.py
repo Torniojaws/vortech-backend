@@ -81,7 +81,7 @@ class TestNewsView(unittest.TestCase):
         # We also need a valid admin user for the add release endpoint test.
         user = Users(
             Name="UnitTest Admin",
-            Username="unittest",
+            Username="unittest-admin",
             Password="password"
         )
         db.session.add(user)

@@ -1,3 +1,5 @@
+from sqlalchemy.sql import expression
+
 from app import db
 
 
@@ -9,6 +11,10 @@ class Users(db.Model):
     Email = db.Column(db.String(100), unique=True)
     Username = db.Column(db.String(50), nullable=False, unique=True)
     Password = db.Column(db.Text, nullable=False)
+    # We use a default value of "False", ie. no one is subscribed automatically
+    Subscriber = db.Column(
+        db.Boolean, nullable=False, server_default=expression.false()
+    )
     Created = db.Column(db.DateTime)
     Updated = db.Column(db.DateTime)
 

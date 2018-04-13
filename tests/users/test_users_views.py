@@ -24,6 +24,7 @@ class TestUsersView(unittest.TestCase):
             Name="UnitTest",
             Username="unittester",
             Password="unittest",
+            Subscriber=True,
             Created=get_datetime(),
         )
         user2 = Users(
@@ -119,6 +120,7 @@ class TestUsersView(unittest.TestCase):
         self.assertEquals(1, len(user["users"]))
         self.assertEquals("unittester", user["users"][0]["username"])
         self.assertFalse("password" in user["users"][0])  # Should not be included
+        self.assertEquals(True, user["users"][0]["subscriber"])
         self.assertEquals(2, user["users"][0]["level"])
 
     def test_getting_all_users(self):
@@ -135,6 +137,9 @@ class TestUsersView(unittest.TestCase):
         self.assertEquals(CONFIG.REGISTERED_LEVEL, user["users"][0]["level"])
         # This user is not mapped (exceptional case), so it should have guest level
         self.assertEquals(CONFIG.GUEST_LEVEL, user["users"][1]["level"])
+        # Subscribers
+        self.assertEquals(True, user["users"][0]["subscriber"])
+        self.assertEquals(False, user["users"][1]["subscriber"])
 
     def test_adding_user(self):
         """The user should be created and the password must be in hashed form. Note that all
@@ -221,6 +226,7 @@ class TestUsersView(unittest.TestCase):
                     name="UnitTest Update",
                     email="unittest-update@example.com",
                     username="UnitTesterUpdate",
+                    subscriber=False,
                     password="unittesting-update",
                 )
             ),
@@ -248,6 +254,7 @@ class TestUsersView(unittest.TestCase):
         self.assertEquals("UnitTest Update", userdata["users"][0]["name"])
         self.assertEquals("unittest-update@example.com", userdata["users"][0]["email"])
         self.assertEquals("UnitTesterUpdate", userdata["users"][0]["username"])
+        self.assertEquals(False, userdata["users"][0]["subscriber"])
         # Password should obviously not be in the response, but it should be updated.
         self.assertFalse("password" in userdata["users"][0])
         self.assertNotEquals(password_before, password_after)
@@ -264,6 +271,7 @@ class TestUsersView(unittest.TestCase):
                     name="UnitTest Update",
                     email="unittest-update@example.com",
                     username="UnitTesterUpdate",
+                    subscriber=True,
                     password="short",
                 )
             ),
@@ -286,6 +294,7 @@ class TestUsersView(unittest.TestCase):
         self.assertEquals(400, response.status_code)
         self.assertEquals(200, get_user.status_code)
         self.assertEquals("UnitTest", userdata["users"][0]["name"])
+        self.assertEquals(True, userdata["users"][0]["subscriber"])
         # Should be none, since we never saved one originally
         self.assertEquals(None, userdata["users"][0]["email"])
         self.assertEquals("unittester", userdata["users"][0]["username"])

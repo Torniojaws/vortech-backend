@@ -47,7 +47,7 @@ subprocess.check_call(
 
 # 3.1 First, chdir to the vortech-backups repository dir
 original_dir = getcwd()
-backup_dir = expanduser("~/vortech-backups/")
+backup_dir = expanduser("/home/vortech/vortech-backups/")
 if not isdir(backup_dir):
     print("Backup path does not exist - cannot continue!")
     sys.exit()

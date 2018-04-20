@@ -4,15 +4,17 @@ import uuid
 
 from dictalchemy import make_class_dictable
 from flask import jsonify, make_response, request, url_for
-from flask_classful import FlaskView
+from flask_classful import FlaskView, route
 from sqlalchemy import and_
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from app import db, cache
+from apps.releases.models import Releases
 from apps.users.models import Users, UsersAccessTokens, UsersAccessMapping
 from apps.users.patches import patch_item
 from apps.utils.auth import registered_only, admin_only
 from apps.utils.time import get_datetime, get_datetime_one_hour_ahead
+from apps.votes.models import VotesReleases
 from settings.config import CONFIG
 
 make_class_dictable(Users)
@@ -165,6 +167,28 @@ class UsersView(FlaskView):
         db.session.delete(user)
         db.session.commit()
         return make_response("", 204)
+
+    @registered_only
+    @route("<int:user_id>/votes/releases/<int:release_id>", methods=["GET"])
+    @cache.cached(timeout=300)
+    def user_vote_on_release(self, user_id, release_id):
+        """Return the vote the user has given to a Release."""
+        release = Releases.query.filter_by(ReleaseID=release_id).first_or_404()
+        vote = VotesReleases.query.filter(
+            and_(
+                VotesReleases.ReleaseID == release_id,
+                VotesReleases.UserID == user_id
+            )
+        ).first_or_404()
+
+        contents = jsonify({
+            "voteID": vote.VoteID,
+            "vote": float(vote.Vote),
+            "releaseID": release.ReleaseID,
+            "created_at": vote.Created,
+            "updated_at": vote.Updated,
+        })
+        return make_response(contents, 200)
 
 
 def get_user_level(user_id):

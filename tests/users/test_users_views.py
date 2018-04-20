@@ -24,6 +24,7 @@ class TestUsersView(unittest.TestCase):
             Name="UnitTest",
             Username="unittester",
             Password="unittest",
+            Subscriber=True,
             Created=get_datetime(),
         )
         user2 = Users(
@@ -66,7 +67,7 @@ class TestUsersView(unittest.TestCase):
         # We also need a valid admin user for the add release endpoint test.
         user = Users(
             Name="UnitTest Admin",
-            Username="unittest",
+            Username="unittest-admin",
             Password="password"
         )
         db.session.add(user)
@@ -119,6 +120,7 @@ class TestUsersView(unittest.TestCase):
         self.assertEquals(1, len(user["users"]))
         self.assertEquals("unittester", user["users"][0]["username"])
         self.assertFalse("password" in user["users"][0])  # Should not be included
+        self.assertEquals(True, user["users"][0]["subscriber"])
         self.assertEquals(2, user["users"][0]["level"])
 
     def test_getting_all_users(self):
@@ -135,6 +137,9 @@ class TestUsersView(unittest.TestCase):
         self.assertEquals(CONFIG.REGISTERED_LEVEL, user["users"][0]["level"])
         # This user is not mapped (exceptional case), so it should have guest level
         self.assertEquals(CONFIG.GUEST_LEVEL, user["users"][1]["level"])
+        # Subscribers
+        self.assertEquals(True, user["users"][0]["subscriber"])
+        self.assertEquals(False, user["users"][1]["subscriber"])
 
     def test_adding_user(self):
         """The user should be created and the password must be in hashed form. Note that all
@@ -145,7 +150,7 @@ class TestUsersView(unittest.TestCase):
                 dict(
                     name="UnitTest Post",
                     email="unittest@example.com",
-                    username="UnitTester",
+                    username="UnitTesterPost",
                     password="unittesting",
                 )
             ),
@@ -176,7 +181,7 @@ class TestUsersView(unittest.TestCase):
                 dict(
                     name="UnitTest Post",
                     email="unittest@example.com",
-                    username="UnitTester",
+                    username="UnitTesterPost",
                     password="",
                 )
             ),
@@ -197,7 +202,7 @@ class TestUsersView(unittest.TestCase):
                 dict(
                     name="UnitTest Post",
                     email="unittest@example.com",
-                    username="UnitTester",
+                    username="UnitTesterPost",
                     password="short",
                 )
             ),
@@ -221,6 +226,7 @@ class TestUsersView(unittest.TestCase):
                     name="UnitTest Update",
                     email="unittest-update@example.com",
                     username="UnitTesterUpdate",
+                    subscriber=False,
                     password="unittesting-update",
                 )
             ),
@@ -248,6 +254,7 @@ class TestUsersView(unittest.TestCase):
         self.assertEquals("UnitTest Update", userdata["users"][0]["name"])
         self.assertEquals("unittest-update@example.com", userdata["users"][0]["email"])
         self.assertEquals("UnitTesterUpdate", userdata["users"][0]["username"])
+        self.assertEquals(False, userdata["users"][0]["subscriber"])
         # Password should obviously not be in the response, but it should be updated.
         self.assertFalse("password" in userdata["users"][0])
         self.assertNotEquals(password_before, password_after)
@@ -264,6 +271,7 @@ class TestUsersView(unittest.TestCase):
                     name="UnitTest Update",
                     email="unittest-update@example.com",
                     username="UnitTesterUpdate",
+                    subscriber=True,
                     password="short",
                 )
             ),
@@ -286,8 +294,140 @@ class TestUsersView(unittest.TestCase):
         self.assertEquals(400, response.status_code)
         self.assertEquals(200, get_user.status_code)
         self.assertEquals("UnitTest", userdata["users"][0]["name"])
+        self.assertEquals(True, userdata["users"][0]["subscriber"])
         # Should be none, since we never saved one originally
         self.assertEquals(None, userdata["users"][0]["email"])
         self.assertEquals("unittester", userdata["users"][0]["username"])
         # Password should obviously not be in the response
         self.assertFalse("password" in userdata["users"][0])
+
+    def test_patching_user_with_add(self):
+        """In practice, replace the existing value whether it's NULL or populated."""
+        response = self.app.patch(
+            "/api/1.0/users/{}".format(self.valid_users[0]),
+            data=json.dumps(
+                [
+                    dict({
+                        "op": "add",
+                        "path": "/email",
+                        "value": "UnitTest Patched Email"
+                    }),
+                    dict({
+                        "op": "add",
+                        "path": "/name",
+                        "value": "UnitTest Patched Name"
+                    }),
+                ]
+            ),
+            content_type="application/json",
+            headers={
+                'User': self.valid_users[0],
+                'Authorization': self.access_token
+            }
+        )
+
+        user = Users.query.filter_by(UserID=self.valid_users[0]).first_or_404()
+
+        self.assertEquals(204, response.status_code)
+        self.assertEquals("", response.data.decode())
+
+        self.assertEquals("UnitTest Patched Email", user.Email)
+        self.assertEquals("UnitTest Patched Name", user.Name)
+
+    # TODO: Maybe add some tests for PATCH op copy/move/remove/replace/test
+
+    def test_patch_that_fails(self):
+        """Should return a 422 Unprocessable Entity."""
+        response = self.app.patch(
+            "/api/1.0/users/{}".format(self.valid_users[0]),
+            data=json.dumps(
+                dict({
+                    "op": "copy",
+                    "from": "/DoesNotExist",
+                    "path": "/something"
+                })
+            ),
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
+        )
+        data = json.loads(response.data.decode())
+
+        self.assertEquals(422, response.status_code)
+        self.assertFalse(data["success"])
+
+    def test_patching_password_to_change_password_with_valid_info(self):
+        """When changing password, the current password is required (handled by @registered_only)
+        and must be correct. And all password rules (length, etc) apply to the new one, also."""
+        response = self.app.patch(
+            "/api/1.0/users/{}".format(self.valid_users[0]),
+            data=json.dumps(
+                [
+                    dict({
+                        "op": "add",
+                        "path": "/password",
+                        "value": "unittestnewpassword"
+                    }),
+                ]
+            ),
+            content_type="application/json-patch+json",
+            headers={
+                'User': self.valid_users[0],
+                'Authorization': self.access_token
+            }
+        )
+
+        user = Users.query.filter_by(UserID=self.valid_users[0]).first_or_404()
+
+        self.assertEquals(204, response.status_code)
+        self.assertEquals("", response.data.decode())
+
+        # The old password must not be valid
+        self.assertFalse(check_password_hash(user.Password, "unittest"))
+        # The new password must be valid
+        self.assertTrue(check_password_hash(user.Password, "unittestnewpassword"))
+
+    def test_patching_password_to_change_password_with_invalid_new_password(self):
+        """The password must be at least the configured length. Return a 400"""
+        response = self.app.patch(
+            "/api/1.0/users/{}".format(self.valid_users[0]),
+            data=json.dumps(
+                [
+                    dict({
+                        "op": "add",
+                        "path": "/password",
+                        "value": "short"
+                    }),
+                ]
+            ),
+            content_type="application/json-patch+json",
+            headers={
+                'User': self.valid_users[0],
+                'Authorization': self.access_token
+            }
+        )
+
+        self.assertEquals(400, response.status_code)
+
+    def test_deleting_user(self):
+        """Should delete the user and its mappings."""
+        response = self.app.delete(
+            "/api/1.0/users/{}".format(self.valid_users[0]),
+            headers={
+                'User': self.valid_users[0],
+                'Authorization': self.access_token
+            }
+        )
+
+        user = Users.query.filter_by(UserID=self.valid_users[0]).first()
+        access_mapping = UsersAccessMapping.query.filter_by(UserID=self.valid_users[0]).first()
+        access_tokens = UsersAccessTokens.query.filter_by(UserID=self.valid_users[0]).all()
+
+        self.assertEquals(204, response.status_code)
+        self.assertEquals("", response.data.decode())
+
+        self.assertEquals(None, user)
+        self.assertEquals(None, access_mapping)
+        self.assertEquals([], access_tokens)

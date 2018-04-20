@@ -22,3 +22,6 @@ dictalchemy==0.1.2.7
 
 # For statistics about visitors. Strange version numbering scheme, but it is correct
 maxminddb-geolite2==2017.803
+
+# For automatic DB backups to Github
+gitpython==2.1.9

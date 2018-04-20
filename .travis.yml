@@ -8,6 +8,7 @@ services:
 - redis-server
 
 before_install:
+- export TZ=Europe/Helsinki
 - cp settings/secret.sample settings/secret.cfg
 - mysql -e 'DROP DATABASE IF EXISTS test_vortech;'
 - mysql -e 'CREATE DATABASE IF NOT EXISTS test_vortech;'

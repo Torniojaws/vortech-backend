@@ -165,6 +165,49 @@ class TestVoteReleasesView(unittest.TestCase):
         self.assertEquals(1, data["votes"][0]["voteCount"])
         self.assertEquals(5, data["votes"][0]["rating"])
 
+    def test_getting_vote_info_as_registered_user(self):
+        """A registered, logged in user can retrieve the vote he has given for a release."""
+        response = self.app.get(
+            "/api/1.0/users/{}/votes/releases/{}".format(self.valid_reg_user, self.release_ids[2]),
+            headers={
+                "User": self.valid_reg_user,
+                "Authorization": self.valid_token
+            }
+        )
+        data = json.loads(response.data.decode())
+
+        self.assertEquals(200, response.status_code)
+        self.assertNotEquals(None, data)
+        self.assertTrue("voteID" in data)
+        self.assertTrue("vote" in data)
+        self.assertTrue("releaseID" in data)
+        self.assertEquals(4.0, data["vote"])
+        self.assertNotEquals(None, data["created_at"])
+
+    def test_getting_vote_info_nonexisting_user(self):
+        """Should be 404."""
+        response = self.app.get(
+            "/api/1.0/users/abc/votes/releases/{}".format(self.release_ids[2]),
+            headers={
+                "User": self.valid_reg_user,
+                "Authorization": self.valid_token
+            }
+        )
+
+        self.assertEquals(404, response.status_code)
+
+    def test_getting_vote_info_nonexisting_release(self):
+        """Should be 404."""
+        response = self.app.get(
+            "/api/1.0/users/{}/votes/releases/abc".format(self.valid_reg_user),
+            headers={
+                "User": self.valid_reg_user,
+                "Authorization": self.valid_token
+            }
+        )
+
+        self.assertEquals(404, response.status_code)
+
     def test_adding_a_vote_as_guest(self):
         """Should add a new vote for the specified release, which is given in the JSON."""
         response = self.app.post(

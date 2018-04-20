@@ -56,3 +56,17 @@ class ReleasesCategoriesMapping(db.Model):
         db.ForeignKey("ReleaseCategories.ReleaseCategoryID", ondelete="CASCADE"),
         nullable=False
     )
+
+
+class ReleasesReports(db.Model):
+    """The studio reports for releases."""
+    __tablename__ = "ReleasesReports"
+    ReleasesReportsID = db.Column(db.Integer, primary_key=True)
+    ReleaseID = db.Column(
+        db.Integer, db.ForeignKey("Releases.ReleaseID", ondelete="CASCADE"), nullable=False
+    )
+    Report = db.Column(db.Text)
+    Author = db.Column(db.String(100))
+    ReportDate = db.Column(db.DateTime)
+    Created = db.Column(db.DateTime)
+    Updated = db.Column(db.DateTime)

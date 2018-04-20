@@ -4,7 +4,7 @@ import unittest
 from sqlalchemy import asc
 
 from app import app, db
-from apps.news.models import News, NewsCategoriesMapping, NewsComments, NewsCategories
+from apps.news.models import News, NewsCategoriesMapping, NewsCategories
 from apps.news.patches import patch_mapping
 from apps.users.models import Users, UsersAccessTokens, UsersAccessLevels, UsersAccessMapping
 from apps.utils.time import get_datetime, get_datetime_one_hour_ahead
@@ -63,7 +63,7 @@ class TestNewsView(unittest.TestCase):
 
         self.valid_news_cats = [ncat1.NewsCategoryID, ncat2.NewsCategoryID, ncat3.NewsCategoryID]
 
-        # And create some Category mappings and comments for them
+        # And create some Category mappings for them
         for news in added_news:
             self.news_ids.append(news.NewsID)
             cat1 = NewsCategoriesMapping(
@@ -74,36 +74,14 @@ class TestNewsView(unittest.TestCase):
                 NewsID=news.NewsID,
                 NewsCategoryID=self.valid_news_cats[2],
             )
-            comment1 = NewsComments(
-                NewsID=news.NewsID,
-                UserID=self.valid_user,
-                Comment="UnitTest Comment for news {}".format(news.NewsID),
-                Created=get_datetime(),
-            )
-            comment2 = NewsComments(
-                NewsID=news.NewsID,
-                UserID=self.valid_user,
-                Comment="UnitTest Another Comment for news {}".format(news.NewsID),
-                Created=get_datetime(),
-            )
             db.session.add(cat1)
             db.session.add(cat2)
-            db.session.add(comment1)
-            db.session.add(comment2)
             db.session.commit()
-
-        # Get the added news comment IDs
-        comments = NewsComments.query.filter(
-            NewsComments.Comment.like("UnitTest%")
-        ).order_by(
-            asc(NewsComments.NewsCommentID)
-        ).all()
-        self.news_comments = [nc.NewsCommentID for nc in comments]
 
         # We also need a valid admin user for the add release endpoint test.
         user = Users(
             Name="UnitTest Admin",
-            Username="unittest",
+            Username="unittest-admin",
             Password="password"
         )
         db.session.add(user)
@@ -139,28 +117,16 @@ class TestNewsView(unittest.TestCase):
 
     def tearDown(self):
         # Delete news items created for the unittest
-        to_delete = News.query.filter(News.Title.like("UnitTest%")).all()
-        for news in to_delete:
+        for news in News.query.all():
             db.session.delete(news)
 
-        # Delete news comments created for the unittest
-        delete_comments = NewsComments.query.filter(NewsComments.Comment.like("UnitTest%")).all()
-        for comment in delete_comments:
-            db.session.delete(comment)
-
         # Delete news categories
-        ncats = NewsCategories.query.filter(NewsCategories.Category.like("TestCategory%")).all()
-        for cat in ncats:
+        for cat in NewsCategories.query.all():
             db.session.delete(cat)
 
         # Delete user created for the unittest
-        delete_user = Users.query.filter(Users.Name == "UnitTest").all()
-        for user in delete_user:
+        for user in Users.query.all():
             db.session.delete(user)
-        db.session.commit()
-
-        user = Users.query.filter_by(UserID=self.user_id).first()
-        db.session.delete(user)
         db.session.commit()
 
     def test_getting_all_news(self):
@@ -215,7 +181,43 @@ class TestNewsView(unittest.TestCase):
         self.assertEquals(201, response.status_code)
         self.assertTrue("Location" in response.get_data().decode())
         self.assertEquals("UnitTest", news.Contents)
-        print("Add news cats (twice the same?): {}".format([c.NewsCategoryID for c in cats]))
+        self.assertEquals(3, len(cats))
+        # When a new non-existing string category is given,
+        # it should be added to general NewsCategories
+        new_cat = NewsCategories.query.filter_by(Category="TestCategoryNew").first_or_404()
+        self.assertEquals("TestCategoryNew", new_cat.Category)
+
+    def test_adding_news_with_string_categories(self):
+        """If a string of categories is given, it should be split into a list by commas."""
+        response = self.app.post(
+            "/api/1.0/news/",
+            data=json.dumps(
+                dict(
+                    title="UnitTest Post",
+                    contents="UnitTest",
+                    author="UnitTester",
+                    categories="{}, {}, {}, {}, {}".format(
+                        self.valid_news_cats[0],
+                        self.valid_news_cats[2],
+                        "TestCategoryNew",
+                        "",  # Empty values should be skipped,
+                        "TestCategory1"  # Existing values should be reused
+                    ),
+                )
+            ),
+            content_type="application/json",
+            headers={
+                'User': self.user_id,
+                'Authorization': self.access_token
+            }
+        )
+        news = News.query.filter_by(Title="UnitTest Post").first_or_404()
+        cats = NewsCategoriesMapping.query.filter_by(NewsID=news.NewsID).order_by(
+            asc(NewsCategoriesMapping.NewsCategoryID)).all()
+        self.assertEquals(201, response.status_code)
+        self.assertTrue("Location" in response.get_data().decode())
+        self.assertEquals("UnitTest", news.Contents)
+        # Should be 3 out of 5, because one item is an empty string, and one is pre-existing
         self.assertEquals(3, len(cats))
         # When a new non-existing string category is given,
         # it should be added to general NewsCategories
@@ -527,39 +529,6 @@ class TestNewsView(unittest.TestCase):
 
         self.assertEquals(422, response.status_code)
         self.assertFalse("", response.data.decode())
-
-    def test_getting_specific_news_comment(self):
-        response = self.app.get(
-            "/api/1.0/news/{}/comments/{}".format(
-                int(self.news_ids[0]),
-                int(self.news_comments[0]),
-            )
-        )
-        resp = json.loads(response.get_data().decode())
-
-        self.assertEquals(200, response.status_code)
-        self.assertEquals(1, len(resp["comments"]))
-        self.assertEquals(
-            "UnitTest Comment for news {}".format(self.news_ids[0]),
-            resp["comments"][0]["comment"]
-        )
-
-    def test_getting_all_news_comments_for_a_news(self):
-        response = self.app.get(
-            "/api/1.0/news/{}/comments/".format(self.news_ids[0])
-        )
-        resp = json.loads(response.get_data().decode())
-
-        self.assertEquals(200, response.status_code)
-        self.assertEquals(2, len(resp["comments"]))
-        self.assertEquals(
-            "UnitTest Comment for news {}".format(self.news_ids[0]),
-            resp["comments"][0]["comment"]
-        )
-        self.assertEquals(
-            "UnitTest Another Comment for news {}".format(self.news_ids[0]),
-            resp["comments"][1]["comment"]
-        )
 
     def test_category_patch_replace(self):
         response = self.app.patch(

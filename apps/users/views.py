@@ -2,16 +2,22 @@ import json
 import socket
 import uuid
 
+from dictalchemy import make_class_dictable
 from flask import jsonify, make_response, request, url_for
-from flask_classful import FlaskView
+from flask_classful import FlaskView, route
 from sqlalchemy import and_
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from app import db, cache
+from apps.releases.models import Releases
 from apps.users.models import Users, UsersAccessTokens, UsersAccessMapping
+from apps.users.patches import patch_item
 from apps.utils.auth import registered_only, admin_only
 from apps.utils.time import get_datetime, get_datetime_one_hour_ahead
+from apps.votes.models import VotesReleases
 from settings.config import CONFIG
+
+make_class_dictable(Users)
 
 
 class UsersView(FlaskView):
@@ -25,7 +31,8 @@ class UsersView(FlaskView):
                 "name": user.Name,
                 "email": user.Email,
                 "username": user.Username,
-                "level": self.get_user_level(user.UserID),
+                "level": get_user_level(user.UserID),
+                "subscriber": user.Subscriber,
                 "created": user.Created,
                 "updated": user.Updated,
             } for user in Users.query.order_by(Users.UserID).all()]
@@ -43,7 +50,8 @@ class UsersView(FlaskView):
                 "name": user.Name,
                 "email": user.Email,
                 "username": user.Username,
-                "level": self.get_user_level(user.UserID),
+                "level": get_user_level(user.UserID),
+                "subscriber": user.Subscriber,
                 "created": user.Created,
                 "updated": user.Updated,
             }]
@@ -118,27 +126,86 @@ class UsersView(FlaskView):
         user.Email = data["email"]
         user.Username = data["username"]
         user.Password = generate_password_hash(data["password"])
+        user.Subscriber = data["subscriber"]
         user.Updated = get_datetime()
 
         db.session.commit()
 
         return make_response("", 200)
 
-    def get_user_level(self, user_id):
-        """Get the given user's access level. This is used by the frontend to *display* the admin
-        features (mostly forms in the profile page) if the UserID is an admin.
-
-        If no mapping is found, we return the configured Guest Level (currently = 1).
-
-        If someone modifies the localStorage level, they will see the admin features. But, the
-        admin features have their own separate endpoint where the actual AccessToken and UserID
-        are validated, so only "true admins" can actually do actions."""
+    @registered_only
+    def patch(self, user_id):
+        """Patch the user."""
+        user = Users.query.filter_by(UserID=user_id).first_or_404()
+        result = []
+        status_code = 204
+        data = request.get_json()
+        # If any password updates, verify the length in advance
+        for p in data:
+            if type(p) == dict and "/password" in p.values():
+                if len(p["value"]) < CONFIG.MIN_PASSWORD_LENGTH:
+                    result = {
+                        "success": False,
+                        "result": "Password is missing or too short."
+                    }
+                    return make_response(jsonify(result), 400)
         try:
-            level = UsersAccessMapping.query.filter_by(UserID=user_id).first().UsersAccessLevelID
-        except AttributeError:
-            # No mapping found - use guest level
-            level = CONFIG.GUEST_LEVEL
-        return level
+            # This only returns a value (boolean) for "op": "test"
+            result = patch_item(user, data)
+            db.session.commit()
+        except Exception:
+            # If any other exceptions happened during the patching, we'll return 422
+            result = {"success": False, "error": "Could not apply patch"}
+            status_code = 422
+
+        return make_response(jsonify(result), status_code)
+
+    @registered_only
+    def delete(self, user_id):
+        """Delete the specified user."""
+        user = Users.query.filter_by(UserID=user_id).first_or_404()
+        db.session.delete(user)
+        db.session.commit()
+        return make_response("", 204)
+
+    @registered_only
+    @route("<int:user_id>/votes/releases/<int:release_id>", methods=["GET"])
+    @cache.cached(timeout=300)
+    def user_vote_on_release(self, user_id, release_id):
+        """Return the vote the user has given to a Release."""
+        release = Releases.query.filter_by(ReleaseID=release_id).first_or_404()
+        vote = VotesReleases.query.filter(
+            and_(
+                VotesReleases.ReleaseID == release_id,
+                VotesReleases.UserID == user_id
+            )
+        ).first_or_404()
+
+        contents = jsonify({
+            "voteID": vote.VoteID,
+            "vote": float(vote.Vote),
+            "releaseID": release.ReleaseID,
+            "created_at": vote.Created,
+            "updated_at": vote.Updated,
+        })
+        return make_response(contents, 200)
+
+
+def get_user_level(user_id):
+    """Get the given user's access level. This is used by the frontend to *display* the admin
+    features (mostly forms in the profile page) if the UserID is an admin.
+
+    If no mapping is found, we return the configured Guest Level (currently = 1).
+
+    If someone modifies the localStorage level, they will see the admin features. But, the
+    admin features have their own separate endpoint where the actual AccessToken and UserID
+    are validated, so only "true admins" can actually do actions."""
+    try:
+        level = UsersAccessMapping.query.filter_by(UserID=user_id).first().UsersAccessLevelID
+    except AttributeError:
+        # No mapping found - use guest level
+        level = CONFIG.GUEST_LEVEL
+    return level
 
 
 class UserLoginView(FlaskView):

@@ -10,7 +10,8 @@ from apps.releases.models import (
     ReleaseFormats,
     ReleasesFormatsMapping,
     ReleaseCategories,
-    ReleasesCategoriesMapping
+    ReleasesCategoriesMapping,
+    ReleasesReports
 )
 from apps.releases.patches import patch_mapping
 from apps.people.models import People, ReleasesPeopleMapping
@@ -276,6 +277,25 @@ class TestReleases(unittest.TestCase):
         db.session.commit()
 
         self.user_id = user.UserID
+
+        # Add two studio reports for the first release
+        report1 = ReleasesReports(
+            ReleaseID=self.release_ids[0],
+            Report="UnitTest\r\n\r\nReport\r\nData",
+            Author="UnitTest Author",
+            ReportDate=get_datetime(),
+            Created=get_datetime()
+        )
+        report2 = ReleasesReports(
+            ReleaseID=self.release_ids[0],
+            Report="UnitTest\r\n\r\nReport2\r\nData2",
+            Author="UnitTest Author",
+            ReportDate=get_datetime(),
+            Created=get_datetime()
+        )
+        db.session.add(report1)
+        db.session.add(report2)
+        db.session.commit()
 
     def tearDown(self):
         # This will delete all the mappings too, via ondelete cascade
@@ -1236,3 +1256,32 @@ class TestReleases(unittest.TestCase):
         self.assertEquals([], formats)
         self.assertEquals([], people)
         self.assertEquals([], songs)
+
+    def test_getting_studio_reports_for_valid_release(self):
+        """Should get two reports for the release."""
+        response = self.app.get("/api/1.0/releases/{}/studio-report".format(self.release_ids[0]))
+        data = json.loads(response.data.decode())
+
+        self.assertEquals(200, response.status_code)
+        self.assertNotEquals("", data)
+        self.assertTrue("reports" in data)
+        self.assertEquals(2, len(data["reports"]))
+        self.assertEquals("UnitTest Author", data["reports"][0]["author"])
+        self.assertEquals("UnitTest\n\nReport\nData", data["reports"][0]["report"])
+        self.assertNotEquals("", data["reports"][0]["date"])
+        self.assertEquals("UnitTest\n\nReport2\nData2", data["reports"][1]["report"])
+
+    def test_getting_studio_reports_for_invalid_release(self):
+        """Should return 404"""
+        response = self.app.get("/api/1.0/releases/{}/studio-report".format("abc"))
+        self.assertEquals(404, response.status_code)
+
+    def test_getting_studio_reports_for_valid_release_with_no_reports(self):
+        """Should get an empty array for the release."""
+        response = self.app.get("/api/1.0/releases/{}/studio-report".format(self.release_ids[1]))
+        data = json.loads(response.data.decode())
+
+        self.assertEquals(200, response.status_code)
+        self.assertNotEquals("", data)
+        self.assertTrue("reports" in data)
+        self.assertEquals(0, len(data["reports"]))

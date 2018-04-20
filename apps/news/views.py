@@ -2,12 +2,12 @@ import json
 import socket
 
 from flask import jsonify, make_response, request, url_for
-from flask_classful import FlaskView, route
-from sqlalchemy import asc, desc, and_
+from flask_classful import FlaskView
+from sqlalchemy import and_, desc
 from dictalchemy import make_class_dictable
 
 from app import db, cache
-from apps.news.models import News, NewsComments, NewsCategoriesMapping, NewsCategories
+from apps.news.models import News, NewsCategoriesMapping, NewsCategories
 from apps.news.patches import patch_item
 from apps.utils.auth import admin_only
 from apps.utils.strings import linux_linebreaks
@@ -67,12 +67,9 @@ class NewsView(FlaskView):
 
         # News items can have an existing category (=int), or a brand new one to be added
         # There is almost always more than one category for a news item
-        for category in data["categories"]:
-            # Skip empty values
-            if not category:
-                continue
-
+        for category in self.convert_categories(data["categories"]):
             if type(category) is not int:
+                print("Adding new newscat for value: {}".format(category))
                 # Only add new category if it doesn't exist
                 exists = NewsCategories.query.filter_by(Category=category).first()
                 if not exists:
@@ -129,7 +126,7 @@ class NewsView(FlaskView):
         db.session.query(NewsCategoriesMapping).filter_by(NewsID=news_id).delete()
         db.session.commit()
 
-        for category in data["categories"]:
+        for category in self.convert_categories(data["categories"]):
             cm = NewsCategoriesMapping(
                 NewsID=news_id,
                 NewsCategoryID=category,
@@ -174,47 +171,6 @@ class NewsView(FlaskView):
 
         return make_response("", 204)
 
-    @route("/<int:news_id>/comments/<int:comment_id>", methods=["GET"])
-    @cache.cached(timeout=300)
-    def news_comment(self, news_id, comment_id):
-        """Return a specific comment to a given News item"""
-        comment = NewsComments.query.filter_by(
-            NewsID=news_id,
-            NewsCommentID=comment_id
-        ).first_or_404()
-
-        contents = jsonify({
-            "comments": [{
-                "id": comment.NewsCommentID,
-                "newsId": comment.NewsID,
-                "userId": comment.UserID,
-                "comment": comment.Comment,
-                "created": comment.Created,
-                "updated": comment.Updated,
-            }]
-        })
-        return make_response(contents, 200)
-
-    @route("/<int:news_id>/comments/", methods=["GET"])
-    def news_comments(self, news_id):
-        """Return all comments for a given News item, in chronological order. Do not cache, since
-        these can get many comments in quick succession when discussing new news."""
-        comments = NewsComments.query.filter_by(NewsID=news_id).order_by(
-            asc(NewsComments.Created)
-        ).all()
-
-        contents = jsonify({
-            "comments": [{
-                "id": comment.NewsCommentID,
-                "newsId": comment.NewsID,
-                "userId": comment.UserID,
-                "comment": comment.Comment,
-                "created": comment.Created,
-                "updated": comment.Updated,
-            } for comment in comments]
-        })
-        return make_response(contents, 200)
-
     def get_categories(self, news_id):
         """Return a list of categories for the news_id"""
         mapped_ids = [
@@ -224,3 +180,21 @@ class NewsView(FlaskView):
             NewsCategories.NewsCategoryID.in_(mapped_ids)
         ).all()
         return [c.Category for c in categories]
+
+    def convert_categories(self, categories):
+        """Make sure that the received categories are a valid list."""
+        if type(categories) == str:
+            categories = [cat.strip() for cat in categories.split(",")]
+
+        result = []
+        # Clean up the list. Numbers will be int(), empty values removed.
+        for c in categories:
+            try:
+                current = int(c)
+            except ValueError:
+                if not c:
+                    continue
+                else:
+                    current = c
+            result.append(current)
+        return result

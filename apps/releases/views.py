@@ -3,18 +3,20 @@ import socket
 
 from dictalchemy import make_class_dictable
 from flask import jsonify, make_response, request, url_for
-from flask_classful import FlaskView
+from flask_classful import FlaskView, route
 from sqlalchemy import asc, desc
 
 from app import db, cache
 from apps.people.models import ReleasesPeopleMapping, People
 from apps.releases.add_cfps import add_categories, add_formats, add_people, add_songs
 from apps.releases.models import (
-    Releases, ReleasesCategoriesMapping, ReleasesFormatsMapping, ReleaseFormats, ReleaseCategories
+    Releases, ReleasesCategoriesMapping, ReleasesFormatsMapping, ReleaseFormats, ReleaseCategories,
+    ReleasesReports
 )
 from apps.releases.patches import patch_item
 from apps.songs.models import ReleasesSongsMapping, Songs
 from apps.utils.auth import admin_only
+from apps.utils.strings import linux_linebreaks
 from apps.utils.time import get_datetime, get_iso_format
 
 make_class_dictable(Releases)
@@ -246,3 +248,25 @@ class ReleasesView(FlaskView):
             )
 
         return songs
+
+    @route("/<int:release_id>/studio-report", methods=["GET"])
+    @cache.cached(timeout=300)
+    def release_studio_report(self, release_id):
+        """Return the studio report(s) to a given Release, in order of their write date.
+        There might be multiple reports."""
+        release = Releases.query.filter_by(ReleaseID=release_id).first_or_404()
+
+        contents = jsonify({
+            "reports": [{
+                "reportID": report.ReleasesReportsID,
+                "releaseID": report.ReleaseID,
+                "report": linux_linebreaks(report.Report),
+                "author": report.Author,
+                "date": get_iso_format(report.ReportDate),
+                "created_at": get_iso_format(report.Created),
+                "updated_at": get_iso_format(report.Updated)
+            } for report in ReleasesReports.query.filter_by(
+                ReleaseID=release.ReleaseID
+            ).order_by(asc(ReleasesReports.ReportDate)).all()]
+        })
+        return make_response(contents, 200)

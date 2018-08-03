@@ -270,3 +270,17 @@ class ReleasesView(FlaskView):
             ).order_by(asc(ReleasesReports.ReportDate)).all()]
         })
         return make_response(contents, 200)
+
+    @route("/categories", methods=["GET"])
+    @cache.cached(timeout=300)
+    def release_categories(self):
+        """Return all available Release categories, eg. "Full length", "Live", and their IDs."""
+        contents = jsonify({
+            "releaseCategories": [{
+                "id": category.ReleaseCategoryID,
+                "category": category.ReleaseCategory
+            } for category in ReleaseCategories.query.order_by(
+                asc(ReleaseCategories.ReleaseCategoryID)).all()
+            ]
+        })
+        return make_response(contents, 200)

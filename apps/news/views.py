@@ -2,8 +2,8 @@ import json
 import socket
 
 from flask import jsonify, make_response, request, url_for
-from flask_classful import FlaskView
-from sqlalchemy import and_, desc
+from flask_classful import FlaskView, route
+from sqlalchemy import and_, asc, desc
 from dictalchemy import make_class_dictable
 
 from app import db, cache
@@ -198,3 +198,17 @@ class NewsView(FlaskView):
                     current = c
             result.append(current)
         return result
+
+    @route("/categories", methods=["GET"])
+    @cache.cached(timeout=300)
+    def news_categories(self):
+        """Return all available News categories, eg. "Studio", "Recording", and their IDs."""
+        contents = jsonify({
+            "newsCategories": [{
+                "id": category.NewsCategoryID,
+                "category": category.Category
+            } for category in NewsCategories.query.order_by(
+                asc(NewsCategories.NewsCategoryID)).all()
+            ]
+        })
+        return make_response(contents, 200)

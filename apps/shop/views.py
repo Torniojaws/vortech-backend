@@ -12,6 +12,7 @@ from apps.shop.models import (
     ShopItems,
     ShopItemsCategoriesMapping,
     ShopItemsURLMapping,
+    ShopCategories
 )
 from apps.shop.patches import patch_item
 from apps.utils.auth import admin_only
@@ -203,3 +204,18 @@ class ShopItemsView(FlaskView):
             result.append(data)
 
         return result
+
+    @route("/categories", methods=["GET"])
+    @cache.cached(timeout=300)
+    def shop_categories(self):
+        """Return all available Shop categories, eg. "Clothing", "Album", and their IDs."""
+        contents = jsonify({
+            "shopCategories": [{
+                "id": category.ShopCategoryID,
+                "category": category.Category,
+                "subCategory": category.SubCategory
+            } for category in ShopCategories.query.order_by(
+                asc(ShopCategories.ShopCategoryID)).all()
+            ]
+        })
+        return make_response(contents, 200)

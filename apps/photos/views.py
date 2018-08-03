@@ -2,14 +2,16 @@ import json
 import socket
 
 from flask import jsonify, make_response, request, url_for
-from flask_classful import FlaskView
+from flask_classful import FlaskView, route
 from sqlalchemy import asc
 from dictalchemy import make_class_dictable
 
 from app import db, cache
 from apps.utils.time import get_datetime
 from apps.photos.add_ac import add_album, add_categories
-from apps.photos.models import Photos, PhotosAlbumsMapping, PhotosCategoriesMapping
+from apps.photos.models import (
+    Photos, PhotosAlbumsMapping, PhotosCategoriesMapping, PhotoCategories
+)
 from apps.photos.patches import patch_item
 from apps.utils.auth import admin_only
 
@@ -183,3 +185,17 @@ class PhotosView(FlaskView):
     def get_album_id(self, photo_id):
         """Return the Album ID the Photo is in. If no album is assigned, return None."""
         return PhotosAlbumsMapping.query.filter_by(PhotoID=photo_id).first().AlbumID
+
+    @route("/categories", methods=["GET"])
+    @cache.cached(timeout=300)
+    def photo_categories(self):
+        """Return all available photo categories, eg. "Live", "Studio", and their IDs."""
+        contents = jsonify({
+            "photoCategories": [{
+                "id": category.PhotoCategoryID,
+                "category": category.Category
+            } for category in PhotoCategories.query.order_by(
+                asc(PhotoCategories.PhotoCategoryID)).all()
+            ]
+        })
+        return make_response(contents, 200)

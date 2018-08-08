@@ -69,7 +69,6 @@ class NewsView(FlaskView):
         # There is almost always more than one category for a news item
         for category in self.convert_categories(data["categories"]):
             if type(category) is not int:
-                print("Adding new newscat for value: {}".format(category))
                 # Only add new category if it doesn't exist
                 exists = NewsCategories.query.filter_by(Category=category).first()
                 if not exists:
@@ -138,28 +137,17 @@ class NewsView(FlaskView):
 
     @admin_only
     def patch(self, news_id):
-        """Change an existing News item partially using an instruction-based JSON, as defined by:
-        https://tools.ietf.org/html/rfc6902
+        """Patch a given News item with RFC 6902 based partial updates."""
+        data = json.loads(request.data.decode())
+        result = patch_item(news_id, data)
 
-        When patching a joined table (like NewsCategoriesMapping), it should behave like a partial
-        PUT, so basically just a delete+add instead of nothing fancy.
-
-        According to RFC 5789, a PATCH should generally return 204 No Content, unless there were
-        errors. We return 422 Unprocessable Entity if the patch JSON is ok, but could
-        not be completed.
-        """
-        news_item = News.query.get_or_404(news_id)
-        result = []
-        status_code = 204
-        try:
-            # This only returns a value (boolean) for "op": "test"
-            result = patch_item(news_item, request.get_json())
-            db.session.commit()
-        except Exception as e:
-            print("News Patch threw error:\n{}\nThe request was:\n{}".format(e, request.get_json()))
-            # If any other exceptions happened during the patching, we'll return 422
-            result = {"success": False, "error": "Could not apply patch"}
+        # On any exception, success is False.
+        # Otherwise we return the result object, which has no success.
+        if result.get("success", True):
+            status_code = 200
+        else:
             status_code = 422
+            result = {"success": False, "message": "Could not apply patch"}
 
         return make_response(jsonify(result), status_code)
 

@@ -21,6 +21,7 @@ from typing import List
 from app import db
 
 from apps.news.models import News, NewsCategoriesMapping
+from apps.utils.time import get_datetime
 
 
 def patch_item(news_id, patches):
@@ -60,12 +61,15 @@ def patch_item(news_id, patches):
         db.session.rollback()
         return {"success": False, "message": str(e)}
 
+    news.Updated = get_datetime()
     db.session.commit()
     return result
 
 
 def apply_patch(news, patch, result):
     """Process a single patch, eg. {"op": "add", "path": "/contents", "value": "Hi"}"""
+    test_result = None
+
     if patch["op"] == "add":
         result = add(news, patch["path"], patch["value"], result)
     elif patch["op"] == "copy":
@@ -82,6 +86,9 @@ def apply_patch(news, patch, result):
             raise AssertionError("Test operation did not pass - cancelling patch")
     else:
         raise ValueError("Unknown patch operation - cancelling patch and rolling back")
+
+    if not test_result:
+        news.Updated = get_datetime()
     return result
 
 

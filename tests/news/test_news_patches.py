@@ -95,7 +95,7 @@ class TestNewsPatches(unittest.TestCase):
         self.assertEquals(None, result["updated"])
         self.assertEquals("Multi title", news_item.Title)
         self.assertEquals("My news 2", news_item.Author)
-        self.assertEquals(None, news_item.Updated)
+        self.assertNotEquals(None, news_item.Updated)  # Populated at the end of a PATCH
 
     def test_less_common_patches(self):
         payload = json.dumps([
@@ -114,7 +114,7 @@ class TestNewsPatches(unittest.TestCase):
         self.assertEquals(0, len(news_cats))
         self.assertEquals("New Author", result["author"])
         self.assertEquals("New Author", result["title"])
-        self.assertEquals(None, news_item.Updated)
+        self.assertNotEquals(None, news_item.Updated)  # Populated at the end of a PATCH
 
     def test_news_categories(self):
         """When adding news categories, we currently assume an integer list, ie. already existing

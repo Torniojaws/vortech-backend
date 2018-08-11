@@ -136,27 +136,16 @@ class UsersView(FlaskView):
     @registered_only
     def patch(self, user_id):
         """Patch the user."""
-        user = Users.query.filter_by(UserID=user_id).first_or_404()
-        result = []
-        status_code = 204
-        data = request.get_json()
-        # If any password updates, verify the length in advance
-        for p in data:
-            if type(p) == dict and "/password" in p.values():
-                if len(p["value"]) < CONFIG.MIN_PASSWORD_LENGTH:
-                    result = {
-                        "success": False,
-                        "result": "Password is missing or too short."
-                    }
-                    return make_response(jsonify(result), 400)
-        try:
-            # This only returns a value (boolean) for "op": "test"
-            result = patch_item(user, data)
-            db.session.commit()
-        except Exception:
-            # If any other exceptions happened during the patching, we'll return 422
-            result = {"success": False, "error": "Could not apply patch"}
+        data = json.loads(request.data.decode())
+        result = patch_item(user_id, data)
+
+        # On any exception, success is False.
+        # Otherwise we return the result object, which has no success.
+        if result.get("success", True):
+            status_code = 200
+        else:
             status_code = 422
+            result = {"success": False, "message": "Could not apply patch"}
 
         return make_response(jsonify(result), status_code)
 

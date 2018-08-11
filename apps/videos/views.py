@@ -2,7 +2,7 @@ import json
 import socket
 
 from flask import jsonify, make_response, request, url_for
-from flask_classful import FlaskView
+from flask_classful import FlaskView, route
 from sqlalchemy import asc, desc
 from dictalchemy import make_class_dictable
 
@@ -10,7 +10,7 @@ from app import db, cache
 from apps.utils.auth import admin_only
 from apps.utils.time import get_datetime
 from apps.videos.add_categories import add_categories
-from apps.videos.models import Videos, VideosCategoriesMapping
+from apps.videos.models import Videos, VideosCategoriesMapping, VideoCategories
 from apps.videos.patches import patch_item
 
 make_class_dictable(Videos)
@@ -132,3 +132,17 @@ class VideosView(FlaskView):
             asc(VideosCategoriesMapping.VideoCategoryID)
         ).all()
         return [c.VideoCategoryID for c in categories]
+
+    @route("/categories", methods=["GET"])
+    @cache.cached(timeout=300)
+    def video_categories(self):
+        """Return all available Video categories, eg. "Live", "Studio", and their IDs."""
+        contents = jsonify({
+            "videoCategories": [{
+                "id": category.VideoCategoryID,
+                "category": category.Category
+            } for category in VideoCategories.query.order_by(
+                asc(VideoCategories.VideoCategoryID)).all()
+            ]
+        })
+        return make_response(contents, 200)

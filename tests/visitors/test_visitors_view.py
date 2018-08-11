@@ -106,6 +106,12 @@ class TestVisitorsViews(unittest.TestCase):
             self.assertEquals(7, data["visits"]["month"])
             self.assertEquals(5, data["visits"]["week"])
             self.assertEquals(5, data["visits"]["today"])
+        elif datetime.now().day < 7:
+            # If the month changes during the week, it's also different:
+            # Week will have 7, month will have 5, and today will have 3
+            self.assertEquals(5, data["visits"]["month"])
+            self.assertEquals(7, data["visits"]["week"])
+            self.assertEquals(3, data["visits"]["today"])
         else:
             # Any other day. Today and This Week should be different
             self.assertEquals(7, data["visits"]["month"])

@@ -1,0 +1,13 @@
+---
+- hosts: all
+  tasks:
+    # Make sure the target installation directory is OK
+    - include: tasks/app-directory.yaml
+    # Setup virtualenv
+    - include: tasks/virtualenv.yaml
+    # Clone the latest version from Github
+    - include: tasks/clone-app.yaml
+    # Install the app requirements, ie. pip
+    - include: tasks/app-requirements.yaml
+    # Make sure the directories and grants are OK
+    - include: tasks/ensure-dirs-grants.yaml

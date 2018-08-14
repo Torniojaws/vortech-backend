@@ -1,0 +1,45 @@
+- name: Install Virtualenv
+  become: yes
+  apt:
+    name: virtualenv
+
+- name: Install Python 3
+  become: yes
+  apt:
+    name: python3
+
+- name: Install uWSGI
+  become: yes
+  apt:
+    name: uwsgi
+
+- name: Install uWSGI Emperor
+  become: yes
+  apt:
+    name: uwsgi-emperor
+
+- name: Install uWSGI Python 3 plugin
+  become: yes
+  apt:
+    name: uwsgi-plugin-python3
+
+- name: Install nginx
+  become: yes
+  apt:
+    name: nginx-full
+
+- name: Install Git
+  become: yes
+  apt:
+    name: git
+
+- name: Install Redis
+  become: yes
+  apt:
+    name: redis-server
+
+# Used in DB backups
+- name: Install Zip
+  become: yes
+  apt:
+    name: zip

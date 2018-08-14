@@ -1,0 +1,5 @@
+---
+- hosts: all
+  tasks:
+    # Install and configure MariaDB
+    - include: tasks/install-mariadb.yaml

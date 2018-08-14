@@ -1,0 +1,12 @@
+- hosts: all
+  tasks:
+    # Setup uWSGI
+    - include: tasks/uwsgi.yaml
+    # Setup nginx
+    - include: tasks/nginx-config.yaml
+    # Setup certbot and automatic certificate renewal (Let's Encrypt)
+    - include: tasks/certificates.yaml
+    # Configure nginx site
+    - include: tasks/nginx-site-config.yaml
+    # Configure uWSGI Emperor mode
+    - include: tasks/uwsgi-emperor.yaml

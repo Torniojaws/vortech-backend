@@ -58,3 +58,7 @@ ENV/
 # Project things
 secret.cfg
 logs/
+
+# Ansible
+*.retry
+vault_pass.txt

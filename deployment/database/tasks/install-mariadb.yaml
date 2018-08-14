@@ -1,0 +1,28 @@
+- include_vars: ../../vault
+
+- name: Install MariaDB
+  become: yes
+  apt:
+    name: mariadb-server
+
+- name: Install libmysqlclient-dev
+  become: yes
+  apt:
+    name: libmysqlclient-dev
+
+- name: Install MySQL-Python
+  become: yes
+  pip:
+    name: MySQL-python
+
+- name: Create the database
+  mysql_db:
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+    name: vortech
+
+- name: Create the database user with all grants
+  mysql_user:
+    name: vortech
+    password: "{{ database_password }}"
+    priv: '*.*:ALL'
+    state: present

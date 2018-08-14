@@ -1,0 +1,10 @@
+- hosts: all
+  tasks:
+    # Create a non-root user and grant rights
+    - import_tasks: tasks/user.yaml
+    # Make sure Apache2 is stopped, if it exists
+    - import_tasks: tasks/stop-apache.yaml
+    # Update apt
+    - import_tasks: tasks/update-apt.yaml
+    # Install required programs
+    - include: tasks/install-programs.yaml

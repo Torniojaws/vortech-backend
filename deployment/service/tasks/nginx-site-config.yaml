@@ -1,0 +1,5 @@
+- name: Create Nginx site config
+  become: yes
+  copy:
+    src: ../files/site-config.conf
+    dest: /etc/nginx/sites-enabled/vortechmusic.conf

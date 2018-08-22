@@ -1,0 +1,36 @@
+- name: Install Let's Encrypt
+  apt:
+    name: letsencrypt
+    state: latest
+
+- name: Create Let's Encrypt certificate
+  shell: letsencrypt certonly -n --webroot -w /srv/vortech-backend/letsencrypt -m vortechband@gmail.com --agree-tos -d vortechmusic.com
+  args:
+    creates: /etc/letsencrypt/live/vortechmusic.com
+
+
+# 1. Then generate the certs: ``sudo certbot --nginx -d vortechmusic.com -d www.vortechmusic.com``
+# - name: Generate certificates with Certbot
+#     1. In Vagrant, the easiest way is to run:
+#     ``sudo certbot run -a manual -i nginx -d vortechmusic.com -d www.vortechmusic.com``
+#     1. Note that it will require you to create files manually in the real host. After you run the
+#     command, it will tell you how to do it. Basically a random string in
+#     ``../public_html/.well-known/acme-challenge/<some_string>`` with a second random string as its
+#     contents
+# 1. There will be two files generated, which you should use as follows. Make sure the path is the
+# same that the actual file. It has sometimes appeared in
+# **/etc/letsencrypt/live/vortechmusic.com-0001/privkey.pem** instead of the below. In that case, use
+# the -0001 one.
+#     ```
+#     ssl_certificate /etc/letsencrypt/live/vortechmusic.com/fullchain.pem;
+#     ssl_certificate_key /etc/letsencrypt/live/vortechmusic.com/privkey.pem;
+#     ssl_trusted_certificate /etc/letsencrypt/live/vortechmusic.com/fullchain.pem;
+#     ```
+# 1. So let's uncomment those rows from the config:
+# ``sudo vim /etc/nginx/sites-enabled/vortech-backend.conf``
+# 1. Find the above three rows and uncomment them. Then save and close.
+# 1. Remove the unneeded config: ``sudo rm /etc/nginx/sites-enabled/vortechmusic.conf``
+# 1. At this point, you might make sure the Nginx config is OK: ``sudo nginx -t``
+# 1. Let's also setup the automatic renewal of the certificates: ``sudo crontab -e``
+# 1. Add this line to it: ``0 8 1 */2 * /usr/bin/certbot renew --quiet``. It will renew the
+# certificates on Day 1 of every second month at 08:00, eg. 1 September at 08:00, 1 November at 08:00

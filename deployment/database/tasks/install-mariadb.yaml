@@ -15,14 +15,19 @@
   pip:
     name: MySQL-python
 
-- name: Create the database
-  mysql_db:
-    login_unix_socket: /var/run/mysqld/mysqld.sock
-    name: vortech
-
 - name: Create the database user with all grants
+  become: yes
   mysql_user:
+    login_user: root
+    login_password: ""
     name: vortech
     password: "{{ database_password }}"
     priv: '*.*:ALL'
     state: present
+
+- name: Create the database
+  become: yes
+  mysql_db:
+    # Using the socket is basically the equivalent of "sudo mysql"
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+    name: vortech

@@ -4,9 +4,11 @@
     - include: tasks/uwsgi.yaml
     # Setup nginx
     - include: tasks/nginx-config.yaml
-    # Setup certbot and automatic certificate renewal (Let's Encrypt)
-    - include: tasks/certificates.yaml
+    # Setup certbot
+    - include: tasks/certbot.yaml
     # Configure nginx site
     - include: tasks/nginx-site-config.yaml
+    # Configure Let's Encrypt
+    - include: tasks/letsencrypt.yaml
     # Configure uWSGI Emperor mode
     - include: tasks/uwsgi-emperor.yaml

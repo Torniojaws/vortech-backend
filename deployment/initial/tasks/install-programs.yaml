@@ -1,12 +1,12 @@
-- name: Install Virtualenv
-  become: yes
-  apt:
-    name: virtualenv
-
 - name: Install Python 3
   become: yes
   apt:
     name: python3
+
+- name: Install Python3 Virtualenv
+  become: yes
+  apt:
+    name: python3-venv
 
 - name: Install uWSGI
   become: yes
@@ -43,3 +43,14 @@
   become: yes
   apt:
     name: zip
+
+# Needed for the app
+- name: Install build-essential
+  become: yes
+  apt:
+    name: build-essential
+
+- name: Install python3-dev
+  become: yes
+  apt:
+    name: python3-dev

@@ -7,9 +7,11 @@
 - name: Database setup
   import_playbook: database/setup.yaml
 
-    # Install the app
-    # - include: app/setup.yaml
-    # Service setup
-    # - include: service/setup.yaml
-    # Start the service
-    # - include: app/tasks/start.yaml
+- name: Install the app
+  import_playbook: app/setup.yaml
+
+- name: Service setup
+  import_playbook: service/setup.yaml
+
+# - name: Start the service
+#   import_playbook: app/tasks/start.yaml

@@ -1,0 +1,4 @@
+- name: Setup virtualenv in the app directory
+  become: yes
+  # Need to use shell explicitly, to prevent Ansible from using Python 2
+  shell: python3 -m venv /srv/vortech-backend/venv

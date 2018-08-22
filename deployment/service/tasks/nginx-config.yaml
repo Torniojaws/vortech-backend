@@ -1,0 +1,17 @@
+- name: Create Nginx config file
+  become: yes
+  copy:
+    src: ../files/nginx-config.conf
+    dest: /etc/nginx/sites-enabled/vortech-backend.conf
+
+- name: Create nginx cert directory
+  become: yes
+  file:
+    path: /etc/nginx/cert
+    state: directory
+
+- name: Create the Nginx dhparam file
+  become: yes
+  openssl_dhparam:
+    path: /etc/nginx/cert/dhparam.pem
+    size: 2048

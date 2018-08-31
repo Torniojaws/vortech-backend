@@ -1,0 +1,5 @@
+---
+- include_vars: ../vault
+
+env: prod
+database_password: {{ secret_prod_db_password }}

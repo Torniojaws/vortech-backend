@@ -10,11 +10,6 @@
   apt:
     name: libmysqlclient-dev
 
-- name: Install MySQL-Python
-  become: yes
-  pip:
-    name: MySQL-python
-
 - name: Create the database user with all grants
   become: yes
   mysql_user:

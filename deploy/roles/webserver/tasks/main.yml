@@ -1,0 +1,4 @@
+---
+- name: Testing
+  register: foo
+  debug: msg="testaan"

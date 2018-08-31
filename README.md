@@ -20,7 +20,13 @@ separate repository.
 
 ## Install
 
-See the [Install Instructions](INSTALL.md)
+The preferred method is to use the makefile, which runs a whole slew of Ansible playbooks.
+
+1. Install make: ``sudo apt get install make``
+1. Add the file ``vault_password`` to the root dir and add the password there.
+1. Then in the project root, run ``make deploy``
+
+But you can also check the full manual steps from [Install Instructions](INSTALL.md)
 
 ## Running locally
 

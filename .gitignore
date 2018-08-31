@@ -61,4 +61,4 @@ logs/
 
 # Ansible
 *.retry
-vault_pass.txt
+vault_password

@@ -1,5 +1,7 @@
 import json
 import unittest
+
+from flask_caching import Cache
 from sqlalchemy import asc
 
 from app import app, db
@@ -13,17 +15,13 @@ class TestVoteShopItemsView(unittest.TestCase):
     def setUp(self):
         self.app = app.test_client()
 
-        """
-        Title = db.Column(db.String(200), nullable=False)
-        Description = db.Column(db.Text)
-        Price = db.Column(
-            db.Float(precision=10, asdecimal=True, decimal_return_scale=2), nullable=False
-        )
-        Currency = db.Column(db.String(3), nullable=False)
-        Image = db.Column(db.String(200))
-        Created = db.Column(db.DateTime)
-        Updated = db.Column(db.DateTime)
-        """
+        # Clear redis cache completely
+        cache = Cache()
+        cache.init_app(app, config={"CACHE_TYPE": "redis"})
+        with app.app_context():
+            cache.clear()
+
+        self.app = app.test_client()
 
         # Add three shopitems
         shopitem1 = ShopItems(
@@ -35,24 +33,33 @@ class TestVoteShopItemsView(unittest.TestCase):
             Created=get_datetime(),
         )
         shopitem2 = ShopItems(
-            Title="UnitTest1",
-            Description="UnitTest Item1",
+            Title="UnitTest2",
+            Description="UnitTest Item2",
             Price=12.34,
             Currency="EUR",
-            Image="unittest1.jpg",
+            Image="unittest2.jpg",
             Created=get_datetime(),
         )
         shopitem3 = ShopItems(
-            Title="UnitTest1",
-            Description="UnitTest Item1",
+            Title="UnitTest3",
+            Description="UnitTest Item3",
             Price=12.34,
             Currency="EUR",
-            Image="unittest1.jpg",
+            Image="unittest3.jpg",
+            Created=get_datetime(),
+        )
+        shopitem4 = ShopItems(
+            Title="UnitTest4",
+            Description="UnitTest Item4",
+            Price=12.34,
+            Currency="EUR",
+            Image="unittest4.jpg",
             Created=get_datetime(),
         )
         db.session.add(shopitem1)
         db.session.add(shopitem2)
         db.session.add(shopitem3)
+        db.session.add(shopitem4)
         db.session.commit()
 
         # Add a guest and registered user, and a test token for the registered
@@ -104,6 +111,7 @@ class TestVoteShopItemsView(unittest.TestCase):
         self.guest_id = user_guest.UserID
 
         self.shopitem_ids = [shopitem1.ShopItemID, shopitem2.ShopItemID, shopitem3.ShopItemID]
+        self.shopitem_without_votes = shopitem4.ShopItemID
 
         # Add some votes for each shopitem - minimum is 1.0, maximum is 5.0. The real steps will be
         # in 0.5 increments. However, any 2 decimal float between 1.00 and 5.00 is technically ok.
@@ -157,7 +165,7 @@ class TestVoteShopItemsView(unittest.TestCase):
 
         self.assertEquals(200, response.status_code)
         self.assertNotEquals(None, data)
-        self.assertEquals(3, len(data["votes"]))
+        self.assertEquals(4, len(data["votes"]))
         self.assertEquals(self.shopitem_ids[0], data["votes"][0]["shopitemID"])
         self.assertEquals(3, data["votes"][0]["voteCount"])
         self.assertEquals(3.33, data["votes"][0]["rating"])
@@ -166,8 +174,8 @@ class TestVoteShopItemsView(unittest.TestCase):
         self.assertEquals(3, data["votes"][2]["voteCount"])
         self.assertEquals(3, data["votes"][2]["rating"])
 
-    def test_getting_votes_for_one_songitem(self):
-        """Should return the votes for the specified songitem."""
+    def test_getting_votes_for_one_shopitem(self):
+        """Should return the votes for the specified shopitem."""
         response = self.app.get("/api/1.0/votes/shopitems/{}".format(self.shopitem_ids[1]))
         data = json.loads(response.data.decode())
 
@@ -178,8 +186,20 @@ class TestVoteShopItemsView(unittest.TestCase):
         self.assertEquals(1, data["votes"][0]["voteCount"])
         self.assertEquals(5, data["votes"][0]["rating"])
 
+    def test_getting_votes_for_shopitem_without_votes(self):
+        """Should return an empty object."""
+        response = self.app.get("/api/1.0/votes/shopitems/{}".format(self.shopitem_without_votes))
+        data = json.loads(response.data.decode())
+
+        self.assertEquals(200, response.status_code)
+        self.assertNotEquals(None, data)
+        self.assertEquals(1, len(data["votes"]))
+        self.assertEquals(self.shopitem_without_votes, data["votes"][0]["shopitemID"])
+        self.assertEquals(0, data["votes"][0]["voteCount"])
+        self.assertEquals(0, data["votes"][0]["rating"])
+
     def test_adding_a_vote_as_guest(self):
-        """Should add a new vote for the specified songitem, which is given in the JSON."""
+        """Should add a new vote for the specified shopitem, which is given in the JSON."""
         response = self.app.post(
             "/api/1.0/votes/shopitems/",
             data=json.dumps(
@@ -252,7 +272,7 @@ class TestVoteShopItemsView(unittest.TestCase):
         self.assertEquals(1, len(votes))
         self.assertEquals(5.00, float(votes[0].Vote))
 
-    def test_adding_another_vote_as_registered_user_for_same_songitem(self):
+    def test_adding_another_vote_as_registered_user_for_same_shopitem(self):
         """Should replace the existing vote with the new one."""
         response = self.app.post(
             "/api/1.0/votes/shopitems/",

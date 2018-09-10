@@ -100,9 +100,11 @@ class ReleaseVotesView(FlaskView):
         ).filter_by(ReleaseID=release_id).first()
 
         voteCount = self.get_vote_count(release_id)
-        rating = float(votes.sumVotes) / voteCount
+        rating = 0
+        if votes.sumVotes:
+            rating = round(float(votes.sumVotes) / voteCount, 2)
 
-        return round(rating, 2)
+        return rating
 
 
 class PhotosVotesView(FlaskView):
@@ -190,9 +192,11 @@ class PhotosVotesView(FlaskView):
         ).filter_by(PhotoID=photo_id).first()
 
         voteCount = self.get_vote_count(photo_id)
-        rating = float(votes.sumVotes) / voteCount
+        rating = 0
+        if votes.sumVotes:
+            rating = round(float(votes.sumVotes) / voteCount, 2)
 
-        return round(rating, 2)
+        return rating
 
 
 class SongsVotesView(FlaskView):
@@ -280,9 +284,11 @@ class SongsVotesView(FlaskView):
         ).filter_by(SongID=song_id).first()
 
         voteCount = self.get_vote_count(song_id)
-        rating = float(votes.sumVotes) / voteCount
+        rating = 0
+        if votes.sumVotes:
+            rating = round(float(votes.sumVotes) / voteCount, 2)
 
-        return round(rating, 2)
+        return rating
 
 
 class ShopItemsVotesView(FlaskView):
@@ -370,6 +376,8 @@ class ShopItemsVotesView(FlaskView):
         ).filter_by(ShopItemID=shopitem_id).first()
 
         voteCount = self.get_vote_count(shopitem_id)
-        rating = float(votes.sumVotes) / voteCount
+        rating = 0
+        if votes.sumVotes:
+            rating = round(float(votes.sumVotes) / voteCount, 2)
 
-        return round(rating, 2)
+        return rating

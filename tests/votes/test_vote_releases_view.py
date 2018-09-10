@@ -1,5 +1,7 @@
 import json
 import unittest
+
+from flask_caching import Cache
 from sqlalchemy import asc
 
 from app import app, db
@@ -12,6 +14,15 @@ from apps.utils.time import get_datetime, get_datetime_one_hour_ahead
 class TestVoteReleasesView(unittest.TestCase):
     def setUp(self):
         self.app = app.test_client()
+
+        # Clear redis cache completely
+        cache = Cache()
+        cache.init_app(app, config={"CACHE_TYPE": "redis"})
+        with app.app_context():
+            cache.clear()
+
+        self.app = app.test_client()
+
         # Add three releases
         release1 = Releases(
             Title="UnitTest 1",
@@ -37,9 +48,18 @@ class TestVoteReleasesView(unittest.TestCase):
             Created=get_datetime(),
             ReleaseCode="TEST003"
         )
+        release4 = Releases(
+            Title="UnitTest 4",
+            Date=get_datetime(),
+            Artist="UnitTest 4 Arts",
+            Credits="UnitTest foursome",
+            Created=get_datetime(),
+            ReleaseCode="TEST004"
+        )
         db.session.add(release1)
         db.session.add(release2)
         db.session.add(release3)
+        db.session.add(release4)
         db.session.commit()
 
         # Add a guest and registered user, and a test token for the registered
@@ -91,6 +111,7 @@ class TestVoteReleasesView(unittest.TestCase):
         self.guest_id = user_guest.UserID
 
         self.release_ids = [release1.ReleaseID, release2.ReleaseID, release3.ReleaseID]
+        self.release_without_votes = release4.ReleaseID
 
         # Add some votes for each release - minimum is 1.0, maximum is 5.0. The real steps will be
         # in 0.5 increments. However, any 2 decimal float between 1.00 and 5.00 is technically ok.
@@ -144,7 +165,7 @@ class TestVoteReleasesView(unittest.TestCase):
 
         self.assertEquals(200, response.status_code)
         self.assertNotEquals(None, data)
-        self.assertEquals(3, len(data["votes"]))
+        self.assertEquals(4, len(data["votes"]))
         self.assertEquals(self.release_ids[0], data["votes"][0]["releaseID"])
         self.assertEquals(3, data["votes"][0]["voteCount"])
         self.assertEquals(3.33, data["votes"][0]["rating"])
@@ -207,6 +228,18 @@ class TestVoteReleasesView(unittest.TestCase):
         )
 
         self.assertEquals(404, response.status_code)
+
+    def test_getting_votes_for_release_without_votes(self):
+        """Should return an empty object."""
+        response = self.app.get("/api/1.0/votes/releases/{}".format(self.release_without_votes))
+        data = json.loads(response.data.decode())
+
+        self.assertEquals(200, response.status_code)
+        self.assertNotEquals(None, data)
+        self.assertEquals(1, len(data["votes"]))
+        self.assertEquals(self.release_without_votes, data["votes"][0]["releaseID"])
+        self.assertEquals(0, data["votes"][0]["voteCount"])
+        self.assertEquals(0, data["votes"][0]["rating"])
 
     def test_adding_a_vote_as_guest(self):
         """Should add a new vote for the specified release, which is given in the JSON."""

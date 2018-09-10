@@ -1,5 +1,7 @@
 import json
 import unittest
+
+from flask_caching import Cache
 from sqlalchemy import asc
 
 from app import app, db
@@ -12,6 +14,14 @@ from apps.utils.time import get_datetime, get_datetime_one_hour_ahead
 class TestVoteSongsView(unittest.TestCase):
     def setUp(self):
         self.app = app.test_client()
+
+        # Clear redis cache completely
+        cache = Cache()
+        cache.init_app(app, config={"CACHE_TYPE": "redis"})
+        with app.app_context():
+            cache.clear()
+
+        self.app = app.test_client()        
 
         # Add three songs
         song1 = Songs(
@@ -26,9 +36,14 @@ class TestVoteSongsView(unittest.TestCase):
             Title="UnitTest3",
             Duration=123,
         )
+        song4 = Songs(
+            Title="UnitTest4",
+            Duration=123,
+        )
         db.session.add(song1)
         db.session.add(song2)
         db.session.add(song3)
+        db.session.add(song4)
         db.session.commit()
 
         # Add a guest and registered user, and a test token for the registered
@@ -80,6 +95,7 @@ class TestVoteSongsView(unittest.TestCase):
         self.guest_id = user_guest.UserID
 
         self.song_ids = [song1.SongID, song2.SongID, song3.SongID]
+        self.song_without_votes = song4.SongID
 
         # Add some votes for each song - minimum is 1.0, maximum is 5.0. The real steps will be
         # in 0.5 increments. However, any 2 decimal float between 1.00 and 5.00 is technically ok.
@@ -132,7 +148,7 @@ class TestVoteSongsView(unittest.TestCase):
 
         self.assertEquals(200, response.status_code)
         self.assertNotEquals(None, data)
-        self.assertEquals(3, len(data["votes"]))
+        self.assertEquals(4, len(data["votes"]))
         self.assertEquals(self.song_ids[0], data["votes"][0]["songID"])
         self.assertEquals(3, data["votes"][0]["voteCount"])
         self.assertEquals(3.33, data["votes"][0]["rating"])
@@ -152,6 +168,18 @@ class TestVoteSongsView(unittest.TestCase):
         self.assertEquals(self.song_ids[1], data["votes"][0]["songID"])
         self.assertEquals(1, data["votes"][0]["voteCount"])
         self.assertEquals(5, data["votes"][0]["rating"])
+
+    def test_getting_votes_for_song_without_votes(self):
+        """Should return an empty object."""
+        response = self.app.get("/api/1.0/votes/songs/{}".format(self.song_without_votes))
+        data = json.loads(response.data.decode())
+
+        self.assertEquals(200, response.status_code)
+        self.assertNotEquals(None, data)
+        self.assertEquals(1, len(data["votes"]))
+        self.assertEquals(self.song_without_votes, data["votes"][0]["songID"])
+        self.assertEquals(0, data["votes"][0]["voteCount"])
+        self.assertEquals(0, data["votes"][0]["rating"])
 
     def test_adding_a_vote_as_guest(self):
         """Should add a new vote for the specified song, which is given in the JSON."""

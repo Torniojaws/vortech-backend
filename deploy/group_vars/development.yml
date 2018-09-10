@@ -1,5 +1,0 @@
----
-- include_vars: ../vault
-
-env: dev
-database_password: {{ secret_dev_db_password }}

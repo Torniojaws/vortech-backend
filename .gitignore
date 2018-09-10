@@ -60,5 +60,6 @@ secret.cfg
 logs/
 
 # Ansible
+ansible.log
 *.retry
 vault_password

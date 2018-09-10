@@ -16,7 +16,7 @@
     login_user: root
     login_password: ""
     name: vortech
-    password: "{{ database_password }}"
+    password: "{{ master_db_password }}"
     priv: '*.*:ALL'
     state: present
 

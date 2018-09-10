@@ -6,10 +6,10 @@ test:
 # sudo apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D
 
 deploy-dev:
-	ansible-playbook --ask-become-pass --connection=local deploy/site.yml -i deploy/inventories/dev
+	export ANSIBLE_CONFIG=deploy/ansible.cfg && ansible-playbook --ask-become-pass --connection=local deploy/site.yml -i deploy/inventories/dev
 
 deploy-prod:
-	ansible-playbook --ask-become-pass --connection=local deploy/site.yml -i deploy/inventories/prod
+	export ANSIBLE_CONFIG=deploy/ansible.cfg && ansible-playbook --ask-become-pass --connection=local deploy/site.yml -i deploy/inventories/prod
 
 install:
 	source ~/.venv/vortech-backend/bin/activate

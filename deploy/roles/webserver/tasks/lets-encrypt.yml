@@ -1,0 +1,31 @@
+---
+- name: Check if first time running certbot
+  become: yes
+  stat:
+    path: /etc/letsencrypt/live/vortechmusic.com/
+  register: certbot_path
+
+- set_fact:
+    skip_certbot: "{{ certbot_path.stat.exists == True and certbot_path.stat.isdir is defined and certbot_path.stat.isdir == True | bool }}"
+
+# Everything below is for production-only
+# Also, if the above path exists, everything below will be SKIPPED (= let's encrypt is already setup)
+
+# TODO: Find a way to make generating the cert automatic. All the attempts require either manual steps,
+# an account key (where to get that?), or cannot be done using "command".
+# Basically to run this command:
+# sudo certbot --agree-tos -m vortechband@gmail.com --nginx -d vortechmusic.com -d www.vortechmusic.com
+# Which errors
+- name: Run certbot
+  become: yes
+  command: certbot --agree-tos -m vortechband@gmail.com --nginx -d vortechmusic.com -d www.vortechmusic.com
+
+- name: Add certbot renewal to crontab
+  become: yes
+  cron:
+    name: "Renew certificate 1st of every second month"
+    minute: "0"
+    hour: "8"
+    day: "1"
+    month: "*/2"
+    job: "/usr/bin/certbot renew --quiet"

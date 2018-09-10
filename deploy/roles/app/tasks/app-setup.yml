@@ -11,10 +11,19 @@
     dest: /srv/vortech-backend/html
     version: master
 
-- name: Install project pip requirements
+- name: Install PRODUCTION project pip requirements
+  when: env == "prod"
   become: yes
   pip:
     requirements: /srv/vortech-backend/html/requirements/prod.txt
+    virtualenv: /srv/vortech-backend/venv
+    virtualenv_python: python3
+
+- name: Install DEVELOPMENT project pip requirements
+  when: env == "dev"
+  become: yes
+  pip:
+    requirements: /srv/vortech-backend/html/requirements/dev.txt
     virtualenv: /srv/vortech-backend/venv
     virtualenv_python: python3
 

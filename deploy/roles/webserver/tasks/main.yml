@@ -1,4 +1,31 @@
----
-- name: Testing
-  register: foo
-  debug: msg="testaan"
+- name: Copy project Nginx config
+  become: yes
+  copy:
+    src: ../files/nginx-config.conf
+    dest: /etc/nginx/sites-enabled/vortech-backend.conf
+
+- name: Create Nginx cert directory
+  become: yes
+  file:
+    path: /etc/nginx/cert
+    state: directory
+
+- name: Create the Nginx dhparam file
+  become: yes
+  openssl_dhparam:
+    path: /etc/nginx/cert/dhparam.pem
+    size: 2048
+
+# Under Ubuntu 16.04, you first need to add the certbot PPA
+
+- name: Install python-certbot-nginx
+  become: yes
+  apt:
+    name: python-certbot-nginx
+
+- import_tasks: lets-encrypt.yml
+
+- name: Verify Nginx config is OK
+  become: yes
+  command: nginx -t
+  changed_when: false

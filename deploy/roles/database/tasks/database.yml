@@ -8,19 +8,29 @@
   apt:
     name: libmysqlclient-dev
 
-- name: Create the database user with all grants
+- name: Install Pip for Ansible
   become: yes
-  mysql_user:
-    login_user: root
-    login_password: ""
-    name: vortech
-    password: "{{ database_password }}"
-    priv: '*.*:ALL'
-    state: present
+  apt:
+    name: python-pip
+
+- name: Install MySQL-python for Ansible
+  become: yes
+  pip:
+    name: MySQL-python
 
 - name: Create the database
   become: yes
   mysql_db:
     # Using the socket is basically the equivalent of "sudo mysql"
     login_unix_socket: /var/run/mysqld/mysqld.sock
-    name: vortech
+    name: "{{ db_name }}"
+
+- name: Create the database user with grants
+  become: yes
+  mysql_user:
+    login_user: root
+    login_password: ""
+    name: "{{ db_username }}"
+    password: "{{ db_password }}"
+    priv: '*.*:ALL'
+    state: present

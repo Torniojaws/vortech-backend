@@ -1,8 +1,0 @@
----
-- hosts: all
-
-- name: Preparation
-  import_playbook: hosts/shared/preparation.yaml
-
-- name: Install required programs
-  import_playbook: hosts/dev/programs.yaml

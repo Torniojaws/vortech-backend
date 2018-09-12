@@ -1,5 +1,0 @@
-- name: Create the app directory
-  become: yes
-  file:
-    path: /srv/vortech-backend
-    state: directory

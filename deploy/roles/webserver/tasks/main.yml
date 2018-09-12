@@ -1,31 +1,17 @@
-- name: Copy project Nginx config
+- import_tasks: nginx.yml
+
+- debug:
+    msg: Remember to run Let's Encrypt manually! See letsencrypt.md in root
+
+- import_tasks: uwsgi.yml
+
+- name: Verify service status is OK
   become: yes
-  copy:
-    src: ../files/nginx-config.conf
-    dest: /etc/nginx/sites-enabled/vortech-backend.conf
-
-- name: Create Nginx cert directory
-  become: yes
-  file:
-    path: /etc/nginx/cert
-    state: directory
-
-- name: Create the Nginx dhparam file
-  become: yes
-  openssl_dhparam:
-    path: /etc/nginx/cert/dhparam.pem
-    size: 2048
-
-# Under Ubuntu 16.04, you first need to add the certbot PPA
-
-- name: Install python-certbot-nginx
-  become: yes
-  apt:
-    name: python-certbot-nginx
-
-- import_tasks: lets-encrypt.yml
-
-- name: Verify Nginx config is OK
-  become: yes
-  command: nginx -t
+  command: systemctl status emperor.uwsgi
   changed_when: false
+
+- name: Reload Emperor vassal
+  become: yes
+  command: touch --no-dereference /etc/uwsgi-emperor/vassals/vortech-backend.ini
+  args:
+    warn: False  # How to no-dereference with Ansible?

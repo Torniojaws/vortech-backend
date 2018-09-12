@@ -4,9 +4,8 @@
 
 # Vortech API
 
-This will be the production API on the new VPS and will be used in the future version of
-https://www.vortechmusic.com as the RESTful API for use by the frontend that will be done in a
-separate repository.
+This is the production Rest API of https://www.vortechmusic.com on the new VPS. The frontend is in
+the repository: https://github.com/Torniojaws/vortech-front/
 
 ## Stack
 
@@ -17,24 +16,28 @@ separate repository.
 - **Language:** Python 3
 - **Framework:** Flask
 - **Cache:** Redis
+- **Deployment:** Ansible
 
 ## Install
 
 The preferred method is to use the makefile, which runs a whole slew of Ansible playbooks.
 
 1. Install make: ``sudo apt get install make``
-1. Add the file ``vault_password`` to the root dir and add the password there.
-1. Then in the project root, run ``make deploy``
+1. Create the file ``deploy/vault_password`` and add the project vault password there.
+1. Then in the project root, run ``make deploy-dev`` or ``make deploy-prod``
 
-But you can also check the full manual steps from [Install Instructions](INSTALL.md)
+You can also check the full manual steps from [Install Instructions](INSTALL.md)
+
+## Update
+
+When updating an existing installation, use ``make update-prod``
 
 ## Running locally
 
 In the actual server, the backend runs via uWSGI as a service. But locally you can/need to launch
 it manually:
 
-1. Start the virtualenv: ``source ~/.venv/vortech-backend/bin/activate``
-1. Launch with: ``python3 manage.py runserver -h 0.0.0.0``
+1. Start the server: `make run`
 1. Send a request, eg. GET http://localhost:5000/api/1.0/news/
 
 ## Tests

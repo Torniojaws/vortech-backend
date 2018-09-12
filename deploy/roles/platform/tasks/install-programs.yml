@@ -43,16 +43,6 @@
   apt:
     name: zip
 
-- name: Install MariaDB
-  become: yes
-  apt:
-    name: mariadb-server
-
-- name: Install libmysqlclient-dev
-  become: yes
-  apt:
-    name: libmysqlclient-dev
-
 - name: Install Redis
   become: yes
   apt:

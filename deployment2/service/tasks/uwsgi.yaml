@@ -1,5 +1,0 @@
-- name: Configure uWSGI
-  become: yes
-  copy:
-    src: ../files/uwsgi-vortech-backend.ini
-    dest: /etc/uwsgi-emperor/vassals/vortech-backend.ini

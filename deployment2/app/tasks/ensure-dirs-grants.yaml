@@ -1,7 +1,0 @@
-- name: Make sure app directory grants are OK
-  become: yes
-  file:
-    dest: /srv/vortech-backend
-    owner: www-data
-    group: www-data
-    recurse: yes

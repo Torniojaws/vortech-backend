@@ -1,6 +1,0 @@
-- name: Install project pip requirements
-  become: yes
-  pip:
-    requirements: /srv/vortech-backend/html/requirements/prod.txt
-    virtualenv: /srv/vortech-backend/venv
-    virtualenv_python: python3

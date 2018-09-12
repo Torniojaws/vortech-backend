@@ -13,10 +13,10 @@
   apt:
     name: python-pip
 
-- name: Install MySQL-python for Ansible
+- name: Install PyMySQL for Ansible
   become: yes
   pip:
-    name: MySQL-python
+    name: pymysql
 
 - name: Create the database
   become: yes

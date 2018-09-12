@@ -111,10 +111,9 @@ def add_people(release_id, people):
         # Get the values
         for k, v in person.items():
             identifier = k
-            try:
-                int(identifier)
+            if isinstance(identifier, int):
                 maybe_exists = True
-            except:
+            else:
                 maybe_exists = False
             instruments = v
 
@@ -168,10 +167,9 @@ def add_songs(release_id, songs):
         # Get the data
         for k, v in song.items():
             identifier = k
-            try:
-                int(identifier)
+            if isinstance(identifier, int):
                 maybe_exists = True
-            except:
+            else:
                 maybe_exists = False
             duration = v
         song_id = None

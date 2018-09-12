@@ -15,7 +15,6 @@ redis==2.10.6
 uWSGI==2.0.17.1
 
 # Database things
-MySQL-python==1.2.5  # required by Ansible for MariaDB installation
 PyMySQL==0.9.2
 SQLAlchemy==1.2.10
 jsonpatch==1.23

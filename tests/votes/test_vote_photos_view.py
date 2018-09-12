@@ -1,5 +1,7 @@
 import json
 import unittest
+
+from flask_caching import Cache
 from sqlalchemy import asc
 
 from app import app, db
@@ -11,6 +13,14 @@ from apps.utils.time import get_datetime, get_datetime_one_hour_ahead
 
 class TestVotePhotosView(unittest.TestCase):
     def setUp(self):
+        self.app = app.test_client()
+
+        # Clear redis cache completely
+        cache = Cache()
+        cache.init_app(app, config={"CACHE_TYPE": "redis"})
+        with app.app_context():
+            cache.clear()
+
         self.app = app.test_client()
 
         # Add three photos
@@ -41,9 +51,19 @@ class TestVotePhotosView(unittest.TestCase):
             City="Espoo",
             Created=get_datetime(),
         )
+        photo4 = Photos(
+            Image="unittest4.jpg",
+            Caption="UnitTest4",
+            TakenBy="Unittester",
+            Country="Finland",
+            CountryCode="FI",
+            City="Espoo",
+            Created=get_datetime(),
+        )
         db.session.add(photo1)
         db.session.add(photo2)
         db.session.add(photo3)
+        db.session.add(photo4)
         db.session.commit()
 
         # Add a guest and registered user, and a test token for the registered
@@ -95,6 +115,7 @@ class TestVotePhotosView(unittest.TestCase):
         self.guest_id = user_guest.UserID
 
         self.photo_ids = [photo1.PhotoID, photo2.PhotoID, photo3.PhotoID]
+        self.photo_without_votes = photo4.PhotoID
 
         # Add some votes for each photo - minimum is 1.0, maximum is 5.0. The real steps will be
         # in 0.5 increments. However, any 2 decimal float between 1.00 and 5.00 is technically ok.
@@ -147,7 +168,7 @@ class TestVotePhotosView(unittest.TestCase):
 
         self.assertEquals(200, response.status_code)
         self.assertNotEquals(None, data)
-        self.assertEquals(3, len(data["votes"]))
+        self.assertEquals(4, len(data["votes"]))
         self.assertEquals(self.photo_ids[0], data["votes"][0]["photoID"])
         self.assertEquals(3, data["votes"][0]["voteCount"])
         self.assertEquals(3.33, data["votes"][0]["rating"])
@@ -167,6 +188,18 @@ class TestVotePhotosView(unittest.TestCase):
         self.assertEquals(self.photo_ids[1], data["votes"][0]["photoID"])
         self.assertEquals(1, data["votes"][0]["voteCount"])
         self.assertEquals(5, data["votes"][0]["rating"])
+
+    def test_getting_votes_for_photo_without_votes(self):
+        """Should return an empty object."""
+        response = self.app.get("/api/1.0/votes/photos/{}".format(self.photo_without_votes))
+        data = json.loads(response.data.decode())
+
+        self.assertEquals(200, response.status_code)
+        self.assertNotEquals(None, data)
+        self.assertEquals(1, len(data["votes"]))
+        self.assertEquals(self.photo_without_votes, data["votes"][0]["photoID"])
+        self.assertEquals(0, data["votes"][0]["voteCount"])
+        self.assertEquals(0, data["votes"][0]["rating"])
 
     def test_adding_a_vote_as_guest(self):
         """Should add a new vote for the specified photo, which is given in the JSON."""

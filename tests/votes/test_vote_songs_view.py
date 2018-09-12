@@ -21,7 +21,7 @@ class TestVoteSongsView(unittest.TestCase):
         with app.app_context():
             cache.clear()
 
-        self.app = app.test_client()        
+        self.app = app.test_client()
 
         # Add three songs
         song1 = Songs(
@@ -129,11 +129,11 @@ class TestVoteSongsView(unittest.TestCase):
 
     def tearDown(self):
         # Deleting a song will also delete the votes for it
-        for song in Songs.query.filter(Songs.Title.like("UnitTest%")).all():
+        for song in Songs.query.all():
             db.session.delete(song)
         db.session.commit()
 
-        for user in Users.query.filter(Users.Username.like("unittest%")).all():
+        for user in Users.query.all():
             db.session.delete(user)
         db.session.commit()
 

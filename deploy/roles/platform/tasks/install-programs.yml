@@ -1,0 +1,59 @@
+- name: Install Python3 Virtualenv
+  become: yes
+  apt:
+    name: python3-venv
+
+- name: Install Python 3
+  become: yes
+  apt:
+    name: python3
+
+- name: Install python3-dev
+  become: yes
+  apt:
+    name: python3-dev
+
+- name: Install uWSGI
+  become: yes
+  apt:
+    name: uwsgi
+
+- name: Install uWSGI Emperor
+  become: yes
+  apt:
+    name: uwsgi-emperor
+
+- name: Install uWSGI Python 3 plugin
+  become: yes
+  apt:
+    name: uwsgi-plugin-python3
+
+- name: Install nginx
+  become: yes
+  apt:
+    name: nginx-full
+
+- name: Install Git
+  become: yes
+  apt:
+    name: git
+
+- name: Install Zip
+  become: yes
+  apt:
+    name: zip
+
+- name: Install Redis
+  become: yes
+  apt:
+    name: redis-server
+
+- name: Install build-essential
+  become: yes
+  apt:
+    name: build-essential
+
+- name: Install software properties common
+  become: yes
+  apt:
+    name: software-properties-common

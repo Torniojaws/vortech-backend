@@ -1,0 +1,4 @@
+---
+- import_tasks: database.yml
+- import_tasks: secret-cfg.yml
+- import_tasks: migration.yml

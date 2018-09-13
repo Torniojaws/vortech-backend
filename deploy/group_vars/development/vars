@@ -1,0 +1,13 @@
+---
+env: dev
+master_db_password: "{{ vault_dev_db_master_password }}"
+secret: "{{ vault_dev_secret }}"
+
+db_dialect: mysql
+db_driver: pymysql
+db_host: 127.0.0.1
+db_port: 3306
+db_name: test_vortech
+db_username: "{{ vault_dev_db_user }}"
+db_password: "{{ vault_dev_db_pass }}"
+db_charset: utf8mb4

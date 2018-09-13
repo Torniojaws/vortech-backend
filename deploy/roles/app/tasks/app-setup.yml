@@ -1,0 +1,34 @@
+- name: Remove the previous app directory
+  become: yes
+  file:
+    path: /srv/vortech-backend/html
+    state: absent
+
+- name: Clone the latest master from Github
+  become: yes
+  git:
+    repo: "https://github.com/Torniojaws/vortech-backend.git"
+    dest: /srv/vortech-backend/html
+    version: master
+
+- name: Install PRODUCTION project pip requirements
+  when: env == "prod"
+  become: yes
+  pip:
+    requirements: /srv/vortech-backend/html/requirements/prod.txt
+    virtualenv: /srv/vortech-backend/venv
+    virtualenv_python: python3
+
+- name: Install DEVELOPMENT project pip requirements
+  when: env == "dev"
+  become: yes
+  pip:
+    requirements: /srv/vortech-backend/html/requirements/dev.txt
+    virtualenv: /srv/vortech-backend/venv
+    virtualenv_python: python3
+
+- name: Create the nginx logs directory
+  become: yes
+  file:
+    path: /srv/vortech-backend/logs
+    state: directory

@@ -2,7 +2,7 @@ import json
 import unittest
 
 from flask_caching import Cache
-from sqlalchemy import asc, or_
+from sqlalchemy import asc
 
 from app import app, db
 from apps.songs.models import Songs, SongsLyrics, SongsTabs
@@ -112,14 +112,7 @@ class TestSongsViews(unittest.TestCase):
         self.user_id = user.UserID
 
     def tearDown(self):
-        """Clean up the test data we entered."""
-        to_delete = Songs.query.filter(
-            or_(
-                Songs.Title.like("UnitTest%"),
-                Songs.Title == 99,
-            )
-        ).all()
-        for song in to_delete:
+        for song in Songs.query.all():
             db.session.delete(song)
         db.session.commit()
 

@@ -1,0 +1,3 @@
+# Normally this is run on the prod server
+[production]
+localhost

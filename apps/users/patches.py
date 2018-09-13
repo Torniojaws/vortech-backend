@@ -184,14 +184,7 @@ def update_values(user, source, target, result, direct_value=None):
         user.Username = value
         result["username"] = value
     elif target == "/password":
-        if (
-            not value
-            or len(value) < CONFIG.MIN_PASSWORD_LENGTH
-        ):
-            raise ValueError("Password is too short! Must be at least {} characters.".format(
-                CONFIG.MIN_PASSWORD_LENGTH)
-            )
-        user.Password = generate_password_hash(value)
+        user.Password = handle_password(user, value)
         result["password"] = "The password has been changed."
     elif target == "/level":
         result["level"] = "Changing user level is not allowed"
@@ -207,6 +200,14 @@ def update_values(user, source, target, result, direct_value=None):
         raise ValueError("Unknown path given to operation!")
 
     return user, result
+
+
+def handle_password(user, value):
+    if not value or len(value) < CONFIG.MIN_PASSWORD_LENGTH:
+        raise ValueError("Password is too short! Must be at least {} characters.".format(
+            CONFIG.MIN_PASSWORD_LENGTH)
+        )
+    return generate_password_hash(value)
 
 
 def get_value(user, source):

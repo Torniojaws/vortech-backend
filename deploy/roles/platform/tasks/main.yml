@@ -1,0 +1,5 @@
+---
+- import_tasks: create-user.yml
+- import_tasks: stop-apache.yml
+- import_tasks: update-apt.yml
+- import_tasks: install-programs.yml

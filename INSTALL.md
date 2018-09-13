@@ -1,11 +1,7 @@
 # Project setup instructions
 
 Follow the instructions below to setup the project into an "empty" platform, which is assumed to be
-Ubuntu 16.04 (Xenial) 64-bit. If you use Vagrant, note that there is bug in the official box
-"ubuntu/xenial64" in Windows. You cannot login with ``vagrant:vagrant`` like normal. The username is
-``ubuntu`` and the password is a random string visible in
-``~\Users\<Name>\.vagrant.d\...\Vagrantfile``. The unofficial recommendation is to use the box
-called ``v0rtex\xenial64`` (how fitting!)
+Ubuntu 18.04 64-bit. Tested on a Virtualbox running Ubuntu 16.04, also.
 
 # Preparation
 

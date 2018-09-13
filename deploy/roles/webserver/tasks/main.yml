@@ -1,0 +1,17 @@
+- import_tasks: nginx.yml
+
+- debug:
+    msg: Remember to run Let's Encrypt manually! See letsencrypt.md in root
+
+- import_tasks: uwsgi.yml
+
+- name: Verify service status is OK
+  become: yes
+  command: systemctl status emperor.uwsgi
+  changed_when: false
+
+- name: Reload Emperor vassal
+  become: yes
+  command: touch --no-dereference /etc/uwsgi-emperor/vassals/vortech-backend.ini
+  args:
+    warn: False  # How to no-dereference with Ansible?

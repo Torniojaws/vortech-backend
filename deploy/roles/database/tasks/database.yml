@@ -1,0 +1,36 @@
+- name: Install MariaDB
+  become: yes
+  apt:
+    name: mariadb-server
+
+- name: Install libmysqlclient-dev
+  become: yes
+  apt:
+    name: libmysqlclient-dev
+
+- name: Install Pip for Ansible
+  become: yes
+  apt:
+    name: python-pip
+
+- name: Install PyMySQL for Ansible
+  become: yes
+  pip:
+    name: pymysql
+
+- name: Create the database
+  become: yes
+  mysql_db:
+    # Using the socket is basically the equivalent of "sudo mysql"
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+    name: "{{ db_name }}"
+
+- name: Create the database user with grants
+  become: yes
+  mysql_user:
+    login_user: root
+    login_password: ""
+    name: "{{ db_username }}"
+    password: "{{ db_password }}"
+    priv: '*.*:ALL'
+    state: present

@@ -1,0 +1,21 @@
+---
+- name: Create the app directory
+  become: yes
+  file:
+    path: /srv/vortech-backend
+    state: directory
+
+- name: Setup virtualenv in the app directory
+  become: yes
+  # Need to use shell explicitly, to prevent Ansible from using Python 2
+  shell: python3 -m venv /srv/vortech-backend/venv
+
+- import_tasks: app-setup.yml
+
+- name: Make sure app directory grants are OK
+  become: yes
+  file:
+    dest: /srv/vortech-backend
+    owner: www-data
+    group: www-data
+    recurse: yes

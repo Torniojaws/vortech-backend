@@ -114,7 +114,7 @@ def add_people(release_id, people):
             try:
                 int(identifier)
                 maybe_exists = True
-            except:
+            except ValueError:
                 maybe_exists = False
             instruments = v
 
@@ -171,7 +171,7 @@ def add_songs(release_id, songs):
             try:
                 int(identifier)
                 maybe_exists = True
-            except:
+            except ValueError:
                 maybe_exists = False
             duration = v
         song_id = None

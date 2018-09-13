@@ -1,0 +1,13 @@
+---
+env: prod
+master_db_password: "{{ vault_prod_db_master_password }}"
+secret: "{{ vault_prod_secret }}"
+
+db_dialect: mysql
+db_driver: pymysql
+db_host: 127.0.0.1
+db_port: 3306
+db_name: vortech
+db_username: "{{ vault_prod_db_user }}"
+db_password: "{{ vault_prod_db_pass }}"
+db_charset: utf8mb4

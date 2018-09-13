@@ -1,0 +1,21 @@
+- name: Create the www-user group
+  become: yes
+  group:
+    name: www-user
+    state: present
+
+- name: Create a user
+  become: yes
+  user:
+    name: vortech
+    group: www-user
+    state: present
+
+- name: Grant rights to the group
+  become: yes
+  lineinfile:
+    dest: /etc/sudoers
+    state: present
+    regexp: '^%www-user\s'
+    line: '%www-user ALL=(ALL) ALL'
+    validate: '/usr/sbin/visudo -cf %s'

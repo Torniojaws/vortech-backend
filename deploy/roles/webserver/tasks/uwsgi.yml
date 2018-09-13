@@ -1,0 +1,35 @@
+- name: Setup uWSGI Emperor config
+  become: yes
+  copy:
+    src: ../files/uwsgi-vortech-backend.ini
+    dest: /etc/uwsgi-emperor/vassals/vortech-backend.ini
+
+- name: Stop uWSGI Emperor LSB
+  become: yes
+  command: systemctl stop uwsgi-emperor
+
+- name: Disable uWSGI Emperor LSB
+  become: yes
+  command: systemctl disable uwsgi-emperor
+
+- name: Setup uWSGI Emperor systemd service
+  become: yes
+  copy:
+    src: ../files/uwsgi-emperor.service
+    dest: /etc/systemd/system/emperor.uwsgi.service
+
+- name: Reload daemon
+  become: yes
+  command: systemctl daemon-reload
+
+- name: Enable Emperor service
+  become: yes
+  command: systemctl enable nginx emperor.uwsgi
+
+- name: Reload Nginx
+  become: yes
+  command: systemctl reload nginx
+
+- name: Start Emperor service
+  become: yes
+  command: systemctl start emperor.uwsgi

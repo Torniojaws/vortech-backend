@@ -42,8 +42,8 @@ it manually:
 
 ## Tests
 
-You can run the tests with ``python3 -m pytest tests/``. If you want the coverage report too, run
-it with:
+You can run the tests with ``make test``, or alternatively: ``python3 -m pytest tests/``.
+If you want the coverage report when running manually, run it with: 
 ``python3 -m pytest tests/ --cov=apps --cov-report term-missing``
 
 ## Versioning

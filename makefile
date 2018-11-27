@@ -31,7 +31,7 @@ update-prod:
 	sudo apt update
 	sudo apt upgrade
 	sudo apt autoremove
-	git checkout master
+	sudo git checkout master
 	sudo git pull
 	source /srv/vortech-backend/venv/bin/activate
 	pip3 install -r requirements/prod.txt

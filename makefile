@@ -32,7 +32,7 @@ update-prod:
 	sudo apt upgrade
 	sudo apt autoremove
 	git checkout master
-	git pull
+	sudo git pull
 	source /srv/vortech-backend/venv/bin/activate
 	pip3 install -r requirements/prod.txt
 	python3 manage.py db upgrade

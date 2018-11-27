@@ -34,7 +34,7 @@ update-prod:
 	sudo git checkout master
 	sudo git pull
 	source /srv/vortech-backend/venv/bin/activate; \
-	pip3 install -r requirements/prod.txt
+	pip3 install -r requirements/prod.txt; \
 	python3 manage.py db upgrade
 	sudo touch --no-dereference /etc/uwsgi-emperor/vassals/vortech-backend.ini
 	echo "Update done!"

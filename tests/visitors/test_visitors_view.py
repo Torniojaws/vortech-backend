@@ -106,6 +106,12 @@ class TestVisitorsViews(unittest.TestCase):
             self.assertEquals(7, data["visits"]["month"])
             self.assertEquals(5, data["visits"]["week"])
             self.assertEquals(5, data["visits"]["today"])
+        elif datetime.now().day == 1:
+            # If the tests are run on the 1st day of the month, and the
+            # month has changed during the week
+            self.assertEquals(5, data["visits"]["month"])
+            self.assertEquals(7, data["visits"]["week"])
+            self.assertEquals(5, data["visits"]["today"])
         elif datetime.now().day < 7:
             # If the month changes during the week, it's also different:
             # Week will have 7, month will have 5, and today will have 3
@@ -139,8 +145,8 @@ class TestVisitorsViews(unittest.TestCase):
 
         self.assertEquals("Unknown", visit.Country)  # You cannot get valid data in localhost
 
-        if datetime.now().weekday() == 0:
-            # Monday, special handling
+        if datetime.now().weekday() == 0 or datetime.now().day == 1:
+            # When run on a Monday or the 1st day of the month
             self.assertEquals(6, len(count))
         else:
             self.assertEquals(4, len(count))
@@ -168,8 +174,8 @@ class TestVisitorsViews(unittest.TestCase):
         self.assertEquals("Europe", visit.Continent)
         self.assertEquals("Republic of Lithuania", visit.Country)
 
-        if datetime.now().weekday() == 0:
-            # Monday, special handling
+        if datetime.now().weekday() == 0 or datetime.now().day == 1:
+            # When run on a Monday or the 1st day of the month
             self.assertEquals(6, len(count))
         else:
             self.assertEquals(4, len(count))
@@ -197,8 +203,8 @@ class TestVisitorsViews(unittest.TestCase):
 
         self.assertEquals("Europe", visit.Continent)
 
-        if datetime.now().weekday() == 0:
-            # Monday, special handling
+        if datetime.now().weekday() == 0 or datetime.now().day == 1:
+            # When run on a Monday or 1st day of the month
             self.assertEquals(5, len(count))
         else:
             self.assertEquals(3, len(count))

@@ -53,9 +53,16 @@ def register_views(app):
     from apps.subscribers.views import SubscribersView
     SubscribersView.register(app, route_base="{}/subscribers/".format(api_path))
 
-    from apps.users.views import UsersView, UserLoginView, UserLogoutView, UserRefreshTokenView
+    from apps.users.views import (
+        UsersView,
+        UserLoginView,
+        UserLoginCheckView,
+        UserLogoutView,
+        UserRefreshTokenView
+    )
     UsersView.register(app, route_base="{}/users/".format(api_path))
     UserLoginView.register(app, route_base="{}/login/".format(api_path))
+    UserLoginCheckView.register(app, route_base="{}/login/check/".format(api_path))
     UserLogoutView.register(app, route_base="{}/logout/".format(api_path))
     UserRefreshTokenView.register(app, route_base="{}/refresh/".format(api_path))
 

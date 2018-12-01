@@ -1,3 +1,4 @@
+import datetime
 import json
 import socket
 import uuid
@@ -312,6 +313,52 @@ class UserRefreshTokenView(FlaskView):
             result = {
                 "success": False,
                 "error": "Missing UserID or valid Token"
+            }
+
+        return make_response(jsonify(result), status_code)
+
+
+class UserLoginCheckView(FlaskView):
+    def post(self):
+        """Check the status of the User's tokens. When an access_token has expired, the user would
+        send a refresh_token to generate a new valid access_token. The refresh_token does not
+        expire."""
+        data = json.loads(request.data.decode())
+        user_id = data["id"]
+        access_token = data["access_token"]
+        refresh_token = data["refresh_token"]
+
+        token = UsersAccessTokens.query.filter(and_(
+            UsersAccessTokens.AccessToken == access_token,
+            UsersAccessTokens.UserID == user_id,
+        )).first()
+
+        if not token or token.RefreshToken != refresh_token:
+            status_code = 401
+            result = {
+                "success": False,
+                "error": "invalid_token"
+            }
+            return make_response(jsonify(result), status_code)
+
+        if token.ExpirationDate < datetime.datetime.now():
+            # AccessToken has expired - generate a new AccessToken
+            token.AccessToken = str(uuid.uuid4())
+            token.ExpirationDate = get_datetime_one_hour_ahead()
+            db.session.commit()
+
+            status_code = 200
+            result = {
+                "success": True,
+                "accessToken": token.AccessToken,
+                "expires_in": 3600,
+                "message": "AccessToken has been renewed"
+            }
+        else:
+            status_code = 200
+            result = {
+                "success": True,
+                "message": "AccessToken is valid"
             }
 
         return make_response(jsonify(result), status_code)

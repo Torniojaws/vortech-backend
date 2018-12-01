@@ -1,6 +1,7 @@
 ---
 env: dev
 master_db_password: "{{ vault_dev_db_master_password }}"
+mariadb_password: "{{ vault_mariadb_root_password }}"
 secret: "{{ vault_dev_secret }}"
 
 db_dialect: mysql

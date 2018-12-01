@@ -323,10 +323,25 @@ class UserLoginCheckView(FlaskView):
         """Check the status of the User's tokens. When an access_token has expired, the user would
         send a refresh_token to generate a new valid access_token. The refresh_token does not
         expire."""
-        data = json.loads(request.data.decode())
-        user_id = data["id"]
-        access_token = data["access_token"]
-        refresh_token = data["refresh_token"]
+        try:
+            data = json.loads(request.data.decode())
+            user_id = data["id"]
+            access_token = data["access_token"]
+            refresh_token = data["refresh_token"]
+        except ValueError:
+            status_code = 400
+            result = {
+                "success": False,
+                "error": "invalid_request"
+            }
+            return make_response(jsonify(result), status_code)
+        except KeyError:
+            status_code = 400
+            result = {
+                "success": False,
+                "error": "invalid_request"
+            }
+            return make_response(jsonify(result), status_code)
 
         token = UsersAccessTokens.query.filter(and_(
             UsersAccessTokens.AccessToken == access_token,

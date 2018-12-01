@@ -108,3 +108,34 @@ class TestUserLoginCheckView(unittest.TestCase):
             "success": False,
             "error": "invalid_token",
         })
+
+    def test_checking_missing_payload(self):
+        """Should be 400 Bad Request"""
+        response = self.app.post("/api/1.0/login/check/")
+        data = json.loads(response.data.decode())
+
+        self.assertEquals(400, response.status_code)
+        self.assertEquals(data, {
+            "success": False,
+            "error": "invalid_request",
+        })
+
+    def test_checking_partial_payload(self):
+        """Should be 400 Bad Request"""
+        response = self.app.post(
+            "/api/1.0/login/check/",
+            data=json.dumps(
+                dict(
+                    id=self.user_id,
+                    refresh_token=str(uuid.uuid4()),
+                )
+            ),
+            content_type="application/json"
+        )
+        data = json.loads(response.data.decode())
+
+        self.assertEquals(400, response.status_code)
+        self.assertEquals(data, {
+            "success": False,
+            "error": "invalid_request",
+        })

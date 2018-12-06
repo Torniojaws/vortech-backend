@@ -179,6 +179,7 @@ def replace(news, target, value, result):
         else:
             raise ValueError("Invalid categories type - must be a list (array)")
     else:
+        print("Replace function will update target=[{}] with value=[\n{}\n]".format(target, value))
         news, result = update_values(news, None, target, result, value)
     db.session.add(news)
     return result

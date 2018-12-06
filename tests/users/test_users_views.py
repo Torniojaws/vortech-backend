@@ -191,7 +191,53 @@ class TestUsersView(unittest.TestCase):
         response = json.loads(resp.get_data().decode())
 
         self.assertEquals(resp.status_code, 400)
-        self.assertFalse(response["success"])
+        self.assertEquals(response["success"], False)
+        self.assertEquals(response["result"], "Password missing.")
+
+    def test_adding_user_with_empty_username(self):
+        """Should be 400 Bad Request from Schematics validation."""
+        resp = self.app.post(
+            "/api/1.0/users/",
+            data=json.dumps(
+                dict(
+                    name="UnitTest Post",
+                    email="unittest@example.com",
+                    username="",
+                    password="",
+                )
+            ),
+            content_type="application/json"
+        )
+
+        response = json.loads(resp.get_data().decode())
+
+        self.assertEquals(resp.status_code, 400)
+        self.assertEquals(response["success"], False)
+        self.assertEquals(response["result"], "Validation failed")
+
+    def test_adding_user_that_already_exists(self):
+        """If you try to register a user with a Display Name that is already registered, it should
+        return a 400 Bad Request."""
+        # This user was already created in the Setup
+        resp = self.app.post(
+            "/api/1.0/users/",
+            data=json.dumps(
+                dict(
+                    name="UnitTest",
+                    email="unittest@example.com",
+                    username="unittester",
+                    password="unittest",
+                )
+            ),
+            content_type="application/json"
+        )
+        response = json.loads(resp.get_data().decode())
+
+        self.assertEquals(resp.status_code, 400)
+        self.assertEquals(response, {
+            "success": False,
+            "result": "Display Name or Username is already in use."
+        })
 
     def test_adding_user_with_too_short_password(self):
         """Test behaviour with too short password.
@@ -212,7 +258,13 @@ class TestUsersView(unittest.TestCase):
         response = json.loads(resp.get_data().decode())
 
         self.assertEquals(resp.status_code, 400)
-        self.assertFalse(response["success"])
+        self.assertEquals(response["success"], False)
+        self.assertEquals(
+            response["result"],
+            "Password is too short. Minimum length is {} characters.".format(
+                CONFIG.MIN_PASSWORD_LENGTH
+            )
+        )
 
     def test_updating_user(self):
         """Should update the given entry with the data in the JSON."""

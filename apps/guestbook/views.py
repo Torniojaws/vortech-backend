@@ -17,7 +17,7 @@ make_class_dictable(Guestbook)
 
 
 class GuestbookView(FlaskView):
-    @cache.cached(timeout=60)
+    # @cache.cached(timeout=60) Disabled for now, for better UX until Redis can handle updates
     def index(self):
         """Return all guestbook posts ordered by GuestbookID in reverse chronological order."""
         content = jsonify({

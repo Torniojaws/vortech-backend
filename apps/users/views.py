@@ -6,7 +6,10 @@ import uuid
 from dictalchemy import make_class_dictable
 from flask import jsonify, make_response, request, url_for
 from flask_classful import FlaskView, route
-from sqlalchemy import and_
+from schematics.models import Model
+from schematics.types import EmailType, StringType
+from schematics.exceptions import ModelValidationError
+from sqlalchemy import and_, exc
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from app import db, cache
@@ -68,25 +71,39 @@ class UsersView(FlaskView):
 
         which returns boolean"""
         data = json.loads(request.data.decode())
-        if (
-            not data["password"]
-            or len(data["password"]) < CONFIG.MIN_PASSWORD_LENGTH
-        ):
-            result = {
+
+        is_valid, errors = valid_input(data)
+        if errors:
+            return make_response(jsonify({
                 "success": False,
-                "result": "Password is missing or too short."
-            }
+                "result": "Validation failed",
+                "errors": errors
+            }), 400)
+
+        valid_password, result = validate_password(data)
+        if not valid_password:
             return make_response(jsonify(result), 400)
 
+        # Passed all checks, should be OK to add
         user = Users(
             Name=data["name"],
-            Email=data["email"],
+            Email=data["email"] or None,  # Empty strings would fail DB unique constraint
             Username=data["username"],
             Password=generate_password_hash(data["password"]),
             Created=get_datetime(),
         )
-        db.session.add(user)
-        db.session.commit()
+        try:
+            db.session.add(user)
+            db.session.commit()
+        except exc.IntegrityError as e:
+            # The chance of duplicate users is low, so it is good enough to let it fail upon insert
+            print(e)
+            db.session.rollback()
+            result = {
+                "success": False,
+                "result": "Display Name or Username is already in use."
+            }
+            return make_response(jsonify(result), 400)
 
         # Grant level 2 (= registered). Anything more is on a case-by-case basis.
         userlevel = UsersAccessMapping(
@@ -111,15 +128,8 @@ class UsersView(FlaskView):
         user = Users.query.filter_by(UserID=user_id).first_or_404()
         data = json.loads(request.data.decode())
 
-        # TODO: Move this to a separate method, since we use it a lot.
-        if (
-            not data["password"]
-            or len(data["password"]) < CONFIG.MIN_PASSWORD_LENGTH
-        ):
-            result = {
-                "success": False,
-                "result": "Password is missing or too short."
-            }
+        valid_password, result = validate_password(data)
+        if not valid_password:
             return make_response(jsonify(result), 400)
 
         # Update the User
@@ -377,3 +387,51 @@ class UserLoginCheckView(FlaskView):
             }
 
         return make_response(jsonify(result), status_code)
+
+
+class NewUserSchema(Model):
+    name = StringType(required=True, min_length=1)
+    email = EmailType(required=False)
+    username = StringType(required=True, min_length=1)
+    password = StringType(required=True)
+
+
+def valid_input(data):
+    """When adding a new user, we must validate the input, as it comes from outside."""
+    userSchema = NewUserSchema()
+    userSchema.name = data["name"]
+    userSchema.email = data["email"] or None
+    userSchema.username = data["username"]
+    userSchema.password = data["password"]
+
+    is_valid = False
+    errors = None
+    try:
+        userSchema.validate()
+        is_valid = True
+    except ModelValidationError as e:
+        print(e.messages)
+        errors = e.to_primitive()
+
+    return is_valid, errors
+
+
+def validate_password(data):
+    """This is used when adding or updating a user. In both cases, it is possible to update the
+    user's password, so it must be checked."""
+    if not data["password"]:
+        result = {
+            "success": False,
+            "result": "Password missing."
+        }
+        return False, result
+
+    if len(data["password"]) < CONFIG.MIN_PASSWORD_LENGTH:
+        result = {
+            "success": False,
+            "result": "Password is too short. Minimum length is {} characters.".format(
+                CONFIG.MIN_PASSWORD_LENGTH
+            )
+        }
+        return False, result
+    return True, None

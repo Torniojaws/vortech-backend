@@ -39,11 +39,15 @@ it manually:
 
 1. Start the server: `make run`
 1. Send a request, eg. GET http://localhost:5000/api/1.0/news/
+1. Create a new User through the register page http://localhost:5000/register
+1. To make the user an admin, run this into the DB:
+  ``INSERT INTO UsersAccessMapping(UserID, UsersAccessLevelID) VALUES(1, 4);``
+   Replace the ``1`` with the actual Users.UserID you have locally. Should usually be ``1``.
 
 ## Tests
 
 You can run the tests with ``make test``, or alternatively: ``python3 -m pytest tests/``.
-If you want the coverage report when running manually, run it with: 
+If you want the coverage report when running manually, run it with:
 ``python3 -m pytest tests/ --cov=apps --cov-report term-missing``
 
 ## Versioning

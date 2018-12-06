@@ -299,6 +299,13 @@ built by Flask Migrate.
     python manage.py db upgrade
     ```
 
+## Setup local DB for development
+
+1. Create a new User through the register page http://localhost:5000/register
+1. To make the user an admin, run this into the DB:
+  ``INSERT INTO UsersAccessMapping(UserID, UsersAccessLevelID) VALUES(1, 4);``
+   Replace the ``1`` with the actual Users.UserID you have locally. Should usually be ``1``.
+
 ## Final words for production
 
 Whenever you make changes to the app, you might need to "refresh" uWSGI to update the page that it

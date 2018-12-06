@@ -20,6 +20,9 @@ SQLAlchemy==1.2.10
 jsonpatch==1.23
 dictalchemy==0.1.2.7
 
+# Validation
+schematics==2.1.0
+
 # For statistics about visitors. Strange version numbering scheme, but it is correct
 maxminddb-geolite2==2018.703
 

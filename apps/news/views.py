@@ -151,6 +151,7 @@ class NewsView(FlaskView):
 
         return make_response(jsonify(result), status_code)
 
+    @admin_only
     def delete(self, news_id):
         """Delete a News item"""
         news = News.query.filter_by(NewsID=news_id).first()

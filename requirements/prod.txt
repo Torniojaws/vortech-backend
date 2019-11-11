@@ -9,7 +9,7 @@ Flask-SQLAlchemy==2.4.1
 werkzeug==0.16.0
 
 # Cache
-redis==2.10.6
+redis==3.3.11
 
 # Gateway
 uWSGI==2.0.18

@@ -3,6 +3,7 @@
   file:
     path: /srv/vortech-backend/html
     state: absent
+    ignore_errors: yes
 
 - name: Clone the latest master from Github
   become: yes

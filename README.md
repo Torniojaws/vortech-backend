@@ -20,11 +20,23 @@ the repository: https://github.com/Torniojaws/vortech-front/
 
 ## Install
 
-The preferred method is to use the makefile, which runs a whole slew of Ansible playbooks.
+You can setup in three different ways, in order of preference:
+
+### Docker Compose
+
+Make sure you have Docker and docker-compose installed, then:
+
+1. `docker-compose up`
+
+### Makefile
+
+The second best method is to use the makefile, which runs a whole slew of Ansible playbooks.
 
 1. Install make: ``sudo apt get install make``
 1. Create the file ``deploy/vault_password`` and add the project vault password there.
 1. Then in the project root, run ``make deploy-dev`` or ``make deploy-prod``
+
+### Full manual
 
 You can also check the full manual steps from [Install Instructions](INSTALL.md)
 

@@ -1,0 +1,24 @@
+version: '3.7'
+services:
+
+  # For local use only! In Prod there is a separate DB
+  database:
+    image: mariadb:10.4
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+
+  # Python 3 + Flask + nginx + uWSGI Emperor
+  platform:
+    build:
+      context: ./docker
+      dockerfile: platform.Dockerfile
+    depends_on:
+      - database
+
+  # The backend app
+  app:
+    build:
+      context: ./docker
+      dockerfile: Dockerfile
+    depends_on:
+      - platform

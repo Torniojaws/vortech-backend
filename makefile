@@ -1,8 +1,8 @@
 SHELL := /bin/bash
 
 test:
-	python3 -m flake8
-	python3 -m pytest tests/ --cov=apps --cov-report term-missing
+	python3.8 -m flake8
+	python3.8 -m pytest tests/ --cov=apps --cov-report term-missing
 
 # Run these if you get GPG errors during deploy-dev or deploy-prod
 # sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys F76221572C52609D

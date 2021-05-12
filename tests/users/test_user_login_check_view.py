@@ -54,8 +54,8 @@ class TestUserLoginCheckView(unittest.TestCase):
         )
         data = json.loads(response.data.decode())
 
-        self.assertEquals(200, response.status_code)
-        self.assertEquals(data, {
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(data, {
             "success": True,
             "message": "AccessToken is valid",
         })
@@ -80,8 +80,8 @@ class TestUserLoginCheckView(unittest.TestCase):
         data = json.loads(response.data.decode())
         token = UsersAccessTokens.query.filter_by(UserID=self.user_id).first()
 
-        self.assertEquals(200, response.status_code)
-        self.assertEquals(data, {
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(data, {
             "success": True,
             "accessToken": token.AccessToken,
             "message": "AccessToken has been renewed",
@@ -103,8 +103,8 @@ class TestUserLoginCheckView(unittest.TestCase):
         )
         data = json.loads(response.data.decode())
 
-        self.assertEquals(401, response.status_code)
-        self.assertEquals(data, {
+        self.assertEqual(401, response.status_code)
+        self.assertEqual(data, {
             "success": False,
             "error": "invalid_token",
         })
@@ -114,8 +114,8 @@ class TestUserLoginCheckView(unittest.TestCase):
         response = self.app.post("/api/1.0/login/check/")
         data = json.loads(response.data.decode())
 
-        self.assertEquals(400, response.status_code)
-        self.assertEquals(data, {
+        self.assertEqual(400, response.status_code)
+        self.assertEqual(data, {
             "success": False,
             "error": "invalid_request",
         })
@@ -134,8 +134,8 @@ class TestUserLoginCheckView(unittest.TestCase):
         )
         data = json.loads(response.data.decode())
 
-        self.assertEquals(400, response.status_code)
-        self.assertEquals(data, {
+        self.assertEqual(400, response.status_code)
+        self.assertEqual(data, {
             "success": False,
             "error": "invalid_request",
         })

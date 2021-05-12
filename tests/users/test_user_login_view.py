@@ -61,12 +61,12 @@ class TestUserLoginView(unittest.TestCase):
         )
         data = json.loads(response.data.decode())
 
-        self.assertEquals(201, response.status_code)
-        self.assertNotEquals(None, data)
+        self.assertEqual(201, response.status_code)
+        self.assertNotEqual(None, data)
         self.assertTrue(data["success"])
-        self.assertEquals(36, len(data["accessToken"]))
-        self.assertEquals(36, len(data["refreshToken"]))
-        self.assertEquals(3600, data["expires_in"])
+        self.assertEqual(36, len(data["accessToken"]))
+        self.assertEqual(36, len(data["refreshToken"]))
+        self.assertEqual(3600, data["expires_in"])
 
     def test_logging_in_with_valid_user_and_password_and_existing_old_token_in_db(self):
         """Should login, and also should remove the old token since it is unusable anyway."""
@@ -85,13 +85,13 @@ class TestUserLoginView(unittest.TestCase):
         # Old token should not exist anymore
         old_token = UsersAccessTokens.query.filter_by(AccessToken="unittest-access-token").first()
 
-        self.assertEquals(201, response.status_code)
-        self.assertNotEquals(None, data)
+        self.assertEqual(201, response.status_code)
+        self.assertNotEqual(None, data)
         self.assertTrue(data["success"])
-        self.assertEquals(36, len(data["accessToken"]))
-        self.assertEquals(36, len(data["refreshToken"]))
-        self.assertEquals(3600, data["expires_in"])
-        self.assertEquals(old_token, None)
+        self.assertEqual(36, len(data["accessToken"]))
+        self.assertEqual(36, len(data["refreshToken"]))
+        self.assertEqual(3600, data["expires_in"])
+        self.assertEqual(old_token, None)
 
     def test_logging_in_with_valid_user_and_wrong_password(self):
         """Should return a 401 with error message."""
@@ -107,12 +107,12 @@ class TestUserLoginView(unittest.TestCase):
         )
         data = json.loads(response.data.decode())
 
-        self.assertEquals(401, response.status_code)
-        self.assertNotEquals(None, data)
+        self.assertEqual(401, response.status_code)
+        self.assertNotEqual(None, data)
         self.assertFalse(data["success"])
         self.assertFalse("accessToken" in data)
         self.assertFalse("refreshToken" in data)
-        self.assertEquals("Invalid password.", data["error"])
+        self.assertEqual("Invalid password.", data["error"])
 
     def test_logging_in_with_invalid_user_and_password(self):
         """Should return a 404, since the user does not exist."""
@@ -127,4 +127,4 @@ class TestUserLoginView(unittest.TestCase):
             content_type="application/json"
         )
 
-        self.assertEquals(404, response.status_code)
+        self.assertEqual(404, response.status_code)

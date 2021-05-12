@@ -25,7 +25,7 @@ def patch_item(user_id, patches):
     except AssertionError:
         db.session.rollback()
         return {"success": False, "message": "Test comparison did not match"}
-    except ValueError as e:
+    except ValueError:
         db.session.rollback()
         return {"success": False, "message": "The patch contained invalid operations"}
 

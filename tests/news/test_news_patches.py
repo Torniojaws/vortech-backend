@@ -78,8 +78,8 @@ class TestNewsPatches(unittest.TestCase):
         ])
         result = patch_item(self.valid_news_id[0], payload)
         news_item = News.query.filter_by(NewsID=self.valid_news_id[0]).first()
-        self.assertEquals("New title", result["title"])
-        self.assertEquals("New title", news_item.Title)
+        self.assertEqual("New title", result["title"])
+        self.assertEqual("New title", news_item.Title)
 
     def test_multiple_patches(self):
         payload = json.dumps([
@@ -90,12 +90,12 @@ class TestNewsPatches(unittest.TestCase):
         ])
         result = patch_item(self.valid_news_id[1], payload)
         news_item = News.query.filter_by(NewsID=self.valid_news_id[1]).first()
-        self.assertEquals("Multi title", result["title"])
-        self.assertEquals("My news 2", result["author"])
-        self.assertEquals(None, result["updated"])
-        self.assertEquals("Multi title", news_item.Title)
-        self.assertEquals("My news 2", news_item.Author)
-        self.assertNotEquals(None, news_item.Updated)  # Populated at the end of a PATCH
+        self.assertEqual("Multi title", result["title"])
+        self.assertEqual("My news 2", result["author"])
+        self.assertEqual(None, result["updated"])
+        self.assertEqual("Multi title", news_item.Title)
+        self.assertEqual("My news 2", news_item.Author)
+        self.assertNotEqual(None, news_item.Updated)  # Populated at the end of a PATCH
 
     def test_less_common_patches(self):
         payload = json.dumps([
@@ -109,12 +109,12 @@ class TestNewsPatches(unittest.TestCase):
         news_item = News.query.filter_by(NewsID=self.valid_news_id[1]).first()
         news_cats = NewsCategoriesMapping.query.filter_by(NewsID=self.valid_news_id[1]).all()
 
-        self.assertNotEquals("My news 2", result["contents"])
-        self.assertEquals([], result["categories"])
-        self.assertEquals(0, len(news_cats))
-        self.assertEquals("New Author", result["author"])
-        self.assertEquals("New Author", result["title"])
-        self.assertNotEquals(None, news_item.Updated)  # Populated at the end of a PATCH
+        self.assertNotEqual("My news 2", result["contents"])
+        self.assertEqual([], result["categories"])
+        self.assertEqual(0, len(news_cats))
+        self.assertEqual("New Author", result["author"])
+        self.assertEqual("New Author", result["title"])
+        self.assertNotEqual(None, news_item.Updated)  # Populated at the end of a PATCH
 
     def test_news_categories(self):
         """When adding news categories, we currently assume an integer list, ie. already existing
@@ -129,8 +129,8 @@ class TestNewsPatches(unittest.TestCase):
         news_cats = NewsCategoriesMapping.query.filter_by(NewsID=self.valid_news_id[0]).order_by(
             asc(NewsCategoriesMapping.NewsCategoryID)
         ).all()
-        self.assertEquals(3, len(news_cats))
-        self.assertEquals(sorted(self.valid_cat_ids), sorted(result["categories"]))
+        self.assertEqual(3, len(news_cats))
+        self.assertEqual(sorted(self.valid_cat_ids), sorted(result["categories"]))
 
     def test_copy_date_updated(self):
         payload = json.dumps([
@@ -139,8 +139,8 @@ class TestNewsPatches(unittest.TestCase):
         result = patch_item(self.valid_news_id[1], payload)
         news_item = News.query.filter_by(NewsID=self.valid_news_id[1]).first()
 
-        self.assertEquals(self.updated, result["created"])
-        self.assertEquals(self.updated, news_item.Updated.strftime("%Y-%m-%d %H:%M:%S"))
+        self.assertEqual(self.updated, result["created"])
+        self.assertEqual(self.updated, news_item.Updated.strftime("%Y-%m-%d %H:%M:%S"))
 
     def test_copy_date_created(self):
         payload = json.dumps([
@@ -149,8 +149,8 @@ class TestNewsPatches(unittest.TestCase):
         result = patch_item(self.valid_news_id[1], payload)
         news_item = News.query.filter_by(NewsID=self.valid_news_id[1]).first()
 
-        self.assertEquals(self.created, result["updated"])
-        self.assertEquals(self.created, news_item.Updated.strftime("%Y-%m-%d %H:%M:%S"))
+        self.assertEqual(self.created, result["updated"])
+        self.assertEqual(self.created, news_item.Updated.strftime("%Y-%m-%d %H:%M:%S"))
 
     def test_replacing_news_categories(self):
         """When replacing news categories, we currently assume an integer list, ie. already existing
@@ -165,8 +165,8 @@ class TestNewsPatches(unittest.TestCase):
         news_cats = NewsCategoriesMapping.query.filter_by(NewsID=self.valid_news_id[0]).order_by(
             asc(NewsCategoriesMapping.NewsCategoryID)
         ).all()
-        self.assertEquals(2, len(news_cats))
-        self.assertEquals(
+        self.assertEqual(2, len(news_cats))
+        self.assertEqual(
             sorted([self.valid_cat_ids[1], self.valid_cat_ids[2]]),
             sorted(result["categories"])
         )
@@ -182,12 +182,12 @@ class TestNewsPatches(unittest.TestCase):
         ])
         result = patch_item(self.valid_news_id[1], payload)
         # If only "test" ops are run, an empty object is returned. Non-matches would raise.
-        self.assertEquals({}, result)
+        self.assertEqual({}, result)
 
     def test_getting_values(self):
         """Should return the value of the path."""
         news_item = News.query.filter_by(NewsID=self.valid_news_id[1]).first()
-        self.assertEquals("Test News 2", get_value(news_item, "/title"))
-        self.assertEquals("UnitTester", get_value(news_item, "/author"))
-        self.assertEquals(self.created, get_value(news_item, "/created"))
-        self.assertEquals("", get_value(news_item, "/doesnotexist"))
+        self.assertEqual("Test News 2", get_value(news_item, "/title"))
+        self.assertEqual("UnitTester", get_value(news_item, "/author"))
+        self.assertEqual(self.created, get_value(news_item, "/created"))
+        self.assertEqual("", get_value(news_item, "/doesnotexist"))

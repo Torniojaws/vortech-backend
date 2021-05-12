@@ -18,7 +18,7 @@ class TestShowsViews(unittest.TestCase):
 
         # Clear redis cache completely
         cache = Cache()
-        cache.init_app(app, config={"CACHE_TYPE": "redis"})
+        cache.init_app(app, config={"CACHE_TYPE": "RedisCache"})
         with app.app_context():
             cache.clear()
 
@@ -207,13 +207,13 @@ class TestShowsViews(unittest.TestCase):
 
         shows = json.loads(response.get_data().decode())
 
-        self.assertEquals(200, response.status_code)
-        self.assertEquals(3, len(shows["shows"]))
-        self.assertEquals("UnitTest 1", shows["shows"][0]["venue"])
-        self.assertEquals("UnitTest 3", shows["shows"][2]["venue"])
-        self.assertEquals("UnitTest Band3", shows["shows"][2]["otherBands"][0]["name"])
-        self.assertEquals("UnitTest Shaker", shows["shows"][2]["people"][0]["instruments"])
-        self.assertEquals(237, shows["shows"][2]["setlist"][0]["duration"])
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(3, len(shows["shows"]))
+        self.assertEqual("UnitTest 1", shows["shows"][0]["venue"])
+        self.assertEqual("UnitTest 3", shows["shows"][2]["venue"])
+        self.assertEqual("UnitTest Band3", shows["shows"][2]["otherBands"][0]["name"])
+        self.assertEqual("UnitTest Shaker", shows["shows"][2]["people"][0]["instruments"])
+        self.assertEqual(237, shows["shows"][2]["setlist"][0]["duration"])
 
     def test_getting_one_show(self):
         """Should return the data of a given show."""
@@ -221,12 +221,12 @@ class TestShowsViews(unittest.TestCase):
 
         show = json.loads(response.get_data().decode())
 
-        self.assertEquals(200, response.status_code)
-        self.assertEquals(1, len(show["shows"]))
-        self.assertEquals("UnitTest 1", show["shows"][0]["venue"])
-        self.assertEquals("UnitTest Band1", show["shows"][0]["otherBands"][0]["name"])
-        self.assertEquals("UnitTest Bass", show["shows"][0]["people"][0]["instruments"])
-        self.assertEquals(230, show["shows"][0]["setlist"][0]["duration"])
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(1, len(show["shows"]))
+        self.assertEqual("UnitTest 1", show["shows"][0]["venue"])
+        self.assertEqual("UnitTest Band1", show["shows"][0]["otherBands"][0]["name"])
+        self.assertEqual("UnitTest Bass", show["shows"][0]["people"][0]["instruments"])
+        self.assertEqual(230, show["shows"][0]["setlist"][0]["duration"])
 
     def test_adding_shows(self):
         """Should add a new entry to the table and then GET should return them. The extra details
@@ -255,13 +255,13 @@ class TestShowsViews(unittest.TestCase):
         get_shows = self.app.get("/api/1.0/shows/")
         showdata = json.loads(get_shows.get_data().decode())
 
-        self.assertEquals(201, response.status_code)
+        self.assertEqual(201, response.status_code)
         self.assertTrue("Location" in response.get_data().decode())
-        self.assertEquals("UnitTest 4", shows[3].Venue)
+        self.assertEqual("UnitTest 4", shows[3].Venue)
 
         # Verify the result of GET after the POST
-        self.assertEquals(200, get_shows.status_code)
-        self.assertEquals("UnitTest 4", showdata["shows"][3]["venue"])
+        self.assertEqual(200, get_shows.status_code)
+        self.assertEqual("UnitTest 4", showdata["shows"][3]["venue"])
 
     def test_updating_shows(self):
         """Should update the given entry with the data in the JSON."""
@@ -286,10 +286,10 @@ class TestShowsViews(unittest.TestCase):
         get_show = self.app.get("/api/1.0/shows/{}".format(self.valid_show_ids[1]))
         showdata = json.loads(get_show.get_data().decode())
 
-        self.assertEquals(200, response.status_code)
-        self.assertEquals(200, get_show.status_code)
-        self.assertEquals("UnitTest 5", showdata["shows"][0]["venue"])
-        self.assertEquals("Germany", showdata["shows"][0]["country"])
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(200, get_show.status_code)
+        self.assertEqual("UnitTest 5", showdata["shows"][0]["venue"])
+        self.assertEqual("Germany", showdata["shows"][0]["country"])
 
     def test_patching_a_show_using_add(self):
         """If the path already has a value, it is replaced. If it is empty, a new value is added.
@@ -339,8 +339,8 @@ class TestShowsViews(unittest.TestCase):
 
         show = Shows.query.filter_by(ShowID=self.valid_show_ids[2]).first()
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals("UnitTest 6", show.Venue)
+        self.assertEqual(204, response.status_code)
+        self.assertEqual("UnitTest 6", show.Venue)
         # TODO: Check the joined tables too
 
     def test_patching_a_show_using_copy(self):
@@ -366,8 +366,8 @@ class TestShowsViews(unittest.TestCase):
 
         show = Shows.query.filter_by(ShowID=self.valid_show_ids[0]).first()
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals("Finland", show.Venue)
+        self.assertEqual(204, response.status_code)
+        self.assertEqual("Finland", show.Venue)
 
     def test_patching_shwos_using_move(self):
         """Move a resource to target location and delete source."""
@@ -391,8 +391,8 @@ class TestShowsViews(unittest.TestCase):
 
         show = Shows.query.filter_by(ShowID=self.valid_show_ids[1]).first()
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals("SE", show.City)
+        self.assertEqual(204, response.status_code)
+        self.assertEqual("SE", show.City)
 
     def test_patching_a_show_using_remove(self):
         """Remove a resource. Most of the columns are NOT NULL though..."""
@@ -413,7 +413,7 @@ class TestShowsViews(unittest.TestCase):
             }
         )
 
-        self.assertEquals(204, response.status_code)
+        self.assertEqual(204, response.status_code)
 
     def test_patching_a_show_using_replace(self):
         """Replace the contents of a resource with a new value."""
@@ -437,8 +437,8 @@ class TestShowsViews(unittest.TestCase):
 
         show = Shows.query.filter_by(ShowID=self.valid_show_ids[1]).first()
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals("Switzerland", show.Country)
+        self.assertEqual(204, response.status_code)
+        self.assertEqual("Switzerland", show.Country)
 
     # "op": "test" will be implemented later
 
@@ -454,8 +454,8 @@ class TestShowsViews(unittest.TestCase):
 
         show = Shows.query.filter_by(ShowID=self.valid_show_ids[2]).first()
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals(None, show)
+        self.assertEqual(204, response.status_code)
+        self.assertEqual(None, show)
 
     def test_adding_show_with_bands_people_setlist(self):
         """Add a show with BPS included."""
@@ -493,19 +493,19 @@ class TestShowsViews(unittest.TestCase):
         get_shows = self.app.get("/api/1.0/shows/")
         showdata = json.loads(get_shows.get_data().decode())
 
-        self.assertEquals(201, response.status_code)
+        self.assertEqual(201, response.status_code)
         self.assertTrue("Location" in response.get_data().decode())
-        self.assertEquals("UnitTest 4", shows[3].Venue)
+        self.assertEqual("UnitTest 4", shows[3].Venue)
 
         # Verify the result of GET after the POST
-        self.assertEquals(200, get_shows.status_code)
-        self.assertEquals("UnitTest 4", showdata["shows"][3]["venue"])
-        self.assertEquals("My First Band", showdata["shows"][3]["otherBands"][0]["name"])
-        self.assertEquals("Metallica", showdata["shows"][3]["otherBands"][1]["name"])
-        self.assertEquals(self.valid_person_id, showdata["shows"][3]["people"][0]["personID"])
-        self.assertEquals("UnitTest Guitar", showdata["shows"][3]["people"][0]["instruments"])
-        self.assertEquals(self.valid_song_id, showdata["shows"][3]["setlist"][0]["songID"])
-        self.assertEquals(210, showdata["shows"][3]["setlist"][0]["duration"])
+        self.assertEqual(200, get_shows.status_code)
+        self.assertEqual("UnitTest 4", showdata["shows"][3]["venue"])
+        self.assertEqual("My First Band", showdata["shows"][3]["otherBands"][0]["name"])
+        self.assertEqual("Metallica", showdata["shows"][3]["otherBands"][1]["name"])
+        self.assertEqual(self.valid_person_id, showdata["shows"][3]["people"][0]["personID"])
+        self.assertEqual("UnitTest Guitar", showdata["shows"][3]["people"][0]["instruments"])
+        self.assertEqual(self.valid_song_id, showdata["shows"][3]["setlist"][0]["songID"])
+        self.assertEqual(210, showdata["shows"][3]["setlist"][0]["duration"])
 
     def test_updating_show_with_bands_people_setlist(self):
         """Update a show with BPS included."""
@@ -540,15 +540,15 @@ class TestShowsViews(unittest.TestCase):
         get_show = self.app.get("/api/1.0/shows/{}".format(self.valid_show_ids[1]))
         showdata = json.loads(get_show.get_data().decode())
 
-        self.assertEquals(200, response.status_code)
-        self.assertEquals(200, get_show.status_code)
-        self.assertEquals("UnitTest 5", showdata["shows"][0]["venue"])
-        self.assertEquals("Germany", showdata["shows"][0]["country"])
-        self.assertEquals("My First Band", showdata["shows"][0]["otherBands"][0]["name"])
-        self.assertEquals("Metallica", showdata["shows"][0]["otherBands"][1]["name"])
-        self.assertEquals("UnitTest Guitar", showdata["shows"][0]["people"][0]["instruments"])
-        self.assertEquals(self.valid_song_id, showdata["shows"][0]["setlist"][0]["songID"])
-        self.assertEquals(210, showdata["shows"][0]["setlist"][0]["duration"])
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(200, get_show.status_code)
+        self.assertEqual("UnitTest 5", showdata["shows"][0]["venue"])
+        self.assertEqual("Germany", showdata["shows"][0]["country"])
+        self.assertEqual("My First Band", showdata["shows"][0]["otherBands"][0]["name"])
+        self.assertEqual("Metallica", showdata["shows"][0]["otherBands"][1]["name"])
+        self.assertEqual("UnitTest Guitar", showdata["shows"][0]["people"][0]["instruments"])
+        self.assertEqual(self.valid_song_id, showdata["shows"][0]["setlist"][0]["songID"])
+        self.assertEqual(210, showdata["shows"][0]["setlist"][0]["duration"])
 
     def test_patching_with_exception(self):
         """Test a patch that results in 422 Unprocessable Entity."""
@@ -568,5 +568,5 @@ class TestShowsViews(unittest.TestCase):
             }
         )
 
-        self.assertEquals(422, response.status_code)
+        self.assertEqual(422, response.status_code)
         self.assertFalse("", response.data.decode())

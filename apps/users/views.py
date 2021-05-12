@@ -6,9 +6,6 @@ import uuid
 from dictalchemy import make_class_dictable
 from flask import jsonify, make_response, request, url_for
 from flask_classful import FlaskView, route
-from schematics.models import Model
-from schematics.types import EmailType, StringType
-from schematics.exceptions import ModelValidationError
 from sqlalchemy import and_, exc
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -72,12 +69,11 @@ class UsersView(FlaskView):
         which returns boolean"""
         data = json.loads(request.data.decode())
 
-        is_valid, errors = valid_input(data)
-        if errors:
+        if not data["name"] or not data["email"] or not data["username"]:
             return make_response(jsonify({
                 "success": False,
                 "result": "Validation failed",
-                "errors": errors
+                "errors": "Missing required data"
             }), 400)
 
         valid_password, result = validate_password(data)
@@ -387,33 +383,6 @@ class UserLoginCheckView(FlaskView):
             }
 
         return make_response(jsonify(result), status_code)
-
-
-class NewUserSchema(Model):
-    name = StringType(required=True, min_length=1)
-    email = EmailType(required=False)
-    username = StringType(required=True, min_length=1)
-    password = StringType(required=True)
-
-
-def valid_input(data):
-    """When adding a new user, we must validate the input, as it comes from outside."""
-    userSchema = NewUserSchema()
-    userSchema.name = data["name"]
-    userSchema.email = data["email"] or None
-    userSchema.username = data["username"]
-    userSchema.password = data["password"]
-
-    is_valid = False
-    errors = None
-    try:
-        userSchema.validate()
-        is_valid = True
-    except ModelValidationError as e:
-        print(e.messages)
-        errors = e.to_primitive()
-
-    return is_valid, errors
 
 
 def validate_password(data):

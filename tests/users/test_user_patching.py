@@ -70,13 +70,13 @@ class TestUsersPatches(unittest.TestCase):
         ])
         result = patch_item(self.valid_users[0], payload)
         user = Users.query.filter_by(UserID=self.valid_users[0]).first_or_404()
-        self.assertEquals("New name", result["name"])
-        self.assertEquals("unittest1@email.com", result["username"])
-        self.assertEquals(True, result["subscriber"])
-        self.assertEquals("New name", user.Name)
-        self.assertEquals("unittest1@email.com", user.Username)
-        self.assertEquals(True, user.Subscriber)
-        self.assertNotEquals(None, user.Updated)  # Should update automatically
+        self.assertEqual("New name", result["name"])
+        self.assertEqual("unittest1@email.com", result["username"])
+        self.assertEqual(True, result["subscriber"])
+        self.assertEqual("New name", user.Name)
+        self.assertEqual("unittest1@email.com", user.Username)
+        self.assertEqual(True, user.Subscriber)
+        self.assertNotEqual(None, user.Updated)  # Should update automatically
 
     def test_less_common_patches(self):
         """These are probably not used a lot."""
@@ -87,11 +87,11 @@ class TestUsersPatches(unittest.TestCase):
         ])
         result = patch_item(self.valid_users[1], payload)
         user = Users.query.filter_by(UserID=self.valid_users[1]).first_or_404()
-        self.assertEquals("unittest2@email.com", result["username"])
-        self.assertEquals(None, result["created"])
-        self.assertEquals("unittest2@email.com", user.Username)
-        self.assertEquals(None, user.Created)
-        self.assertNotEquals(None, user.Updated)  # Should update automatically
+        self.assertEqual("unittest2@email.com", result["username"])
+        self.assertEqual(None, result["created"])
+        self.assertEqual("unittest2@email.com", user.Username)
+        self.assertEqual(None, user.Created)
+        self.assertNotEqual(None, user.Updated)  # Should update automatically
 
     def test_each_add(self):
         payload = json.dumps([
@@ -103,22 +103,22 @@ class TestUsersPatches(unittest.TestCase):
         ])
         result = patch_item(self.valid_users[2], payload)
         user = Users.query.filter_by(UserID=self.valid_users[2]).first_or_404()
-        self.assertEquals("New email", result["email"])
-        self.assertEquals("New username", result["username"])
-        self.assertEquals("The password has been updated", result["password"])
-        self.assertEquals("User level is not allowed to be changed with PATCH", result["level"])
-        self.assertEquals(True, result["subscriber"])
-        self.assertEquals("New email", user.Email)
-        self.assertEquals("New username", user.Username)
-        self.assertEquals(True, check_password_hash(user.Password, "New password"))
-        self.assertEquals(True, user.Subscriber)
+        self.assertEqual("New email", result["email"])
+        self.assertEqual("New username", result["username"])
+        self.assertEqual("The password has been updated", result["password"])
+        self.assertEqual("User level is not allowed to be changed with PATCH", result["level"])
+        self.assertEqual(True, result["subscriber"])
+        self.assertEqual("New email", user.Email)
+        self.assertEqual("New username", user.Username)
+        self.assertEqual(True, check_password_hash(user.Password, "New password"))
+        self.assertEqual(True, user.Subscriber)
 
     def test_move(self):
         payload = json.dumps([{"op": "move", "from": "/created", "path": "/updated"}])
         result = patch_item(self.valid_users[0], payload)
         user = Users.query.filter_by(UserID=self.valid_users[0]).first_or_404()
-        self.assertEquals(None, user.Created)
-        self.assertNotEquals(None, result["updated"])
+        self.assertEqual(None, user.Created)
+        self.assertNotEqual(None, result["updated"])
 
     def test_remove(self):
         """NB: We always populate User.Updated after a successful patch, so it will not be None
@@ -130,12 +130,12 @@ class TestUsersPatches(unittest.TestCase):
         ])
         result = patch_item(self.valid_users[1], payload)
         user = Users.query.filter_by(UserID=self.valid_users[1]).first_or_404()
-        self.assertEquals(None, user.Email)
-        self.assertEquals(None, user.Created)
-        self.assertNotEquals(None, user.Updated)  # Will be populated after success
-        self.assertEquals(None, result["email"])
-        self.assertEquals(None, result["created"])
-        self.assertEquals(None, result["updated"])  # But here it is explicitly None after success
+        self.assertEqual(None, user.Email)
+        self.assertEqual(None, user.Created)
+        self.assertNotEqual(None, user.Updated)  # Will be populated after success
+        self.assertEqual(None, result["email"])
+        self.assertEqual(None, result["created"])
+        self.assertEqual(None, result["updated"])  # But here it is explicitly None after success
 
     def test_tests(self):
         """Verify the "test" operations for each valid path. The "test" operation does not return
@@ -154,8 +154,8 @@ class TestUsersPatches(unittest.TestCase):
         ])
         result = patch_item(self.valid_users[1], payload)  # NB: Only user[1] has a level
         user = Users.query.filter_by(UserID=self.valid_users[1]).first_or_404()
-        self.assertEquals("Passed the tests", result["name"])
-        self.assertEquals("Passed the tests", user.Name)
+        self.assertEqual("Passed the tests", result["name"])
+        self.assertEqual("Passed the tests", user.Name)
 
     def test_special_cases(self):
         """For coverage."""
@@ -169,21 +169,21 @@ class TestUsersPatches(unittest.TestCase):
         ])
         result = patch_item(self.valid_users[2], payload)  # users[2] has an Updated value
         user = Users.query.filter_by(UserID=self.valid_users[2]).first_or_404()
-        self.assertEquals("Passed the tests", result["name"])
-        self.assertEquals("Passed the tests", result["email"])
+        self.assertEqual("Passed the tests", result["name"])
+        self.assertEqual("Passed the tests", result["email"])
         self.assertTrue(check_password_hash(user.Password, "Passed the tests"))
-        self.assertEquals("Changing user level is not allowed", result["level"])
-        self.assertEquals("Changing the creation date is not allowed", result["created"])
-        self.assertEquals("Passed the tests", user.Name)
-        self.assertEquals("Passed the tests", user.Email)
+        self.assertEqual("Changing user level is not allowed", result["level"])
+        self.assertEqual("Changing the creation date is not allowed", result["created"])
+        self.assertEqual("Passed the tests", user.Name)
+        self.assertEqual("Passed the tests", user.Email)
 
     def test_get_values(self):
         user = Users.query.filter_by(UserID=self.valid_users[2]).first_or_404()
-        self.assertEquals("UnitTester 3", get_value(user, "/name"))
-        self.assertEquals("unittest3@email.com", get_value(user, "/email"))
-        self.assertEquals("unittest3", get_value(user, "/username"))
-        self.assertEquals(3, get_value(user, "/level"))
-        self.assertEquals(False, get_value(user, "/subscriber"))
-        self.assertEquals(self.user_created[2], get_value(user, "/created"))
-        self.assertEquals(self.user_updated, get_value(user, "/updated"))
-        self.assertEquals("", get_value(user, "/doesnotexist"))
+        self.assertEqual("UnitTester 3", get_value(user, "/name"))
+        self.assertEqual("unittest3@email.com", get_value(user, "/email"))
+        self.assertEqual("unittest3", get_value(user, "/username"))
+        self.assertEqual(3, get_value(user, "/level"))
+        self.assertEqual(False, get_value(user, "/subscriber"))
+        self.assertEqual(self.user_created[2], get_value(user, "/created"))
+        self.assertEqual(self.user_updated, get_value(user, "/updated"))
+        self.assertEqual("", get_value(user, "/doesnotexist"))

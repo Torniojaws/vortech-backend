@@ -2,7 +2,7 @@ import json
 import unittest
 
 from flask_caching import Cache
-from werkzeug import check_password_hash
+from werkzeug.security import check_password_hash
 
 from app import app, db
 from apps.users.models import Users, UsersAccessLevels, UsersAccessMapping, UsersAccessTokens
@@ -14,7 +14,7 @@ class TestUsersView(unittest.TestCase):
     def setUp(self):
         # Clear redis cache completely
         cache = Cache()
-        cache.init_app(app, config={"CACHE_TYPE": "redis"})
+        cache.init_app(app, config={"CACHE_TYPE": "RedisCache"})
         with app.app_context():
             cache.clear()
 
@@ -116,30 +116,30 @@ class TestUsersView(unittest.TestCase):
         )
         user = json.loads(resp.get_data().decode())
 
-        self.assertEquals(resp.status_code, 200)
-        self.assertEquals(1, len(user["users"]))
-        self.assertEquals("unittester", user["users"][0]["username"])
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(1, len(user["users"]))
+        self.assertEqual("unittester", user["users"][0]["username"])
         self.assertFalse("password" in user["users"][0])  # Should not be included
-        self.assertEquals(True, user["users"][0]["subscriber"])
-        self.assertEquals(2, user["users"][0]["level"])
+        self.assertEqual(True, user["users"][0]["subscriber"])
+        self.assertEqual(2, user["users"][0]["level"])
 
     def test_getting_all_users(self):
         """Should return all users' details."""
         resp = self.app.get("/api/1.0/users/")
         user = json.loads(resp.get_data().decode())
 
-        self.assertEquals(resp.status_code, 200)
-        self.assertEquals(3, len(user["users"]))
-        self.assertEquals("unittester", user["users"][0]["username"])
-        self.assertEquals("UnitTest2", user["users"][1]["name"])
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(3, len(user["users"]))
+        self.assertEqual("unittester", user["users"][0]["username"])
+        self.assertEqual("UnitTest2", user["users"][1]["name"])
         self.assertFalse("password" in user["users"][0])  # Should not be included
         self.assertFalse("password" in user["users"][1])  # Should not be included
-        self.assertEquals(CONFIG.REGISTERED_LEVEL, user["users"][0]["level"])
+        self.assertEqual(CONFIG.REGISTERED_LEVEL, user["users"][0]["level"])
         # This user is not mapped (exceptional case), so it should have guest level
-        self.assertEquals(CONFIG.GUEST_LEVEL, user["users"][1]["level"])
+        self.assertEqual(CONFIG.GUEST_LEVEL, user["users"][1]["level"])
         # Subscribers
-        self.assertEquals(True, user["users"][0]["subscriber"])
-        self.assertEquals(False, user["users"][1]["subscriber"])
+        self.assertEqual(True, user["users"][0]["subscriber"])
+        self.assertEqual(False, user["users"][1]["subscriber"])
 
     def test_adding_user(self):
         """The user should be created and the password must be in hashed form. Note that all
@@ -160,18 +160,18 @@ class TestUsersView(unittest.TestCase):
         user = Users.query.filter_by(Name="UnitTest Post").first_or_404()
         userlevel = UsersAccessMapping.query.filter_by(UserID=user.UserID).first()
 
-        self.assertEquals(resp.status_code, 201)
+        self.assertEqual(resp.status_code, 201)
         self.assertTrue("Location" in resp.get_data().decode())
-        self.assertEquals("UnitTest Post", user.Name)
-        self.assertEquals("unittest@example.com", user.Email)
+        self.assertEqual("UnitTest Post", user.Name)
+        self.assertEqual("unittest@example.com", user.Email)
         self.assertFalse(user.Password == "unittesting")  # Must not be the cleartext password
         # The hashed password must validate against the real cleartext password
         self.assertTrue(check_password_hash(user.Password, "unittesting"))
         # Sanity check with invalid password
         self.assertFalse(check_password_hash(user.Password, "notcorrect"))
         # Make sure user is mapped as level 2 (Registered user)
-        self.assertNotEquals(None, userlevel)
-        self.assertEquals(2, userlevel.UsersAccessLevelID)
+        self.assertNotEqual(None, userlevel)
+        self.assertEqual(2, userlevel.UsersAccessLevelID)
 
     def test_adding_user_with_empty_password(self):
         """Test behaviour with empty password."""
@@ -190,12 +190,12 @@ class TestUsersView(unittest.TestCase):
 
         response = json.loads(resp.get_data().decode())
 
-        self.assertEquals(resp.status_code, 400)
-        self.assertEquals(response["success"], False)
-        self.assertEquals(response["result"], "Password missing.")
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(response["success"], False)
+        self.assertEqual(response["result"], "Password missing.")
 
     def test_adding_user_with_empty_username(self):
-        """Should be 400 Bad Request from Schematics validation."""
+        """Should be 400 Bad Request."""
         resp = self.app.post(
             "/api/1.0/users/",
             data=json.dumps(
@@ -211,9 +211,9 @@ class TestUsersView(unittest.TestCase):
 
         response = json.loads(resp.get_data().decode())
 
-        self.assertEquals(resp.status_code, 400)
-        self.assertEquals(response["success"], False)
-        self.assertEquals(response["result"], "Validation failed")
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(response["success"], False)
+        self.assertEqual(response["result"], "Validation failed")
 
     def test_adding_user_that_already_exists(self):
         """If you try to register a user with a Display Name that is already registered, it should
@@ -233,8 +233,8 @@ class TestUsersView(unittest.TestCase):
         )
         response = json.loads(resp.get_data().decode())
 
-        self.assertEquals(resp.status_code, 400)
-        self.assertEquals(response, {
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(response, {
             "success": False,
             "result": "Display Name or Username is already in use."
         })
@@ -257,9 +257,9 @@ class TestUsersView(unittest.TestCase):
 
         response = json.loads(resp.get_data().decode())
 
-        self.assertEquals(resp.status_code, 400)
-        self.assertEquals(response["success"], False)
-        self.assertEquals(
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(response["success"], False)
+        self.assertEqual(
             response["result"],
             "Password is too short. Minimum length is {} characters.".format(
                 CONFIG.MIN_PASSWORD_LENGTH
@@ -301,16 +301,16 @@ class TestUsersView(unittest.TestCase):
         )
         userdata = json.loads(get_user.get_data().decode())
 
-        self.assertEquals(200, response.status_code)
-        self.assertEquals(200, get_user.status_code)
-        self.assertEquals("UnitTest Update", userdata["users"][0]["name"])
-        self.assertEquals("unittest-update@example.com", userdata["users"][0]["email"])
-        self.assertEquals("UnitTesterUpdate", userdata["users"][0]["username"])
-        self.assertEquals(False, userdata["users"][0]["subscriber"])
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(200, get_user.status_code)
+        self.assertEqual("UnitTest Update", userdata["users"][0]["name"])
+        self.assertEqual("unittest-update@example.com", userdata["users"][0]["email"])
+        self.assertEqual("UnitTesterUpdate", userdata["users"][0]["username"])
+        self.assertEqual(False, userdata["users"][0]["subscriber"])
         # Password should obviously not be in the response, but it should be updated.
         self.assertFalse("password" in userdata["users"][0])
-        self.assertNotEquals(password_before, password_after)
-        self.assertNotEquals("unittesting-update", password_after)
+        self.assertNotEqual(password_before, password_after)
+        self.assertNotEqual("unittesting-update", password_after)
         # The hashed updated password must validate against the real cleartext password
         self.assertTrue(check_password_hash(password_after, "unittesting-update"))
 
@@ -343,13 +343,13 @@ class TestUsersView(unittest.TestCase):
         )
         userdata = json.loads(get_user.get_data().decode())
 
-        self.assertEquals(400, response.status_code)
-        self.assertEquals(200, get_user.status_code)
-        self.assertEquals("UnitTest", userdata["users"][0]["name"])
-        self.assertEquals(True, userdata["users"][0]["subscriber"])
+        self.assertEqual(400, response.status_code)
+        self.assertEqual(200, get_user.status_code)
+        self.assertEqual("UnitTest", userdata["users"][0]["name"])
+        self.assertEqual(True, userdata["users"][0]["subscriber"])
         # Should be none, since we never saved one originally
-        self.assertEquals(None, userdata["users"][0]["email"])
-        self.assertEquals("unittester", userdata["users"][0]["username"])
+        self.assertEqual(None, userdata["users"][0]["email"])
+        self.assertEqual("unittester", userdata["users"][0]["username"])
         # Password should obviously not be in the response
         self.assertFalse("password" in userdata["users"][0])
 
@@ -367,12 +367,12 @@ class TestUsersView(unittest.TestCase):
         access_mapping = UsersAccessMapping.query.filter_by(UserID=self.valid_users[0]).first()
         access_tokens = UsersAccessTokens.query.filter_by(UserID=self.valid_users[0]).all()
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals("", response.data.decode())
+        self.assertEqual(204, response.status_code)
+        self.assertEqual("", response.data.decode())
 
-        self.assertEquals(None, user)
-        self.assertEquals(None, access_mapping)
-        self.assertEquals([], access_tokens)
+        self.assertEqual(None, user)
+        self.assertEqual(None, access_mapping)
+        self.assertEqual([], access_tokens)
 
     def test_patching_things(self):
         """All the features are tested in the two news patches test files. This tests
@@ -391,10 +391,10 @@ class TestUsersView(unittest.TestCase):
             }
         )
         data = json.loads(response.data.decode())
-        self.assertEquals(200, response.status_code)
-        self.assertEquals("New name", data["name"])
-        self.assertEquals("unittester", data["email"])
-        self.assertEquals(None, data["updated"])
+        self.assertEqual(200, response.status_code)
+        self.assertEqual("New name", data["name"])
+        self.assertEqual("unittester", data["email"])
+        self.assertEqual(None, data["updated"])
 
     def test_patching_with_invalid_payload(self):
         """Should return 422 Unprocessable Entity."""
@@ -408,6 +408,6 @@ class TestUsersView(unittest.TestCase):
             }
         )
         data = json.loads(response.data.decode())
-        self.assertEquals(422, response.status_code)
-        self.assertEquals(False, data["success"])
-        self.assertEquals("Could not apply patch", data["message"])
+        self.assertEqual(422, response.status_code)
+        self.assertEqual(False, data["success"])
+        self.assertEqual("Could not apply patch", data["message"])

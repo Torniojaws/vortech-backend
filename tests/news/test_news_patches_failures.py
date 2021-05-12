@@ -74,7 +74,7 @@ class TestNewsPatchesFailures(unittest.TestCase):
         payload = json.dumps([[{"op": "add", "path": "/categories", "value": "invalid"}]])
         result = patch_item(self.valid_news_id[0], payload)
         self.assertFalse(result["success"])
-        self.assertEquals("Only lists are allowed in categories", result["message"])
+        self.assertEqual("Only lists are allowed in categories", result["message"])
 
     def test_db_constraint(self):
         """When attempting an operation that is against the DB constraints."""
@@ -83,9 +83,9 @@ class TestNewsPatchesFailures(unittest.TestCase):
         ])
         result = patch_item(self.valid_news_id[1], payload)
         news_item = News.query.filter_by(NewsID=self.valid_news_id[0]).first()
-        self.assertNotEquals(None, news_item.Author)
+        self.assertNotEqual(None, news_item.Author)
         self.assertFalse(result["success"])
-        self.assertEquals("The defined source cannot be nullified (NOT NULL)", result["message"])
+        self.assertEqual("The defined source cannot be nullified (NOT NULL)", result["message"])
 
     def test_failing_test_op(self):
         """When the test OP comparison fails, should cancel the patch and rollback any
@@ -98,11 +98,11 @@ class TestNewsPatchesFailures(unittest.TestCase):
         ])
         result = patch_item(self.valid_news_id[1], payload)
         news_item = News.query.filter_by(NewsID=self.valid_news_id[1]).first()
-        self.assertNotEquals("Should not change", news_item.Contents)
-        self.assertNotEquals("Should not change", news_item.Author)
-        self.assertEquals("Test News 2", news_item.Title)
+        self.assertNotEqual("Should not change", news_item.Contents)
+        self.assertNotEqual("Should not change", news_item.Author)
+        self.assertEqual("Test News 2", news_item.Title)
         self.assertFalse(result["success"])
-        self.assertEquals("Comparison test failed in the patch", result["message"])
+        self.assertEqual("Comparison test failed in the patch", result["message"])
 
     def test_invalid_op(self):
         """When an invalid OP is in the payload, should cancel the patch and rollback any
@@ -113,9 +113,9 @@ class TestNewsPatchesFailures(unittest.TestCase):
         ])
         result = patch_item(self.valid_news_id[0], payload)
         news_item = News.query.filter_by(NewsID=self.valid_news_id[0]).first()
-        self.assertNotEquals("Should not change", news_item.Author)
+        self.assertNotEqual("Should not change", news_item.Author)
         self.assertFalse(result["success"])
-        self.assertEquals("Invalid operation in patch", result["message"])
+        self.assertEqual("Invalid operation in patch", result["message"])
 
     def test_add_function_with_non_list(self):
         """Should raise a ValueError."""
@@ -148,13 +148,13 @@ class TestNewsPatchesFailures(unittest.TestCase):
             {"op": "test", "path": "/doesnotexist", "value": "Test News 2"},
         ])
         result = patch_item(self.valid_news_id[1], payload)
-        self.assertEquals(False, result["success"])
-        self.assertEquals("Comparison test failed in the patch", result["message"])
+        self.assertEqual(False, result["success"])
+        self.assertEqual("Comparison test failed in the patch", result["message"])
 
     def test_copy_to_unknown_target_raises(self):
         payload = json.dumps([
             {"op": "copy", "from": "/created", "path": "/doesnotexist"},
         ])
         result = patch_item(self.valid_news_id[1], payload)
-        self.assertEquals(False, result["success"])
-        self.assertEquals("Invalid operation in patch", result["message"])
+        self.assertEqual(False, result["success"])
+        self.assertEqual("Invalid operation in patch", result["message"])

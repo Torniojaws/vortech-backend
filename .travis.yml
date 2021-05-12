@@ -1,7 +1,7 @@
 language: python
 
 python:
-- '3.5'
+- '3.6'
 
 services:
 - mysql
@@ -19,7 +19,7 @@ before_install:
 
 install:
 - pip install -r requirements/dev.txt
-- python manage.py db upgrade
+- flask db upgrade
 
 before_script:
 - redis-cli info

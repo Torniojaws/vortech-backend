@@ -34,46 +34,46 @@ class TestUsersPatchesFailures(unittest.TestCase):
         payload = json.dumps([{"op": "test", "path": "/username", "value": "invalid"}])
         result = patch_item(self.valid_users[0], payload)
         self.assertFalse(result["success"])
-        self.assertEquals("Test comparison did not match", result["message"])
+        self.assertEqual("Test comparison did not match", result["message"])
 
     def test_an_invalid_operation(self):
         payload = json.dumps([{"op": "doesnotexist", "path": "/username", "value": "invalid"}])
         result = patch_item(self.valid_users[1], payload)
         self.assertFalse(result["success"])
-        self.assertEquals("The patch contained invalid operations", result["message"])
+        self.assertEqual("The patch contained invalid operations", result["message"])
 
     def test_invalid_move(self):
         payload = json.dumps([{"op": "move", "from": "/username", "path": "/email"}])
         result = patch_item(self.valid_users[2], payload)
         self.assertFalse(result["success"])
-        self.assertEquals("The patch contained invalid operations", result["message"])
+        self.assertEqual("The patch contained invalid operations", result["message"])
 
     def test_invalid_remove(self):
         payload = json.dumps([{"op": "remove", "path": "/username"}])
         result = patch_item(self.valid_users[0], payload)
         self.assertFalse(result["success"])
-        self.assertEquals("The patch contained invalid operations", result["message"])
+        self.assertEqual("The patch contained invalid operations", result["message"])
 
     def test_invalid_path_in_test_op(self):
         payload = json.dumps([{"op": "test", "path": "/doesnotexist", "value": "foo"}])
         result = patch_item(self.valid_users[1], payload)
         self.assertFalse(result["success"])
-        self.assertEquals("Test comparison did not match", result["message"])
+        self.assertEqual("Test comparison did not match", result["message"])
 
     def test_adding_too_short_password(self):
         payload = json.dumps([{"op": "add", "path": "/password", "value": "a"}])
         result = patch_item(self.valid_users[2], payload)
         self.assertFalse(result["success"])
-        self.assertEquals("The patch contained invalid operations", result["message"])
+        self.assertEqual("The patch contained invalid operations", result["message"])
 
     def test_replacing_with_too_short_password(self):
         payload = json.dumps([{"op": "replace", "path": "/password", "value": "a"}])
         result = patch_item(self.valid_users[0], payload)
         self.assertFalse(result["success"])
-        self.assertEquals("The patch contained invalid operations", result["message"])
+        self.assertEqual("The patch contained invalid operations", result["message"])
 
     def test_replacing_nonexisting_path(self):
         payload = json.dumps([{"op": "replace", "path": "/doesnotexist", "value": "a"}])
         result = patch_item(self.valid_users[1], payload)
         self.assertFalse(result["success"])
-        self.assertEquals("The patch contained invalid operations", result["message"])
+        self.assertEqual("The patch contained invalid operations", result["message"])

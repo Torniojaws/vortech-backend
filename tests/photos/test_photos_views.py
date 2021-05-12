@@ -19,7 +19,7 @@ class TestPhotosViews(unittest.TestCase):
     def setUp(self):
         # Clear redis cache completely
         cache = Cache()
-        cache.init_app(app, config={"CACHE_TYPE": "redis"})
+        cache.init_app(app, config={"CACHE_TYPE": "RedisCache"})
         with app.app_context():
             cache.clear()
 
@@ -189,78 +189,78 @@ class TestPhotosViews(unittest.TestCase):
         response = self.app.get("/api/1.0/photos/")
         data = json.loads(response.data.decode())
 
-        self.assertEquals(200, response.status_code)
-        self.assertEquals(3, len(data["photos"]))
-        self.assertEquals("unittest1.jpg", data["photos"][0]["image"])
-        self.assertEquals("unittest2.jpg", data["photos"][1]["image"])
-        self.assertEquals("unittest3.jpg", data["photos"][2]["image"])
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(3, len(data["photos"]))
+        self.assertEqual("unittest1.jpg", data["photos"][0]["image"])
+        self.assertEqual("unittest2.jpg", data["photos"][1]["image"])
+        self.assertEqual("unittest3.jpg", data["photos"][2]["image"])
 
-        self.assertEquals(self.valid_photos[0], data["photos"][0]["id"])
-        self.assertEquals("UnitTest Caption 1", data["photos"][0]["caption"])
-        self.assertEquals("UnitTest Taken 1", data["photos"][0]["takenBy"])
-        self.assertEquals("UnitTest Country 1", data["photos"][0]["country"])
-        self.assertEquals("UT", data["photos"][0]["countryCode"])
-        self.assertEquals("UnitTest City 1", data["photos"][0]["city"])
-        self.assertNotEquals("", data["photos"][0]["createdAt"])
-        self.assertEquals(None, data["photos"][0]["updatedAt"])
+        self.assertEqual(self.valid_photos[0], data["photos"][0]["id"])
+        self.assertEqual("UnitTest Caption 1", data["photos"][0]["caption"])
+        self.assertEqual("UnitTest Taken 1", data["photos"][0]["takenBy"])
+        self.assertEqual("UnitTest Country 1", data["photos"][0]["country"])
+        self.assertEqual("UT", data["photos"][0]["countryCode"])
+        self.assertEqual("UnitTest City 1", data["photos"][0]["city"])
+        self.assertNotEqual("", data["photos"][0]["createdAt"])
+        self.assertEqual(None, data["photos"][0]["updatedAt"])
 
-        self.assertEquals(self.valid_albums[0], data["photos"][0]["albumID"])
-        self.assertEquals(self.valid_albums[0], data["photos"][1]["albumID"])
-        self.assertEquals(self.valid_albums[1], data["photos"][2]["albumID"])
+        self.assertEqual(self.valid_albums[0], data["photos"][0]["albumID"])
+        self.assertEqual(self.valid_albums[0], data["photos"][1]["albumID"])
+        self.assertEqual(self.valid_albums[1], data["photos"][2]["albumID"])
 
-        self.assertEquals(
+        self.assertEqual(
             [self.valid_cats[0], self.valid_cats[1]],
             data["photos"][0]["categories"]
         )
-        self.assertEquals([self.valid_cats[0]], data["photos"][1]["categories"])
-        self.assertEquals([self.valid_cats[2]], data["photos"][2]["categories"])
+        self.assertEqual([self.valid_cats[0]], data["photos"][1]["categories"])
+        self.assertEqual([self.valid_cats[2]], data["photos"][2]["categories"])
 
     def test_getting_one_photo(self):
         """Should return the data of a given photo."""
         response = self.app.get("/api/1.0/photos/{}".format(self.valid_photos[1]))
         data = json.loads(response.data.decode())
 
-        self.assertEquals(200, response.status_code)
-        self.assertEquals(1, len(data["photos"]))
-        self.assertEquals("unittest2.jpg", data["photos"][0]["image"])
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(1, len(data["photos"]))
+        self.assertEqual("unittest2.jpg", data["photos"][0]["image"])
 
-        self.assertEquals(self.valid_photos[1], data["photos"][0]["id"])
-        self.assertEquals("UnitTest Caption 2", data["photos"][0]["caption"])
-        self.assertEquals("UnitTest Taken 2", data["photos"][0]["takenBy"])
-        self.assertEquals("UnitTest Country 2", data["photos"][0]["country"])
-        self.assertEquals("UT", data["photos"][0]["countryCode"])
-        self.assertEquals("UnitTest City 2", data["photos"][0]["city"])
-        self.assertNotEquals("", data["photos"][0]["createdAt"])
-        self.assertEquals(None, data["photos"][0]["updatedAt"])
+        self.assertEqual(self.valid_photos[1], data["photos"][0]["id"])
+        self.assertEqual("UnitTest Caption 2", data["photos"][0]["caption"])
+        self.assertEqual("UnitTest Taken 2", data["photos"][0]["takenBy"])
+        self.assertEqual("UnitTest Country 2", data["photos"][0]["country"])
+        self.assertEqual("UT", data["photos"][0]["countryCode"])
+        self.assertEqual("UnitTest City 2", data["photos"][0]["city"])
+        self.assertNotEqual("", data["photos"][0]["createdAt"])
+        self.assertEqual(None, data["photos"][0]["updatedAt"])
 
-        self.assertEquals(self.valid_albums[0], data["photos"][0]["albumID"])
+        self.assertEqual(self.valid_albums[0], data["photos"][0]["albumID"])
 
-        self.assertEquals([self.valid_cats[0]], data["photos"][0]["categories"])
+        self.assertEqual([self.valid_cats[0]], data["photos"][0]["categories"])
 
     def test_getting_photos_in_album(self):
         """Should return all photos in a given album."""
         response = self.app.get("/api/1.0/photos/albums/{}".format(self.valid_albums[0]))
         data = json.loads(response.data.decode())
 
-        self.assertEquals(200, response.status_code)
-        self.assertEquals(2, len(data["photos"]))
-        self.assertEquals("unittest1.jpg", data["photos"][0]["image"])
-        self.assertEquals("unittest2.jpg", data["photos"][1]["image"])
-        self.assertEquals(self.valid_albums[0], data["photos"][0]["albumID"])
-        self.assertEquals(self.valid_albums[0], data["photos"][1]["albumID"])
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(2, len(data["photos"]))
+        self.assertEqual("unittest1.jpg", data["photos"][0]["image"])
+        self.assertEqual("unittest2.jpg", data["photos"][1]["image"])
+        self.assertEqual(self.valid_albums[0], data["photos"][0]["albumID"])
+        self.assertEqual(self.valid_albums[0], data["photos"][1]["albumID"])
 
     def test_getting_photos_in_category(self):
         """Should return all photos in a given photo category."""
         response = self.app.get("/api/1.0/photos/categories/{}".format(self.valid_cats[0]))
         data = json.loads(response.data.decode())
 
-        self.assertEquals(200, response.status_code)
-        self.assertEquals(2, len(data["photos"]))
-        self.assertEquals("unittest1.jpg", data["photos"][0]["image"])
-        self.assertEquals("unittest2.jpg", data["photos"][1]["image"])
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(2, len(data["photos"]))
+        self.assertEqual("unittest1.jpg", data["photos"][0]["image"])
+        self.assertEqual("unittest2.jpg", data["photos"][1]["image"])
         # The same photo can be in multiple categories, so the exact entry must be checked
-        self.assertEquals(self.valid_cats[0], data["photos"][0]["categories"][0])
-        self.assertEquals(self.valid_cats[0], data["photos"][1]["categories"][0])
+        self.assertEqual(self.valid_cats[0], data["photos"][0]["categories"][0])
+        self.assertEqual(self.valid_cats[0], data["photos"][1]["categories"][0])
 
     def test_adding_photo(self):
         """Should add the photo and its related album and categories mapping."""
@@ -290,18 +290,18 @@ class TestPhotosViews(unittest.TestCase):
         album = PhotosAlbumsMapping.query.filter_by(PhotoID=photo.PhotoID).first()
         cats = PhotosCategoriesMapping.query.filter_by(PhotoID=photo.PhotoID).all()
 
-        self.assertEquals(201, response.status_code)
+        self.assertEqual(201, response.status_code)
         self.assertTrue("Location" in data)
 
-        self.assertEquals("unittest-post.jpg", photo.Image)
-        self.assertEquals("UnitTest Post Caption", photo.Caption)
-        self.assertEquals("UnitTest Post Taken", photo.TakenBy)
-        self.assertEquals("UnitTest Post Country", photo.Country)
-        self.assertEquals("UT", photo.CountryCode)
-        self.assertEquals("UnitTest Post City", photo.City)
+        self.assertEqual("unittest-post.jpg", photo.Image)
+        self.assertEqual("UnitTest Post Caption", photo.Caption)
+        self.assertEqual("UnitTest Post Taken", photo.TakenBy)
+        self.assertEqual("UnitTest Post Country", photo.Country)
+        self.assertEqual("UT", photo.CountryCode)
+        self.assertEqual("UnitTest Post City", photo.City)
 
-        self.assertEquals(self.valid_albums[1], album.AlbumID)
-        self.assertEquals(
+        self.assertEqual(self.valid_albums[1], album.AlbumID)
+        self.assertEqual(
             [self.valid_cats[0], self.valid_cats[1]],
             [c.PhotoCategoryID for c in cats]
         )
@@ -341,13 +341,13 @@ class TestPhotosViews(unittest.TestCase):
         album = PhotosAlbumsMapping.query.filter_by(PhotoID=self.valid_photos[0]).first()
         cats = PhotosCategoriesMapping.query.filter_by(PhotoID=self.valid_photos[0]).all()
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals("", response.data.decode())
+        self.assertEqual(204, response.status_code)
+        self.assertEqual("", response.data.decode())
 
-        self.assertEquals("UnitTest Patched Caption", photo.Caption)
-        self.assertEquals(self.valid_albums[1], album.AlbumID)
-        self.assertEquals(3, len(cats))
-        self.assertEquals(self.valid_cats[2], cats[2].PhotoCategoryID)
+        self.assertEqual("UnitTest Patched Caption", photo.Caption)
+        self.assertEqual(self.valid_albums[1], album.AlbumID)
+        self.assertEqual(3, len(cats))
+        self.assertEqual(self.valid_cats[2], cats[2].PhotoCategoryID)
 
     def test_patching_photo_using_copy(self):
         """For the Photo data, anything goes. But for album and categories, there is really no
@@ -382,14 +382,14 @@ class TestPhotosViews(unittest.TestCase):
 
         photo = Photos.query.filter_by(PhotoID=self.valid_photos[0]).first()
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals("", response.data.decode())
+        self.assertEqual(204, response.status_code)
+        self.assertEqual("", response.data.decode())
 
-        self.assertEquals("UnitTest Caption 1", photo.Image)
+        self.assertEqual("UnitTest Caption 1", photo.Image)
         # These are nonsense, but allows to test the "copy" operation validly. Since the method
         # skips the operation, the target value should remain identical.
-        self.assertEquals("UnitTest Taken 1", photo.TakenBy)
-        self.assertEquals("UnitTest Country 1", photo.Country)
+        self.assertEqual("UnitTest Taken 1", photo.TakenBy)
+        self.assertEqual("UnitTest Country 1", photo.Country)
 
     def test_patching_photo_using_move(self):
         """For the Photo data, anything goes. But for album and categories, there is really no
@@ -424,17 +424,17 @@ class TestPhotosViews(unittest.TestCase):
 
         photo = Photos.query.filter_by(PhotoID=self.valid_photos[0]).first()
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals("", response.data.decode())
+        self.assertEqual(204, response.status_code)
+        self.assertEqual("", response.data.decode())
 
         # Due to JsonPatch and sqlalchemy differences in behaviour, the move keeps the original
-        self.assertEquals("UnitTest Caption 1", photo.Caption)
-        self.assertEquals("UnitTest Caption 1", photo.TakenBy)
+        self.assertEqual("UnitTest Caption 1", photo.Caption)
+        self.assertEqual("UnitTest Caption 1", photo.TakenBy)
         # These are nonsense, but allows to test the "copy" operation validly. Since the method
         # skips the operation, the target value should remain identical.
         # NB: This value is Caption 1, because we moved the caption to TakenBy above
-        self.assertEquals("UnitTest Caption 1", photo.TakenBy)
-        self.assertEquals("UnitTest Country 1", photo.Country)
+        self.assertEqual("UnitTest Caption 1", photo.TakenBy)
+        self.assertEqual("UnitTest Country 1", photo.Country)
 
     def test_patching_photo_using_remove(self):
         """Remove the given resource. Due to the usual JsonPatch+sqlalchemy, it won't work for
@@ -468,13 +468,13 @@ class TestPhotosViews(unittest.TestCase):
         album = PhotosAlbumsMapping.query.filter_by(PhotoID=self.valid_photos[0]).first()
         cats = PhotosCategoriesMapping.query.filter_by(PhotoID=self.valid_photos[0]).all()
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals("", response.data.decode())
+        self.assertEqual(204, response.status_code)
+        self.assertEqual("", response.data.decode())
 
         # Due to JsonPatch and sqlalchemy differences in behaviour, the move keeps the original
-        self.assertEquals("UnitTest Taken 1", photo.TakenBy)
-        self.assertEquals(None, album)
-        self.assertEquals([], cats)
+        self.assertEqual("UnitTest Taken 1", photo.TakenBy)
+        self.assertEqual(None, album)
+        self.assertEqual([], cats)
 
     def test_patching_photo_using_replace(self):
         """Replace the existing value."""
@@ -510,13 +510,13 @@ class TestPhotosViews(unittest.TestCase):
         album = PhotosAlbumsMapping.query.filter_by(PhotoID=self.valid_photos[0]).first()
         cats = PhotosCategoriesMapping.query.filter_by(PhotoID=self.valid_photos[0]).all()
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals("", response.data.decode())
+        self.assertEqual(204, response.status_code)
+        self.assertEqual("", response.data.decode())
 
-        self.assertEquals("UnitTest Patched Caption", photo.Caption)
-        self.assertEquals(self.valid_albums[1], album.AlbumID)
-        self.assertEquals(1, len(cats))
-        self.assertEquals(self.valid_cats[2], cats[0].PhotoCategoryID)
+        self.assertEqual("UnitTest Patched Caption", photo.Caption)
+        self.assertEqual(self.valid_albums[1], album.AlbumID)
+        self.assertEqual(1, len(cats))
+        self.assertEqual(self.valid_cats[2], cats[0].PhotoCategoryID)
 
     def test_deleting_photo(self):
         """Should delete the photo and its mappings."""
@@ -532,12 +532,12 @@ class TestPhotosViews(unittest.TestCase):
         album = PhotosAlbumsMapping.query.filter_by(PhotoID=self.valid_photos[1]).first()
         cats = PhotosCategoriesMapping.query.filter_by(PhotoID=self.valid_photos[1]).all()
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals("", response.data.decode())
+        self.assertEqual(204, response.status_code)
+        self.assertEqual("", response.data.decode())
 
-        self.assertEquals(None, photo)
-        self.assertEquals(None, album)
-        self.assertEquals([], cats)
+        self.assertEqual(None, photo)
+        self.assertEqual(None, album)
+        self.assertEqual([], cats)
 
     def test_failing_patch(self):
         """Should return a 422 Unprocessable Entity."""
@@ -558,7 +558,7 @@ class TestPhotosViews(unittest.TestCase):
         )
         data = json.loads(response.data.decode())
 
-        self.assertEquals(422, response.status_code)
+        self.assertEqual(422, response.status_code)
         self.assertFalse(data["success"])
 
     def test_adding_album_and_category_with_invalid_id(self):
@@ -589,10 +589,10 @@ class TestPhotosViews(unittest.TestCase):
         album = PhotosAlbumsMapping.query.filter_by(PhotoID=photo.PhotoID).first()
         cats = PhotosCategoriesMapping.query.filter_by(PhotoID=photo.PhotoID).first()
 
-        self.assertEquals(201, response.status_code)
+        self.assertEqual(201, response.status_code)
         self.assertTrue("Location" in data)
-        self.assertEquals(None, album)
-        self.assertEquals(None, cats)
+        self.assertEqual(None, album)
+        self.assertEqual(None, cats)
 
     def test_adding_album_with_existing_string(self):
         """When the Album ID is an existing string, we should not add a new entry."""
@@ -622,10 +622,10 @@ class TestPhotosViews(unittest.TestCase):
         album = PhotosAlbumsMapping.query.filter_by(PhotoID=photo.PhotoID).first()
         albums = PhotoAlbums.query.filter_by(Title="UnitTest Photo Album 1").all()
 
-        self.assertEquals(201, response.status_code)
+        self.assertEqual(201, response.status_code)
         self.assertTrue("Location" in data)
-        self.assertEquals(1, len(albums))
-        self.assertEquals(self.valid_albums[0], album.AlbumID)
+        self.assertEqual(1, len(albums))
+        self.assertEqual(self.valid_albums[0], album.AlbumID)
 
     def test_adding_album_and_category_with_nonexisting_string(self):
         """When using a non-existing string, should add a new entry."""
@@ -658,9 +658,9 @@ class TestPhotosViews(unittest.TestCase):
         albums = PhotoAlbums.query.filter_by(Title="UnitTest New Album").all()
         cats = PhotoCategories.query.filter_by(Category="UnitTest New Category").all()
 
-        self.assertEquals(201, response.status_code)
+        self.assertEqual(201, response.status_code)
         self.assertTrue("Location" in data)
-        self.assertEquals(1, len(albums))
-        self.assertEquals(1, len(cats))
-        self.assertEquals(albums[0].AlbumID, album.AlbumID)
-        self.assertEquals(cats[0].PhotoCategoryID, cat.PhotoCategoryID)
+        self.assertEqual(1, len(albums))
+        self.assertEqual(1, len(cats))
+        self.assertEqual(albums[0].AlbumID, album.AlbumID)
+        self.assertEqual(cats[0].PhotoCategoryID, cat.PhotoCategoryID)

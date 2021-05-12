@@ -15,7 +15,7 @@ class TestCommentsSongsView(unittest.TestCase):
     def setUp(self):
         # Clear redis cache completely
         cache = Cache()
-        cache.init_app(app, config={"CACHE_TYPE": "redis"})
+        cache.init_app(app, config={"CACHE_TYPE": "RedisCache"})
         with app.app_context():
             cache.clear()
 
@@ -161,9 +161,9 @@ class TestCommentsSongsView(unittest.TestCase):
         response = self.app.get("/api/1.0/comments/songs/")
         data = json.loads(response.data.decode())
 
-        self.assertEquals(200, response.status_code)
-        self.assertNotEquals(None, data)
-        self.assertEquals(4, len(data["comments"]))
+        self.assertEqual(200, response.status_code)
+        self.assertNotEqual(None, data)
+        self.assertEqual(4, len(data["comments"]))
         self.assertTrue(data["comments"][0]["songID"] in self.song_ids)
         self.assertTrue(data["comments"][1]["songID"] in self.song_ids)
         self.assertTrue(data["comments"][2]["songID"] in self.song_ids)
@@ -174,14 +174,14 @@ class TestCommentsSongsView(unittest.TestCase):
         response = self.app.get("/api/1.0/comments/songs/{}".format(self.song_ids[0]))
         data = json.loads(response.data.decode())
 
-        self.assertEquals(200, response.status_code)
-        self.assertNotEquals(None, data)
-        self.assertEquals(2, len(data["comments"]))
-        self.assertEquals(self.song_ids[0], data["comments"][0]["songID"])
-        self.assertEquals("UnitTest1", data["comments"][0]["name"])
-        self.assertEquals("S1C1 Comment", data["comments"][0]["comment"])
-        self.assertEquals("UnitTest2", data["comments"][1]["name"])
-        self.assertEquals("S1C2 Comment", data["comments"][1]["comment"])
+        self.assertEqual(200, response.status_code)
+        self.assertNotEqual(None, data)
+        self.assertEqual(2, len(data["comments"]))
+        self.assertEqual(self.song_ids[0], data["comments"][0]["songID"])
+        self.assertEqual("UnitTest1", data["comments"][0]["name"])
+        self.assertEqual("S1C1 Comment", data["comments"][0]["comment"])
+        self.assertEqual("UnitTest2", data["comments"][1]["name"])
+        self.assertEqual("S1C2 Comment", data["comments"][1]["comment"])
 
     def test_adding_a_comment_as_registered_user(self):
         """Should add a new comment with the userID."""
@@ -204,11 +204,11 @@ class TestCommentsSongsView(unittest.TestCase):
             asc(CommentsSongs.CommentID)
         ).all()
 
-        self.assertEquals(201, response.status_code)
-        self.assertEquals(2, len(comments))
-        self.assertEquals("S3C1 Comment", comments[0].Comment)
-        self.assertEquals("S3 UnitTest Brand New", comments[1].Comment)
-        self.assertEquals(self.valid_users[1], comments[1].UserID)
+        self.assertEqual(201, response.status_code)
+        self.assertEqual(2, len(comments))
+        self.assertEqual("S3C1 Comment", comments[0].Comment)
+        self.assertEqual("S3 UnitTest Brand New", comments[1].Comment)
+        self.assertEqual(self.valid_users[1], comments[1].UserID)
 
     def test_adding_a_comment_as_registered_user_with_invalid_token(self):
         """Should throw a 401, since it is an invalid case."""
@@ -231,9 +231,9 @@ class TestCommentsSongsView(unittest.TestCase):
             asc(CommentsSongs.CommentID)
         ).all()
 
-        self.assertEquals(401, response.status_code)
-        self.assertEquals(1, len(comments))
-        self.assertEquals("S2C1 Comment", comments[0].Comment)
+        self.assertEqual(401, response.status_code)
+        self.assertEqual(1, len(comments))
+        self.assertEqual("S2C1 Comment", comments[0].Comment)
 
     def test_adding_another_comment_as_registered_user_for_same_song(self):
         """Should add a second comment normally."""
@@ -256,10 +256,10 @@ class TestCommentsSongsView(unittest.TestCase):
             asc(CommentsSongs.CommentID)
         ).all()
 
-        self.assertEquals(201, response.status_code)
-        self.assertEquals(2, len(comments))
-        self.assertEquals("S3C1 Comment", comments[0].Comment)
-        self.assertEquals("S3 UnitTest Comment Same", comments[1].Comment)
+        self.assertEqual(201, response.status_code)
+        self.assertEqual(2, len(comments))
+        self.assertEqual("S3C1 Comment", comments[0].Comment)
+        self.assertEqual("S3 UnitTest Comment Same", comments[1].Comment)
 
     def test_editing_a_comment(self):
         """Should modify an existing comment."""
@@ -282,10 +282,10 @@ class TestCommentsSongsView(unittest.TestCase):
             asc(CommentsSongs.CommentID)
         ).all()
 
-        self.assertEquals(200, response.status_code)
-        self.assertEquals(2, len(comments))
-        self.assertEquals("UnitTest Edited", comments[0].Comment)
-        self.assertEquals("S1C2 Comment", comments[1].Comment)
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(2, len(comments))
+        self.assertEqual("UnitTest Edited", comments[0].Comment)
+        self.assertEqual("S1C2 Comment", comments[1].Comment)
 
     def test_editing_a_comment_without_comment_id(self):
         """Should return 400 Bad Request."""
@@ -302,7 +302,7 @@ class TestCommentsSongsView(unittest.TestCase):
                 "Authorization": self.valid_tokens[0]
             }
         )
-        self.assertEquals(400, response.status_code)
+        self.assertEqual(400, response.status_code)
 
     def test_editing_a_comment_without_comment(self):
         """Should return 400 Bad Request."""
@@ -319,7 +319,7 @@ class TestCommentsSongsView(unittest.TestCase):
                 "Authorization": self.valid_tokens[0]
             }
         )
-        self.assertEquals(400, response.status_code)
+        self.assertEqual(400, response.status_code)
 
     def test_editing_a_comment_with_wrong_userid(self):
         """Should return 401 Unauthorized. You can only edit your own comments."""
@@ -337,7 +337,7 @@ class TestCommentsSongsView(unittest.TestCase):
                 "Authorization": self.valid_tokens[0]
             }
         )
-        self.assertEquals(401, response.status_code)
+        self.assertEqual(401, response.status_code)
 
     def test_deleting_a_comment(self):
         """Should delete the comment."""
@@ -357,9 +357,9 @@ class TestCommentsSongsView(unittest.TestCase):
 
         comments = CommentsSongs.query.filter_by(SongID=self.song_ids[0]).all()
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals(1, len(comments))
-        self.assertEquals("S1C2 Comment", comments[0].Comment)
+        self.assertEqual(204, response.status_code)
+        self.assertEqual(1, len(comments))
+        self.assertEqual("S1C2 Comment", comments[0].Comment)
 
     def test_deleting_a_comment_with_invalid_comment_id(self):
         """Should return 400 Bad Request."""
@@ -376,7 +376,7 @@ class TestCommentsSongsView(unittest.TestCase):
                 "Authorization": self.valid_tokens[0]
             }
         )
-        self.assertEquals(400, response.status_code)
+        self.assertEqual(400, response.status_code)
 
     def test_deleting_a_comment_with_invalid_user_id(self):
         """Should return 401 Unauthorized."""
@@ -393,4 +393,4 @@ class TestCommentsSongsView(unittest.TestCase):
                 "Authorization": self.valid_tokens[1]
             }
         )
-        self.assertEquals(401, response.status_code)
+        self.assertEqual(401, response.status_code)

@@ -32,7 +32,7 @@ class TestReleases(unittest.TestCase):
     def setUp(self):
         # Clear redis cache completely
         cache = Cache()
-        cache.init_app(app, config={"CACHE_TYPE": "redis"})
+        cache.init_app(app, config={"CACHE_TYPE": "RedisCache"})
         with app.app_context():
             cache.clear()
 
@@ -337,14 +337,14 @@ class TestReleases(unittest.TestCase):
             response.get_data().decode()
         )
 
-        self.assertEquals(200, response.status_code)
+        self.assertEqual(200, response.status_code)
         self.assertFalse(release is None)
-        self.assertEquals("UnitTest Arts", release["releases"][0]["artist"])
-        self.assertEquals("UnitTest is a good and fun activity", release["releases"][0]["credits"])
-        self.assertEquals(1, len(release["releases"][0]["categories"]))
-        self.assertEquals(1, len(release["releases"][0]["formats"]))
-        self.assertEquals(1, len(release["releases"][0]["people"]))
-        self.assertEquals(3, len(release["releases"][0]["songs"]))
+        self.assertEqual("UnitTest Arts", release["releases"][0]["artist"])
+        self.assertEqual("UnitTest is a good and fun activity", release["releases"][0]["credits"])
+        self.assertEqual(1, len(release["releases"][0]["categories"]))
+        self.assertEqual(1, len(release["releases"][0]["formats"]))
+        self.assertEqual(1, len(release["releases"][0]["people"]))
+        self.assertEqual(3, len(release["releases"][0]["songs"]))
         # SongID is used for lyrics and tabs
         self.assertTrue("id" in release["releases"][0]["songs"][0])
         self.assertTrue(type(int(release["releases"][0]["songs"][0]["id"])) == int)
@@ -357,18 +357,18 @@ class TestReleases(unittest.TestCase):
             response.get_data().decode()
         )
 
-        self.assertEquals(200, response.status_code)
-        self.assertEquals(2, len(releases["releases"]))
-        self.assertEquals("UnitTest 2", releases["releases"][0]["title"])
-        self.assertEquals("UnitTest", releases["releases"][1]["title"])
-        self.assertEquals(1, len(releases["releases"][0]["categories"]))
-        self.assertEquals(1, len(releases["releases"][0]["formats"]))
-        self.assertEquals(1, len(releases["releases"][0]["people"]))
-        self.assertEquals(3, len(releases["releases"][0]["songs"]))
-        self.assertEquals(1, len(releases["releases"][1]["categories"]))
-        self.assertEquals(1, len(releases["releases"][1]["formats"]))
-        self.assertEquals(1, len(releases["releases"][1]["people"]))
-        self.assertEquals(3, len(releases["releases"][1]["songs"]))
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(2, len(releases["releases"]))
+        self.assertEqual("UnitTest 2", releases["releases"][0]["title"])
+        self.assertEqual("UnitTest", releases["releases"][1]["title"])
+        self.assertEqual(1, len(releases["releases"][0]["categories"]))
+        self.assertEqual(1, len(releases["releases"][0]["formats"]))
+        self.assertEqual(1, len(releases["releases"][0]["people"]))
+        self.assertEqual(3, len(releases["releases"][0]["songs"]))
+        self.assertEqual(1, len(releases["releases"][1]["categories"]))
+        self.assertEqual(1, len(releases["releases"][1]["formats"]))
+        self.assertEqual(1, len(releases["releases"][1]["people"]))
+        self.assertEqual(3, len(releases["releases"][1]["songs"]))
         # SongID is used for lyrics and tabs
         self.assertTrue("id" in releases["releases"][0]["songs"][0])
         self.assertTrue(type(int(releases["releases"][0]["songs"][0]["id"])) == int)
@@ -412,31 +412,31 @@ class TestReleases(unittest.TestCase):
         songs = ReleasesSongsMapping.query.filter_by(ReleaseID=release.ReleaseID).order_by(
             asc(ReleasesSongsMapping.ReleasesSongsMappingID)).all()
 
-        self.assertEquals(201, response.status_code)
+        self.assertEqual(201, response.status_code)
         self.assertTrue("Location" in response.get_data().decode())
-        self.assertEquals("UnitTest Title", release.Title)
+        self.assertEqual("UnitTest Title", release.Title)
         # These are tested more thoroughly in their own unit tests, so just a simple check here
-        self.assertEquals(1, len(cats))
-        self.assertEquals(
+        self.assertEqual(1, len(cats))
+        self.assertEqual(
             "UnitTest Category",
             ReleaseCategories.query.filter_by(
                 ReleaseCategoryID=cats[0].ReleaseCategoryID
             ).first().ReleaseCategory
         )
-        self.assertEquals(1, len(formats))
-        self.assertEquals(
+        self.assertEqual(1, len(formats))
+        self.assertEqual(
             "UnitTest Format",
             ReleaseFormats.query.filter_by(
                 ReleaseFormatID=formats[0].ReleaseFormatID
             ).first().Title
         )
-        self.assertEquals(1, len(people))
-        self.assertEquals(
+        self.assertEqual(1, len(people))
+        self.assertEqual(
             "UnitTest Person",
             People.query.filter_by(PersonID=people[0].PersonID).first().Name
         )
-        self.assertEquals(1, len(songs))
-        self.assertEquals(
+        self.assertEqual(1, len(songs))
+        self.assertEqual(
             "UnitTest Song 1",
             Songs.query.filter_by(SongID=songs[0].SongID).first().Title
         )
@@ -478,13 +478,13 @@ class TestReleases(unittest.TestCase):
         songs = ReleasesSongsMapping.query.filter_by(ReleaseID=release.ReleaseID).order_by(
             asc(ReleasesSongsMapping.ReleasesSongsMappingID)).all()
 
-        self.assertEquals(200, response.status_code)
-        self.assertEquals("UnitTest Title Put", release.Title)
-        self.assertEquals("UnitTest Artist Put", release.Artist)
+        self.assertEqual(200, response.status_code)
+        self.assertEqual("UnitTest Title Put", release.Title)
+        self.assertEqual("UnitTest Artist Put", release.Artist)
 
         # Categories
-        self.assertEquals(1, len(cats))
-        self.assertEquals(
+        self.assertEqual(1, len(cats))
+        self.assertEqual(
             "UnitTest Category Put",
             ReleaseCategories.query.filter_by(
                 ReleaseCategoryID=cats[0].ReleaseCategoryID
@@ -492,8 +492,8 @@ class TestReleases(unittest.TestCase):
         )
 
         # Formats
-        self.assertEquals(1, len(formats))
-        self.assertEquals(
+        self.assertEqual(1, len(formats))
+        self.assertEqual(
             "UnitTest Format Put",
             ReleaseFormats.query.filter_by(
                 ReleaseFormatID=formats[0].ReleaseFormatID
@@ -505,8 +505,8 @@ class TestReleases(unittest.TestCase):
         # the new value in a PUT will be evaluated as usual as either existing, new or invalid.
         # The original person will not be deleted by a PUT, but the mapping for this release will
         # be cleared and replaced with the new people defined in the JSON.
-        self.assertEquals(1, len(people))
-        self.assertEquals(
+        self.assertEqual(1, len(people))
+        self.assertEqual(
             "UnitTest Guitar Put",
             ReleasesPeopleMapping.query.filter_by(
                 ReleasesPeopleMappingID=people[0].ReleasesPeopleMappingID
@@ -520,8 +520,8 @@ class TestReleases(unittest.TestCase):
         # every time a release is updated, because the time should be release-specific.
         # So the only choice is to use the PUT /songs/:id or PATCH /songs/:id endpoint to update
         # the original song. Or just fix it manually in the DB :)
-        self.assertEquals(1, len(songs))
-        self.assertEquals(
+        self.assertEqual(1, len(songs))
+        self.assertEqual(
             89,
             ReleasesSongsMapping.query.filter_by(
                 ReleasesSongsMappingID=songs[0].ReleasesSongsMappingID
@@ -545,18 +545,18 @@ class TestReleases(unittest.TestCase):
             p = patch_mapping(p)
             mapped_patchdata.append(p)
 
-        self.assertEquals(6, len(mapped_patchdata))
-        self.assertEquals("add", mapped_patchdata[0]["op"])
-        self.assertEquals("replace", mapped_patchdata[3]["op"])
-        self.assertEquals("/Title", mapped_patchdata[0]["path"])
-        self.assertEquals("testi", mapped_patchdata[0]["value"])
-        self.assertEquals("/Date", mapped_patchdata[1]["from"])
-        self.assertEquals("/Artist", mapped_patchdata[1]["path"])
-        self.assertEquals("/Credits", mapped_patchdata[2]["path"])
-        self.assertEquals("/Categories", mapped_patchdata[3]["path"])
-        self.assertEquals("/Formats", mapped_patchdata[4]["path"])
-        self.assertEquals("/People", mapped_patchdata[5]["from"])
-        self.assertEquals("/Songs", mapped_patchdata[5]["path"])
+        self.assertEqual(6, len(mapped_patchdata))
+        self.assertEqual("add", mapped_patchdata[0]["op"])
+        self.assertEqual("replace", mapped_patchdata[3]["op"])
+        self.assertEqual("/Title", mapped_patchdata[0]["path"])
+        self.assertEqual("testi", mapped_patchdata[0]["value"])
+        self.assertEqual("/Date", mapped_patchdata[1]["from"])
+        self.assertEqual("/Artist", mapped_patchdata[1]["path"])
+        self.assertEqual("/Credits", mapped_patchdata[2]["path"])
+        self.assertEqual("/Categories", mapped_patchdata[3]["path"])
+        self.assertEqual("/Formats", mapped_patchdata[4]["path"])
+        self.assertEqual("/People", mapped_patchdata[5]["from"])
+        self.assertEqual("/Songs", mapped_patchdata[5]["path"])
 
     """The below contains the actual implementation of the patching logic for PATCH /endpoint
     requests.  The RFC 6902 definition is used."""
@@ -588,9 +588,9 @@ class TestReleases(unittest.TestCase):
 
         release = Releases.query.get_or_404(self.release_ids[0])
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals("UnitTest Patched Title", release.Title)
-        self.assertEquals("UnitTest Patched Artist", release.Artist)
+        self.assertEqual(204, response.status_code)
+        self.assertEqual("UnitTest Patched Title", release.Title)
+        self.assertEqual("UnitTest Patched Artist", release.Artist)
 
     def test_patching_using_add_in_categories(self):
         """Add can be used to insert new values into the existing resource."""
@@ -615,10 +615,10 @@ class TestReleases(unittest.TestCase):
         cats = ReleasesCategoriesMapping.query.filter_by(ReleaseID=self.release_ids[0]).order_by(
             asc(ReleasesCategoriesMapping.ReleaseCategoryID)).all()
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals(2, len(cats))
+        self.assertEqual(204, response.status_code)
+        self.assertEqual(2, len(cats))
 
-        self.assertEquals(
+        self.assertEqual(
             "UnitTest patched category",
             ReleaseCategories.query.filter_by(
                 ReleaseCategoryID=cats[1].ReleaseCategoryID
@@ -648,9 +648,9 @@ class TestReleases(unittest.TestCase):
         formats = ReleasesFormatsMapping.query.filter_by(ReleaseID=self.release_ids[0]).order_by(
             asc(ReleasesFormatsMapping.ReleaseFormatID)).all()
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals(2, len(formats))
-        self.assertEquals(
+        self.assertEqual(204, response.status_code)
+        self.assertEqual(2, len(formats))
+        self.assertEqual(
             "UnitTest patched format",
             ReleaseFormats.query.filter_by(
                 ReleaseFormatID=formats[1].ReleaseFormatID
@@ -680,15 +680,15 @@ class TestReleases(unittest.TestCase):
         people = ReleasesPeopleMapping.query.filter_by(ReleaseID=self.release_ids[0]).order_by(
             asc(ReleasesPeopleMapping.PersonID)).all()
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals(2, len(people))
-        self.assertEquals(
+        self.assertEqual(204, response.status_code)
+        self.assertEqual(2, len(people))
+        self.assertEqual(
             "UnitTest patched person",
             People.query.filter_by(
                 PersonID=people[1].PersonID
             ).first().Name
         )
-        self.assertEquals(
+        self.assertEqual(
             "Synths",
             ReleasesPeopleMapping.query.filter_by(
                 PersonID=people[1].PersonID
@@ -718,15 +718,15 @@ class TestReleases(unittest.TestCase):
         songs = ReleasesSongsMapping.query.filter_by(ReleaseID=self.release_ids[0]).order_by(
             asc(ReleasesSongsMapping.SongID)).all()
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals(4, len(songs))
-        self.assertEquals(
+        self.assertEqual(204, response.status_code)
+        self.assertEqual(4, len(songs))
+        self.assertEqual(
             "UnitTest patched Song 2",
             Songs.query.filter_by(
                 SongID=songs[3].SongID
             ).first().Title
         )
-        self.assertEquals(
+        self.assertEqual(
             290,
             ReleasesSongsMapping.query.filter_by(
                 SongID=songs[3].SongID
@@ -753,8 +753,8 @@ class TestReleases(unittest.TestCase):
 
         release = Releases.query.get_or_404(self.release_ids[1])
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals("UnitTest 2 Arts", release.Title)
+        self.assertEqual(204, response.status_code)
+        self.assertEqual("UnitTest 2 Arts", release.Title)
 
     def test_patching_using_copy_in_categories(self):
         """For Release Categories, the "copy" patch has no meaning, as there is nowhere to copy to.
@@ -775,8 +775,8 @@ class TestReleases(unittest.TestCase):
             }
         )
 
-        self.assertEquals(response.status_code, 204)
-        self.assertEquals("", response.data.decode())
+        self.assertEqual(response.status_code, 204)
+        self.assertEqual("", response.data.decode())
 
     def test_patching_using_copy_in_formats(self):
         """For Release Formats, the "copy" patch has no meaning, as there is nowhere to copy to.
@@ -797,8 +797,8 @@ class TestReleases(unittest.TestCase):
             }
         )
 
-        self.assertEquals(response.status_code, 204)
-        self.assertEquals("", response.data.decode())
+        self.assertEqual(response.status_code, 204)
+        self.assertEqual("", response.data.decode())
 
     def test_patching_using_copy_in_people(self):
         """For Release People, the "copy" patch has no real meaning. It can technically be used,
@@ -820,8 +820,8 @@ class TestReleases(unittest.TestCase):
             }
         )
 
-        self.assertEquals(response.status_code, 204)
-        self.assertEquals("", response.data.decode())
+        self.assertEqual(response.status_code, 204)
+        self.assertEqual("", response.data.decode())
 
     def test_patching_using_copy_in_songs(self):
         """For Release Songs, the "copy" patch has no real meaning. It can technically be used,
@@ -843,8 +843,8 @@ class TestReleases(unittest.TestCase):
             }
         )
 
-        self.assertEquals(response.status_code, 204)
-        self.assertEquals("", response.data.decode())
+        self.assertEqual(response.status_code, 204)
+        self.assertEqual("", response.data.decode())
 
     def test_patching_using_move(self):
         """NOTE! More than half the columns in this project are nullable=False, which prevents
@@ -870,8 +870,8 @@ class TestReleases(unittest.TestCase):
 
         release = Releases.query.get_or_404(self.release_ids[0])
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals("UnitTest is a good and fun activity", release.Artist)
+        self.assertEqual(204, response.status_code)
+        self.assertEqual("UnitTest is a good and fun activity", release.Artist)
 
     def test_patching_using_move_in_categories(self):
         """For Release Categories, the "move" patch has no meaning, as there is nowhere to move to.
@@ -892,8 +892,8 @@ class TestReleases(unittest.TestCase):
             }
         )
 
-        self.assertEquals(response.status_code, 204)
-        self.assertEquals("", response.data.decode())
+        self.assertEqual(response.status_code, 204)
+        self.assertEqual("", response.data.decode())
 
     def test_patching_using_move_in_formats(self):
         """For Release Formats, the "move" patch has no meaning, as there is nowhere to move to.
@@ -914,8 +914,8 @@ class TestReleases(unittest.TestCase):
             }
         )
 
-        self.assertEquals(response.status_code, 204)
-        self.assertEquals("", response.data.decode())
+        self.assertEqual(response.status_code, 204)
+        self.assertEqual("", response.data.decode())
 
     def test_patching_using_move_in_people(self):
         """For Release People, the "move" patch has no meaning, as there is nowhere to move to.
@@ -936,8 +936,8 @@ class TestReleases(unittest.TestCase):
             }
         )
 
-        self.assertEquals(response.status_code, 204)
-        self.assertEquals("", response.data.decode())
+        self.assertEqual(response.status_code, 204)
+        self.assertEqual("", response.data.decode())
 
     def test_patching_using_move_in_songs(self):
         """For Release Songs, the "move" patch has no meaning, as there is nowhere to move to.
@@ -958,8 +958,8 @@ class TestReleases(unittest.TestCase):
             }
         )
 
-        self.assertEquals(response.status_code, 204)
-        self.assertEquals("", response.data.decode())
+        self.assertEqual(response.status_code, 204)
+        self.assertEqual("", response.data.decode())
 
     def test_patching_using_remove(self):
         """NOTE! More than half the columns in this project are nullable=False, which prevents
@@ -982,8 +982,8 @@ class TestReleases(unittest.TestCase):
 
         release = Releases.query.get_or_404(self.release_ids[0])
 
-        self.assertEquals(204, response.status_code)
-        self.assertNotEquals(None, release.Artist)
+        self.assertEqual(204, response.status_code)
+        self.assertNotEqual(None, release.Artist)
 
     def test_patching_using_remove_in_categories(self):
         """For Release Categories, the "remove" has a special own method that deletes things."""
@@ -1003,8 +1003,8 @@ class TestReleases(unittest.TestCase):
         )
 
         cats = ReleasesCategoriesMapping.query.filter_by(ReleaseID=self.release_ids[0]).all()
-        self.assertEquals(response.status_code, 204)
-        self.assertEquals([], cats)
+        self.assertEqual(response.status_code, 204)
+        self.assertEqual([], cats)
 
     def test_patching_using_remove_in_formats(self):
         """For Release Formats, the "remove" has a special own method that deletes things."""
@@ -1024,8 +1024,8 @@ class TestReleases(unittest.TestCase):
         )
 
         formats = ReleasesFormatsMapping.query.filter_by(ReleaseID=self.release_ids[0]).all()
-        self.assertEquals(response.status_code, 204)
-        self.assertEquals([], formats)
+        self.assertEqual(response.status_code, 204)
+        self.assertEqual([], formats)
 
     def test_patching_using_remove_in_people(self):
         """For Release People, the "remove" has a special own method that deletes things."""
@@ -1045,8 +1045,8 @@ class TestReleases(unittest.TestCase):
         )
 
         people = ReleasesPeopleMapping.query.filter_by(ReleaseID=self.release_ids[0]).all()
-        self.assertEquals(response.status_code, 204)
-        self.assertEquals([], people)
+        self.assertEqual(response.status_code, 204)
+        self.assertEqual([], people)
 
     def test_patching_using_remove_in_songs(self):
         """For Release Songs, the "remove" has a special own method that deletes things."""
@@ -1066,8 +1066,8 @@ class TestReleases(unittest.TestCase):
         )
 
         songs = ReleasesSongsMapping.query.filter_by(ReleaseID=self.release_ids[0]).all()
-        self.assertEquals(response.status_code, 204)
-        self.assertEquals([], songs)
+        self.assertEqual(response.status_code, 204)
+        self.assertEqual([], songs)
 
     def test_patching_using_replace(self):
         """Replace will delete any existing values in the source and insert the new value there."""
@@ -1089,8 +1089,8 @@ class TestReleases(unittest.TestCase):
 
         release = Releases.query.get_or_404(self.release_ids[0])
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals("UnitTest Patch Replace", release.Artist)
+        self.assertEqual(204, response.status_code)
+        self.assertEqual("UnitTest Patch Replace", release.Artist)
 
     def test_patching_using_replace_in_categories(self):
         """Categories has its own method for replacing things."""
@@ -1114,11 +1114,11 @@ class TestReleases(unittest.TestCase):
             asc(ReleasesCategoriesMapping.ReleaseCategoryID)
         ).all()
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals("", response.data.decode())
-        self.assertEquals(2, len(cats))
-        self.assertEquals(self.valid_cats[1], cats[0].ReleaseCategoryID)
-        self.assertEquals(self.valid_cats[2], cats[1].ReleaseCategoryID)
+        self.assertEqual(204, response.status_code)
+        self.assertEqual("", response.data.decode())
+        self.assertEqual(2, len(cats))
+        self.assertEqual(self.valid_cats[1], cats[0].ReleaseCategoryID)
+        self.assertEqual(self.valid_cats[2], cats[1].ReleaseCategoryID)
 
     def test_patching_using_replace_in_formats(self):
         """Formats has its own method for replacing things."""
@@ -1142,11 +1142,11 @@ class TestReleases(unittest.TestCase):
             asc(ReleasesFormatsMapping.ReleaseFormatID)
         ).all()
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals("", response.data.decode())
-        self.assertEquals(2, len(formats))
-        self.assertEquals(self.valid_formats[0], formats[0].ReleaseFormatID)
-        self.assertEquals(self.valid_formats[1], formats[1].ReleaseFormatID)
+        self.assertEqual(204, response.status_code)
+        self.assertEqual("", response.data.decode())
+        self.assertEqual(2, len(formats))
+        self.assertEqual(self.valid_formats[0], formats[0].ReleaseFormatID)
+        self.assertEqual(self.valid_formats[1], formats[1].ReleaseFormatID)
 
     def test_patching_using_replace_in_people(self):
         """People has its own method for replacing things."""
@@ -1170,11 +1170,11 @@ class TestReleases(unittest.TestCase):
             asc(ReleasesPeopleMapping.PersonID)
         ).all()
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals("", response.data.decode())
-        self.assertEquals(2, len(people))
-        self.assertEquals(self.valid_people[0], people[0].PersonID)
-        self.assertEquals(self.valid_people[1], people[1].PersonID)
+        self.assertEqual(204, response.status_code)
+        self.assertEqual("", response.data.decode())
+        self.assertEqual(2, len(people))
+        self.assertEqual(self.valid_people[0], people[0].PersonID)
+        self.assertEqual(self.valid_people[1], people[1].PersonID)
 
     def test_patching_using_replace_in_songs(self):
         """Songs has its own method for replacing things."""
@@ -1198,13 +1198,13 @@ class TestReleases(unittest.TestCase):
             asc(ReleasesSongsMapping.SongID)
         ).all()
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals("", response.data.decode())
-        self.assertEquals(2, len(songs))
+        self.assertEqual(204, response.status_code)
+        self.assertEqual("", response.data.decode())
+        self.assertEqual(2, len(songs))
         for song in songs:
             print(song.SongID)
-        self.assertEquals(self.valid_songs[0], songs[0].SongID)
-        self.assertEquals(self.valid_songs[1], songs[1].SongID)
+        self.assertEqual(self.valid_songs[0], songs[0].SongID)
+        self.assertEqual(self.valid_songs[1], songs[1].SongID)
 
     def test_patching_using_test(self):
         """Test is used to check does a resource contain the same value as our source data."""
@@ -1227,7 +1227,7 @@ class TestReleases(unittest.TestCase):
             }
         )
 
-        self.assertEquals(422, response.status_code)
+        self.assertEqual(422, response.status_code)
         self.assertFalse("", response.data.decode())
 
     def test_deleting_release(self):
@@ -1249,39 +1249,39 @@ class TestReleases(unittest.TestCase):
         songs = ReleasesSongsMapping.query.filter_by(ReleaseID=self.release_ids[0]).order_by(
             asc(ReleasesSongsMapping.ReleaseID)).all()
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals("", response.data.decode())
-        self.assertEquals(None, query_result)
-        self.assertEquals([], cats)
-        self.assertEquals([], formats)
-        self.assertEquals([], people)
-        self.assertEquals([], songs)
+        self.assertEqual(204, response.status_code)
+        self.assertEqual("", response.data.decode())
+        self.assertEqual(None, query_result)
+        self.assertEqual([], cats)
+        self.assertEqual([], formats)
+        self.assertEqual([], people)
+        self.assertEqual([], songs)
 
     def test_getting_studio_reports_for_valid_release(self):
         """Should get two reports for the release."""
         response = self.app.get("/api/1.0/releases/{}/studio-report".format(self.release_ids[0]))
         data = json.loads(response.data.decode())
 
-        self.assertEquals(200, response.status_code)
-        self.assertNotEquals("", data)
+        self.assertEqual(200, response.status_code)
+        self.assertNotEqual("", data)
         self.assertTrue("reports" in data)
-        self.assertEquals(2, len(data["reports"]))
-        self.assertEquals("UnitTest Author", data["reports"][0]["author"])
-        self.assertEquals("UnitTest\n\nReport\nData", data["reports"][0]["report"])
-        self.assertNotEquals("", data["reports"][0]["date"])
-        self.assertEquals("UnitTest\n\nReport2\nData2", data["reports"][1]["report"])
+        self.assertEqual(2, len(data["reports"]))
+        self.assertEqual("UnitTest Author", data["reports"][0]["author"])
+        self.assertEqual("UnitTest\n\nReport\nData", data["reports"][0]["report"])
+        self.assertNotEqual("", data["reports"][0]["date"])
+        self.assertEqual("UnitTest\n\nReport2\nData2", data["reports"][1]["report"])
 
     def test_getting_studio_reports_for_invalid_release(self):
         """Should return 404"""
         response = self.app.get("/api/1.0/releases/{}/studio-report".format("abc"))
-        self.assertEquals(404, response.status_code)
+        self.assertEqual(404, response.status_code)
 
     def test_getting_studio_reports_for_valid_release_with_no_reports(self):
         """Should get an empty array for the release."""
         response = self.app.get("/api/1.0/releases/{}/studio-report".format(self.release_ids[1]))
         data = json.loads(response.data.decode())
 
-        self.assertEquals(200, response.status_code)
-        self.assertNotEquals("", data)
+        self.assertEqual(200, response.status_code)
+        self.assertNotEqual("", data)
         self.assertTrue("reports" in data)
-        self.assertEquals(0, len(data["reports"]))
+        self.assertEqual(0, len(data["reports"]))

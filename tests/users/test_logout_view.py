@@ -67,8 +67,8 @@ class TestUserLogoutView(unittest.TestCase):
         )
         data = json.loads(response.data.decode())
 
-        self.assertEquals(200, response.status_code)
-        self.assertNotEquals(None, data)
+        self.assertEqual(200, response.status_code)
+        self.assertNotEqual(None, data)
         self.assertTrue(data["success"])
 
     def test_logging_out_with_invalid_user_and_valid_token(self):
@@ -84,8 +84,8 @@ class TestUserLogoutView(unittest.TestCase):
         )
         data = json.loads(response.data.decode())
 
-        self.assertEquals(404, response.status_code)
-        self.assertNotEquals(None, data)
+        self.assertEqual(404, response.status_code)
+        self.assertNotEqual(None, data)
         self.assertFalse(data["success"])
 
     def test_logging_out_with_valid_user_and_invalid_token(self):
@@ -101,8 +101,8 @@ class TestUserLogoutView(unittest.TestCase):
         )
         data = json.loads(response.data.decode())
 
-        self.assertEquals(200, response.status_code)
-        self.assertNotEquals(None, data)
+        self.assertEqual(200, response.status_code)
+        self.assertNotEqual(None, data)
         self.assertTrue(data["success"])
 
     def test_logging_out_with_invalid_user_and_invalid_token(self):
@@ -117,7 +117,7 @@ class TestUserLogoutView(unittest.TestCase):
         )
         data = json.loads(response.data.decode())
 
-        self.assertEquals(404, response.status_code)
-        self.assertNotEquals(None, data)
+        self.assertEqual(404, response.status_code)
+        self.assertNotEqual(None, data)
         self.assertFalse(data["success"])
-        self.assertEquals("Missing UserID or Token", data["error"])
+        self.assertEqual("Missing UserID or Token", data["error"])

@@ -111,7 +111,7 @@ class VideosView(FlaskView):
             # This only returns a value (boolean) for "op": "test"
             result = patch_item(video, request.get_json())
             db.session.commit()
-        except Exception as e:
+        except Exception:
             # If any other exceptions happened during the patching, we'll return 422
             result = {"success": False, "error": "Could not apply patch"}
             status_code = 422

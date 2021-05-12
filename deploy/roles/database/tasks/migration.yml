@@ -1,4 +1,4 @@
 - name: Run database migration/update
   shell: |
     cd /srv/vortech-backend/html/
-    /srv/vortech-backend/venv/bin/python3 /srv/vortech-backend/html/manage.py db upgrade
+    flask db upgrade

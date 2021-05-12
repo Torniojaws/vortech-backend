@@ -283,20 +283,20 @@ built by Flask Migrate.
 1. And then edit the ``secret.cfg`` to the settings you defined for the database
 1. Then activate the virtualenv, if it's not active: ``source /srv/vortech-backend/venv/bin/activate``
 1. Now we can build the database structure.
-1. In production, run ``python manage.py db upgrade`` to make the database up-to-date with the code.
+1. In production, run ``flask db upgrade`` to make the database up-to-date with the code.
 1. In Vagrant, if you start from scratch, you need to temporarily
 ``sudo chown vagrant:vagrant html/``.
 1. Then in Vagrant, run:
     ```
     # This reads the registered DB models and initializes the migration
-    python manage.py db init
+    flask db init
 
     # This builds the migration files, which will be added to the repo.
     # They are used to build the DB structure in other computers where the repo is cloned to
-    python manage.py db migrate -m "Creating all tables"
+    flask db migrate -m "Creating all tables"
 
     # This builds the database tables based on the migration files
-    python manage.py db upgrade
+    flask db upgrade
     ```
 
 ## Setup local DB for development

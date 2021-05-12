@@ -16,7 +16,7 @@ class TestSongsViews(unittest.TestCase):
 
         # Clear redis cache completely
         cache = Cache()
-        cache.init_app(app, config={"CACHE_TYPE": "redis"})
+        cache.init_app(app, config={"CACHE_TYPE": "RedisCache"})
         with app.app_context():
             cache.clear()
 
@@ -126,10 +126,10 @@ class TestSongsViews(unittest.TestCase):
 
         songs = json.loads(response.get_data().decode())
 
-        self.assertEquals(200, response.status_code)
-        self.assertEquals(3, len(songs["songs"]))
-        self.assertEquals("UnitTest Song One", songs["songs"][0]["title"])
-        self.assertEquals("UnitTest Song Three", songs["songs"][2]["title"])
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(3, len(songs["songs"]))
+        self.assertEqual("UnitTest Song One", songs["songs"][0]["title"])
+        self.assertEqual("UnitTest Song Three", songs["songs"][2]["title"])
 
     def test_getting_one_song(self):
         """Should return the data of a given song."""
@@ -137,9 +137,9 @@ class TestSongsViews(unittest.TestCase):
 
         song = json.loads(response.get_data().decode())
 
-        self.assertEquals(200, response.status_code)
-        self.assertEquals(1, len(song["songs"]))
-        self.assertEquals("UnitTest Song One", song["songs"][0]["title"])
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(1, len(song["songs"]))
+        self.assertEqual("UnitTest Song One", song["songs"][0]["title"])
 
     def test_getting_lyrics(self):
         """Should return the lyrics for the song with html line breaks."""
@@ -147,21 +147,21 @@ class TestSongsViews(unittest.TestCase):
 
         lyrics = json.loads(response.get_data().decode())
 
-        self.assertEquals(200, response.status_code)
+        self.assertEqual(200, response.status_code)
         self.assertTrue("songTitle" in lyrics)
-        self.assertEquals("UnitTest Song One", lyrics["songTitle"])
+        self.assertEqual("UnitTest Song One", lyrics["songTitle"])
         self.assertTrue("author" in lyrics)
-        self.assertEquals(lyrics["author"], "UnitTester")
+        self.assertEqual(lyrics["author"], "UnitTester")
         self.assertTrue("lyrics" in lyrics)
-        self.assertEquals("My example lyrics\nAre here\n\nNew paragraph\n", lyrics["lyrics"])
+        self.assertEqual("My example lyrics\nAre here\n\nNew paragraph\n", lyrics["lyrics"])
 
     def test_getting_lyrics_to_nonexisting_song(self):
         response = self.app.get("/api/1.0/songs/abc/lyrics")
-        self.assertEquals(404, response.status_code)
+        self.assertEqual(404, response.status_code)
 
     def test_getting_missing_lyrics_to_existing_song(self):
         response = self.app.get("/api/1.0/songs/{}/lyrics".format(self.valid_song_ids[1]))
-        self.assertEquals(404, response.status_code)
+        self.assertEqual(404, response.status_code)
 
     def test_getting_tabs_with_one(self):
         """Should return the only tab for the song."""
@@ -169,13 +169,13 @@ class TestSongsViews(unittest.TestCase):
 
         tabs = json.loads(response.get_data().decode())
 
-        self.assertEquals(200, response.status_code)
+        self.assertEqual(200, response.status_code)
         self.assertTrue("songTitle" in tabs)
-        self.assertEquals("UnitTest Song One", tabs["songTitle"])
+        self.assertEqual("UnitTest Song One", tabs["songTitle"])
         self.assertTrue("tabs" in tabs)
-        self.assertEquals(1, len(tabs["tabs"]))
+        self.assertEqual(1, len(tabs["tabs"]))
         expected = {"title": "Guitar Pro 5", "filename": "unittest1.gp5"}
-        self.assertEquals(expected, tabs["tabs"][0])
+        self.assertEqual(expected, tabs["tabs"][0])
 
     def test_getting_tabs_with_many(self):
         """Should return all tabs for the song."""
@@ -183,11 +183,11 @@ class TestSongsViews(unittest.TestCase):
 
         tabs = json.loads(response.get_data().decode())
 
-        self.assertEquals(200, response.status_code)
+        self.assertEqual(200, response.status_code)
         self.assertTrue("songTitle" in tabs)
-        self.assertEquals("UnitTest Song Two", tabs["songTitle"])
+        self.assertEqual("UnitTest Song Two", tabs["songTitle"])
         self.assertTrue("tabs" in tabs)
-        self.assertEquals(2, len(tabs["tabs"]))
+        self.assertEqual(2, len(tabs["tabs"]))
         expected = [
             {"title": "Text", "filename": "unittest2.txt"},
             {"title": "Guitar Pro 5", "filename": "unittest - song 2.gp5"}
@@ -196,15 +196,15 @@ class TestSongsViews(unittest.TestCase):
 
     def test_getting_tabs_to_nonexisting_song(self):
         response = self.app.get("/api/1.0/songs/abc/tabs")
-        self.assertEquals(404, response.status_code)
+        self.assertEqual(404, response.status_code)
 
     def test_getting_missing_tabs_to_existing_song(self):
         """Should return an empty array for tabs."""
         response = self.app.get("/api/1.0/songs/{}/tabs".format(self.valid_song_ids[2]))
         tabs = json.loads(response.get_data().decode())
 
-        self.assertEquals(200, response.status_code)
-        self.assertEquals([], tabs["tabs"])
+        self.assertEqual(200, response.status_code)
+        self.assertEqual([], tabs["tabs"])
 
     def test_adding_songs(self):
         """Should add a new entry to the table and then GET should return them."""
@@ -229,13 +229,13 @@ class TestSongsViews(unittest.TestCase):
         get_songs = self.app.get("/api/1.0/songs/")
         songdata = json.loads(get_songs.get_data().decode())
 
-        self.assertEquals(201, response.status_code)
+        self.assertEqual(201, response.status_code)
         self.assertTrue("Location" in response.get_data().decode())
-        self.assertEquals("UnitTest Song Four", songs[3].Title)
+        self.assertEqual("UnitTest Song Four", songs[3].Title)
 
         # Verify the result of GET after the POST
-        self.assertEquals(200, get_songs.status_code)
-        self.assertEquals("UnitTest Song Four", songdata["songs"][3]["title"])
+        self.assertEqual(200, get_songs.status_code)
+        self.assertEqual("UnitTest Song Four", songdata["songs"][3]["title"])
 
     def test_updating_songs(self):
         """Should update the given entry with the data in the JSON."""
@@ -257,10 +257,10 @@ class TestSongsViews(unittest.TestCase):
         get_song = self.app.get("/api/1.0/songs/{}".format(self.valid_song_ids[1]))
         songdata = json.loads(get_song.get_data().decode())
 
-        self.assertEquals(200, response.status_code)
-        self.assertEquals(200, get_song.status_code)
-        self.assertEquals("UnitTest Updated Song Two", songdata["songs"][0]["title"])
-        self.assertEquals(109, songdata["songs"][0]["duration"])
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(200, get_song.status_code)
+        self.assertEqual("UnitTest Updated Song Two", songdata["songs"][0]["title"])
+        self.assertEqual(109, songdata["songs"][0]["duration"])
 
     def test_patching_a_song_using_add(self):
         """If the path already has a value, it is replaced. If it is empty, a new value is added.
@@ -286,8 +286,8 @@ class TestSongsViews(unittest.TestCase):
 
         song = Songs.query.filter_by(SongID=self.valid_song_ids[2]).first()
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals("UnitTest Patched Song Three", song.Title)
+        self.assertEqual(204, response.status_code)
+        self.assertEqual("UnitTest Patched Song Three", song.Title)
 
     def test_patching_a_song_using_copy(self):
         """Copy a resource to target location. For a song, it doesn't really make sense as you can
@@ -312,8 +312,8 @@ class TestSongsViews(unittest.TestCase):
 
         song = Songs.query.filter_by(SongID=self.valid_song_ids[0]).first()
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals(99, int(song.Title))
+        self.assertEqual(204, response.status_code)
+        self.assertEqual(99, int(song.Title))
 
     def test_patching_songs_using_move(self):
         """Move a resource to target location and delete source. But in Songs, there are no
@@ -338,9 +338,9 @@ class TestSongsViews(unittest.TestCase):
 
         song = Songs.query.filter_by(SongID=self.valid_song_ids[1]).first()
 
-        self.assertEquals(422, response.status_code)
+        self.assertEqual(422, response.status_code)
         # Make sure nothing changed.
-        self.assertEquals("UnitTest Song Two", song.Title)
+        self.assertEqual("UnitTest Song Two", song.Title)
 
     def test_patching_a_song_using_remove(self):
         """Remove a resource. But, because both of the resources in Songs are nullable=False,
@@ -364,9 +364,9 @@ class TestSongsViews(unittest.TestCase):
 
         song = Songs.query.filter_by(SongID=self.valid_song_ids[0]).first()
 
-        self.assertEquals(422, response.status_code)
+        self.assertEqual(422, response.status_code)
         # Make sure it was not removed. Although it is NOT NULL...
-        self.assertEquals("UnitTest Song One", song.Title)
+        self.assertEqual("UnitTest Song One", song.Title)
 
     def test_patching_a_song_using_replace(self):
         """Replace the contents of a resource with a new value."""
@@ -390,8 +390,8 @@ class TestSongsViews(unittest.TestCase):
 
         song = Songs.query.filter_by(SongID=self.valid_song_ids[1]).first()
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals("UnitTest Patched Song Two", song.Title)
+        self.assertEqual(204, response.status_code)
+        self.assertEqual("UnitTest Patched Song Two", song.Title)
 
     # "op": "test" will be implemented later
 
@@ -407,5 +407,5 @@ class TestSongsViews(unittest.TestCase):
 
         song = Songs.query.filter_by(SongID=self.valid_song_ids[2]).first()
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals(None, song)
+        self.assertEqual(204, response.status_code)
+        self.assertEqual(None, song)

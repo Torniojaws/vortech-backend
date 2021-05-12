@@ -54,10 +54,10 @@ class TestAddPeople(unittest.TestCase):
         songs = Songs.query.all()
         mapping = ReleasesSongsMapping.query.filter_by(ReleaseID=self.release_id).all()
 
-        self.assertEquals(1, len(songs))
-        self.assertEquals(1, len(mapping))
-        self.assertEquals(self.existing_song_id, mapping[0].SongID)
-        self.assertEquals(240, mapping[0].ReleaseSongDuration)
+        self.assertEqual(1, len(songs))
+        self.assertEqual(1, len(mapping))
+        self.assertEqual(self.existing_song_id, mapping[0].SongID)
+        self.assertEqual(240, mapping[0].ReleaseSongDuration)
 
     def test_adding_songs_with_new_string_values(self):
         """Should create new entries to Songs and then do the mapping for the current release."""
@@ -75,13 +75,13 @@ class TestAddPeople(unittest.TestCase):
         s1 = Songs.query.filter_by(Title="UnitTest Songie").first()
         s2 = Songs.query.filter_by(Title="UnitTest Secunda").first()
 
-        self.assertEquals(3, len(songs))
+        self.assertEqual(3, len(songs))
         self.assertFalse(s1 is None)
         self.assertFalse(s2 is None)
-        self.assertEquals(mapping[0].SongID, s1.SongID)
-        self.assertEquals(mapping[0].ReleaseSongDuration, 125)
-        self.assertEquals(mapping[1].SongID, s2.SongID)
-        self.assertEquals(mapping[1].ReleaseSongDuration, 290)
+        self.assertEqual(mapping[0].SongID, s1.SongID)
+        self.assertEqual(mapping[0].ReleaseSongDuration, 125)
+        self.assertEqual(mapping[1].SongID, s2.SongID)
+        self.assertEqual(mapping[1].ReleaseSongDuration, 290)
 
     def test_adding_songs_with_existing_string_values(self):
         """Should not add a new entry to Songs, and the mapping should be correct for current
@@ -92,11 +92,11 @@ class TestAddPeople(unittest.TestCase):
         songs = Songs.query.all()
         mapping = ReleasesSongsMapping.query.filter_by(ReleaseID=self.release_id).all()
 
-        self.assertEquals(1, len(songs))
-        self.assertEquals(songs[0].SongID, mapping[0].SongID)
-        self.assertEquals(320, mapping[0].ReleaseSongDuration)
+        self.assertEqual(1, len(songs))
+        self.assertEqual(songs[0].SongID, mapping[0].SongID)
+        self.assertEqual(320, mapping[0].ReleaseSongDuration)
         # The original duration should be intact in Songs table
-        self.assertEquals(99, songs[0].Duration)
+        self.assertEqual(99, songs[0].Duration)
 
     def test_adding_songs_with_nonexisting_ids(self):
         """When you add SongIDs that do not exist, no mapping should happen and no new entries
@@ -106,5 +106,5 @@ class TestAddPeople(unittest.TestCase):
         songs = Songs.query.all()
         mapping = ReleasesSongsMapping.query.filter_by(ReleaseID=self.release_id).first()
 
-        self.assertEquals(1, len(songs))
+        self.assertEqual(1, len(songs))
         self.assertTrue(mapping is None)

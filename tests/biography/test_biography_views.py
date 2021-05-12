@@ -16,7 +16,7 @@ class TestBiographyViews(unittest.TestCase):
 
         # Clear redis cache completely
         cache = Cache()
-        cache.init_app(app, config={"CACHE_TYPE": "redis"})
+        cache.init_app(app, config={"CACHE_TYPE": "RedisCache"})
         with app.app_context():
             cache.clear()
 
@@ -100,7 +100,7 @@ class TestBiographyViews(unittest.TestCase):
         database."""
         response = self.app.get("/api/1.0/biography/")
 
-        self.assertEquals(200, response.status_code)
+        self.assertEqual(200, response.status_code)
         self.assertTrue("third" in response.get_data().decode())
 
     def test_adding_biography(self):
@@ -124,14 +124,14 @@ class TestBiographyViews(unittest.TestCase):
         get_bio = self.app.get("/api/1.0/biography/")
         biodata = json.loads(get_bio.get_data().decode())
 
-        self.assertEquals(201, response.status_code)
+        self.assertEqual(201, response.status_code)
         self.assertTrue("Location" in response.get_data().decode())
-        self.assertEquals("UnitTest fourth short", bio.Short)
-        self.assertEquals("UnitTest fourth full", bio.Full)
+        self.assertEqual("UnitTest fourth short", bio.Short)
+        self.assertEqual("UnitTest fourth full", bio.Full)
 
         # Verify the result of GET after the POST
-        self.assertEquals(200, get_bio.status_code)
-        self.assertEquals("UnitTest fourth full", biodata["biography"][0]["full"])
+        self.assertEqual(200, get_bio.status_code)
+        self.assertEqual("UnitTest fourth full", biodata["biography"][0]["full"])
 
     def test_updating_biography(self):
         """Should update the current newest entry with the data in the JSON."""
@@ -153,10 +153,10 @@ class TestBiographyViews(unittest.TestCase):
         get_bio = self.app.get("/api/1.0/biography/")
         biodata = json.loads(get_bio.get_data().decode())
 
-        self.assertEquals(200, response.status_code)
-        self.assertEquals(200, get_bio.status_code)
-        self.assertEquals("UnitTest Updated newest short", biodata["biography"][0]["short"])
-        self.assertEquals("UnitTest Updated newest full", biodata["biography"][0]["full"])
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(200, get_bio.status_code)
+        self.assertEqual("UnitTest Updated newest short", biodata["biography"][0]["short"])
+        self.assertEqual("UnitTest Updated newest full", biodata["biography"][0]["full"])
 
     def test_patching_biography_using_add(self):
         """Should update only one of the two columns in the newest biography, and should update
@@ -188,9 +188,9 @@ class TestBiographyViews(unittest.TestCase):
 
         current_bio = Biography.query.order_by(desc(Biography.BiographyID)).first()
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals("UnitTest Patched Short", current_bio.Short)
-        self.assertEquals("UnitTest Patched Full", current_bio.Full)
+        self.assertEqual(204, response.status_code)
+        self.assertEqual("UnitTest Patched Short", current_bio.Short)
+        self.assertEqual("UnitTest Patched Full", current_bio.Full)
 
     def test_patching_biography_using_copy(self):
         """Copy a resource to target location."""
@@ -214,8 +214,8 @@ class TestBiographyViews(unittest.TestCase):
 
         current_bio = Biography.query.order_by(desc(Biography.BiographyID)).first()
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals("This is the third longer entry in the Biographies.", current_bio.Short)
+        self.assertEqual(204, response.status_code)
+        self.assertEqual("This is the third longer entry in the Biographies.", current_bio.Short)
 
     def test_patching_biography_using_move(self):
         """Move a resource to target location and delete source. But in Biography, there are no
@@ -240,9 +240,9 @@ class TestBiographyViews(unittest.TestCase):
 
         current_bio = Biography.query.order_by(desc(Biography.BiographyID)).first()
 
-        self.assertEquals(422, response.status_code)
+        self.assertEqual(422, response.status_code)
         # Make sure nothing changed.
-        self.assertEquals("This is the third longer entry in the Biographies.", current_bio.Full)
+        self.assertEqual("This is the third longer entry in the Biographies.", current_bio.Full)
 
     def test_patching_biography_using_remove(self):
         """Remove a resource. But, because both of the resources in Biography are nullable=False,
@@ -266,9 +266,9 @@ class TestBiographyViews(unittest.TestCase):
 
         current_bio = Biography.query.order_by(desc(Biography.BiographyID)).first()
 
-        self.assertEquals(422, response.status_code)
+        self.assertEqual(422, response.status_code)
         # Make sure it was not removed. Although it is NOT NULL...
-        self.assertEquals("This is the third longer entry in the Biographies.", current_bio.Full)
+        self.assertEqual("This is the third longer entry in the Biographies.", current_bio.Full)
 
     def test_patching_biography_using_replace(self):
         """Replace the contents of a resource with a new value."""
@@ -292,7 +292,7 @@ class TestBiographyViews(unittest.TestCase):
 
         current_bio = Biography.query.order_by(desc(Biography.BiographyID)).first()
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals("UnitTest patched with replace", current_bio.Full)
+        self.assertEqual(204, response.status_code)
+        self.assertEqual("UnitTest patched with replace", current_bio.Full)
 
     # "op": "test" will be implemented later

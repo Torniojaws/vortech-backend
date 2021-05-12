@@ -25,7 +25,7 @@ deploy-prod:
 run:
 	source ~/.venv/vortech-backend/bin/activate
 	pip3 install -r requirements/dev.txt
-	python3 manage.py runserver -h 0.0.0.0
+	flask run --host=0.0.0.0
 
 update-prod:
 	sudo apt update
@@ -35,6 +35,6 @@ update-prod:
 	sudo git pull
 	source /srv/vortech-backend/venv/bin/activate; \
 	pip3 install -r requirements/prod.txt; \
-	python3 manage.py db upgrade
+	flask db upgrade
 	sudo touch --no-dereference /etc/uwsgi-emperor/vassals/vortech-backend.ini
 	echo "Update done!"

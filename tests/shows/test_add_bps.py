@@ -74,11 +74,11 @@ class TestAddBPS(unittest.TestCase):
         add_bands(self.valid_show_id, data)
         show = ShowsOtherBands.query.filter_by(ShowID=self.valid_show_id).all()
 
-        self.assertEquals(2, len(show))
-        self.assertEquals("UnitTest Bandy", show[0].BandName)
-        self.assertEquals("https://www.example.com", show[0].BandWebsite)
-        self.assertEquals("UnitTest Yhtye", show[1].BandName)
-        self.assertEquals("https://www.example.com/yhtye", show[1].BandWebsite)
+        self.assertEqual(2, len(show))
+        self.assertEqual("UnitTest Bandy", show[0].BandName)
+        self.assertEqual("https://www.example.com", show[0].BandWebsite)
+        self.assertEqual("UnitTest Yhtye", show[1].BandName)
+        self.assertEqual("https://www.example.com/yhtye", show[1].BandWebsite)
 
     def test_adding_people(self):
         """Inserts the received people data to ShowsPeopleMapping."""
@@ -94,10 +94,10 @@ class TestAddBPS(unittest.TestCase):
         add_people(self.valid_show_id, data)
         person = ShowsPeopleMapping.query.filter_by(ShowID=self.valid_show_id).all()
 
-        self.assertEquals(1, len(person))
-        self.assertEquals("UnitTest Drums", person[0].Instruments)
-        self.assertEquals(self.valid_show_id, person[0].ShowID)
-        self.assertEquals(self.valid_person_id, person[0].PersonID)
+        self.assertEqual(1, len(person))
+        self.assertEqual("UnitTest Drums", person[0].Instruments)
+        self.assertEqual(self.valid_show_id, person[0].ShowID)
+        self.assertEqual(self.valid_person_id, person[0].PersonID)
 
     def test_adding_songs(self):
         """Inserts the received band data to ShowsSongsMapping."""
@@ -114,8 +114,8 @@ class TestAddBPS(unittest.TestCase):
         add_setlist(self.valid_show_id, data)
         song = ShowsSongsMapping.query.filter_by(ShowID=self.valid_show_id).all()
 
-        self.assertEquals(1, len(song))
-        self.assertEquals(self.valid_show_id, song[0].ShowID)
-        self.assertEquals(self.valid_song_id, song[0].SongID)
-        self.assertEquals(1, song[0].SetlistOrder)
-        self.assertEquals(112, song[0].ShowSongDuration)
+        self.assertEqual(1, len(song))
+        self.assertEqual(self.valid_show_id, song[0].ShowID)
+        self.assertEqual(self.valid_song_id, song[0].SongID)
+        self.assertEqual(1, song[0].SetlistOrder)
+        self.assertEqual(112, song[0].ShowSongDuration)

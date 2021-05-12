@@ -188,7 +188,7 @@ class TestAuthFunctions(unittest.TestCase):
                 'Authorization': "wrong"
             }
         )
-        self.assertEquals(401, response.status_code)
+        self.assertEqual(401, response.status_code)
 
     def test_admin_only_with_valid_user_and_invalid_token(self):
         """Test the admin-only decorator in Releases endpoint with valid user but invalid token."""
@@ -200,7 +200,7 @@ class TestAuthFunctions(unittest.TestCase):
                 'Authorization': "wrong"
             }
         )
-        self.assertEquals(401, response.status_code)
+        self.assertEqual(401, response.status_code)
 
     def test_admin_only_with_missing_user_and_invalid_token(self):
         """Test the admin-only decorator in Releases endpoint with valid user but invalid token."""
@@ -211,7 +211,7 @@ class TestAuthFunctions(unittest.TestCase):
                 'Authorization': "wrong"
             }
         )
-        self.assertEquals(401, response.status_code)
+        self.assertEqual(401, response.status_code)
 
     def test_registered_only_with_invalid_user_token(self):
         """Test the registered users-only decorator in GET /users/:id endpoint with invalid auth."""
@@ -222,7 +222,7 @@ class TestAuthFunctions(unittest.TestCase):
                 'Authorization': "wrong"
             }
         )
-        self.assertEquals(401, response.status_code)
+        self.assertEqual(401, response.status_code)
 
     def test_registered_only_with_valid_user_and_invalid_token(self):
         """Test the registered users-only decorator in GET /users/:id endpoint with valid user but
@@ -234,7 +234,7 @@ class TestAuthFunctions(unittest.TestCase):
                 'Authorization': "wrong"
             }
         )
-        self.assertEquals(401, response.status_code)
+        self.assertEqual(401, response.status_code)
 
     def test_registered_only_with_missing_user_and_invalid_token(self):
         """Test the registered users-only decorator in GET /users/:id endpoint with missing user
@@ -245,20 +245,20 @@ class TestAuthFunctions(unittest.TestCase):
                 'Authorization': "wrong"
             }
         )
-        self.assertEquals(401, response.status_code)
+        self.assertEqual(401, response.status_code)
 
     def test_user_id_with_valid_registered_id(self):
-        self.assertEquals(2, user_id_or_guest("2"))
+        self.assertEqual(2, user_id_or_guest("2"))
 
     def test_user_id_with_valid_guest_id(self):
-        self.assertEquals(1, user_id_or_guest(1))
+        self.assertEqual(1, user_id_or_guest(1))
 
     def test_user_id_with_invalid_values(self):
-        self.assertEquals(1, user_id_or_guest(""))
-        self.assertEquals(1, user_id_or_guest(None))
-        self.assertEquals(1, user_id_or_guest("test"))
-        self.assertEquals(1, user_id_or_guest(0))
-        self.assertEquals(1, user_id_or_guest(-2))
+        self.assertEqual(1, user_id_or_guest(""))
+        self.assertEqual(1, user_id_or_guest(None))
+        self.assertEqual(1, user_id_or_guest("test"))
+        self.assertEqual(1, user_id_or_guest(0))
+        self.assertEqual(1, user_id_or_guest(-2))
 
     def test_validate_valid_user(self):
         headers = {
@@ -266,7 +266,7 @@ class TestAuthFunctions(unittest.TestCase):
             "Authorization": self.valid_token
         }
         user_id, registered, token_invalid = validate_user(headers)
-        self.assertEquals(self.mapped_user_id, user_id)
+        self.assertEqual(self.mapped_user_id, user_id)
         self.assertTrue(registered)
         self.assertFalse(token_invalid)
 
@@ -276,7 +276,7 @@ class TestAuthFunctions(unittest.TestCase):
             "Authorization": self.access_token
         }
         user_id, registered, token_invalid = validate_user(headers)
-        self.assertEquals(1, user_id)
+        self.assertEqual(1, user_id)
         self.assertFalse(registered)
         self.assertTrue(token_invalid)
 
@@ -286,6 +286,6 @@ class TestAuthFunctions(unittest.TestCase):
             "Authorization": "wrong"
         }
         user_id, registered, token_invalid = validate_user(headers)
-        self.assertEquals(self.user_id, user_id)
+        self.assertEqual(self.user_id, user_id)
         self.assertTrue(registered)
         self.assertTrue(token_invalid)

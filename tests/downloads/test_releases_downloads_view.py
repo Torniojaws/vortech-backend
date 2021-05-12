@@ -71,30 +71,30 @@ class TestDownloadsReleasesViews(unittest.TestCase):
         response = self.app.get("/api/1.0/downloads/releases/")
         data = json.loads(response.data.decode())
 
-        self.assertEquals(200, response.status_code)
-        self.assertNotEquals(None, data)
-        self.assertEquals(2, len(data["downloads"]))
+        self.assertEqual(200, response.status_code)
+        self.assertNotEqual(None, data)
+        self.assertEqual(2, len(data["downloads"]))
 
-        self.assertEquals(self.release_ids[0], data["downloads"][0]["releaseID"])
-        self.assertEquals(3, data["downloads"][0]["count"])
-        self.assertEquals("2017-01-01 12:00:15", data["downloads"][0]["since"])
+        self.assertEqual(self.release_ids[0], data["downloads"][0]["releaseID"])
+        self.assertEqual(3, data["downloads"][0]["count"])
+        self.assertEqual("2017-01-01 12:00:15", data["downloads"][0]["since"])
 
-        self.assertEquals(self.release_ids[1], data["downloads"][1]["releaseID"])
-        self.assertEquals(2, data["downloads"][1]["count"])
-        self.assertEquals("2017-03-02 01:00:15", data["downloads"][1]["since"])
+        self.assertEqual(self.release_ids[1], data["downloads"][1]["releaseID"])
+        self.assertEqual(2, data["downloads"][1]["count"])
+        self.assertEqual("2017-03-02 01:00:15", data["downloads"][1]["since"])
 
     def test_getting_download_count_for_specific_release(self):
         """Should return the download count for the specified release."""
         response = self.app.get("/api/1.0/downloads/releases/{}".format(self.release_ids[1]))
         data = json.loads(response.data.decode())
 
-        self.assertEquals(200, response.status_code)
-        self.assertNotEquals(None, data)
-        self.assertEquals(1, len(data["downloads"]))
+        self.assertEqual(200, response.status_code)
+        self.assertNotEqual(None, data)
+        self.assertEqual(1, len(data["downloads"]))
 
-        self.assertEquals(self.release_ids[1], data["downloads"][0]["releaseID"])
-        self.assertEquals(2, data["downloads"][0]["count"])
-        self.assertEquals("2017-03-02 01:00:15", data["downloads"][0]["since"])
+        self.assertEqual(self.release_ids[1], data["downloads"][0]["releaseID"])
+        self.assertEqual(2, data["downloads"][0]["count"])
+        self.assertEqual("2017-03-02 01:00:15", data["downloads"][0]["since"])
 
     def test_adding_a_download(self):
         """Should add the entry to DB using the release ID specified in the JSON."""
@@ -110,6 +110,6 @@ class TestDownloadsReleasesViews(unittest.TestCase):
 
         downloads = DownloadsReleases.query.filter_by(ReleaseID=self.release_ids[0]).all()
 
-        self.assertEquals(201, response.status_code)
+        self.assertEqual(201, response.status_code)
         self.assertTrue("Location" in response.data.decode())
-        self.assertEquals(4, len(downloads))
+        self.assertEqual(4, len(downloads))

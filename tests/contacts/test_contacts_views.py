@@ -19,7 +19,7 @@ class TestContactsViews(unittest.TestCase):
 
         # Clear redis cache completely
         cache = Cache()
-        cache.init_app(app, config={"CACHE_TYPE": "redis"})
+        cache.init_app(app, config={"CACHE_TYPE": "RedisCache"})
         with app.app_context():
             cache.clear()
 
@@ -99,13 +99,13 @@ class TestContactsViews(unittest.TestCase):
             desc(Contacts.Created)
         ).first_or_404()
 
-        self.assertEquals(200, response.status_code)
-        self.assertEquals(newest.ContactsID, data["contacts"][0]["id"])
-        self.assertEquals("unittest@email.com", data["contacts"][0]["email"])
-        self.assertEquals("unittest-techrider.pdf", data["contacts"][0]["techRider"])
-        self.assertEquals("unittest-inputlist.pdf", data["contacts"][0]["inputList"])
-        self.assertEquals("unittest-backline.pdf", data["contacts"][0]["backline"])
-        self.assertNotEquals(0, len(data["contacts"][0]["createdAt"]))
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(newest.ContactsID, data["contacts"][0]["id"])
+        self.assertEqual("unittest@email.com", data["contacts"][0]["email"])
+        self.assertEqual("unittest-techrider.pdf", data["contacts"][0]["techRider"])
+        self.assertEqual("unittest-inputlist.pdf", data["contacts"][0]["inputList"])
+        self.assertEqual("unittest-backline.pdf", data["contacts"][0]["backline"])
+        self.assertNotEqual(0, len(data["contacts"][0]["createdAt"]))
 
     def test_adding_a_contacts_entry(self):
         """When a new Contacts entry is added, it should be returned instead of the previous
@@ -134,16 +134,16 @@ class TestContactsViews(unittest.TestCase):
             desc(Contacts.Created)
         ).first_or_404()
 
-        self.assertEquals(201, response.status_code)
+        self.assertEqual(201, response.status_code)
         self.assertTrue("Location" in response.data.decode())
 
-        self.assertEquals(200, get_contacts.status_code)
-        self.assertEquals(newest.ContactsID, data["contacts"][0]["id"])
-        self.assertEquals("unittest-post@email.com", data["contacts"][0]["email"])
-        self.assertEquals("unittest-post-techrider.pdf", data["contacts"][0]["techRider"])
-        self.assertEquals("unittest-post-inputlist.pdf", data["contacts"][0]["inputList"])
-        self.assertEquals("unittest-post-backline.pdf", data["contacts"][0]["backline"])
-        self.assertNotEquals(0, len(data["contacts"][0]["createdAt"]))
+        self.assertEqual(200, get_contacts.status_code)
+        self.assertEqual(newest.ContactsID, data["contacts"][0]["id"])
+        self.assertEqual("unittest-post@email.com", data["contacts"][0]["email"])
+        self.assertEqual("unittest-post-techrider.pdf", data["contacts"][0]["techRider"])
+        self.assertEqual("unittest-post-inputlist.pdf", data["contacts"][0]["inputList"])
+        self.assertEqual("unittest-post-backline.pdf", data["contacts"][0]["backline"])
+        self.assertNotEqual(0, len(data["contacts"][0]["createdAt"]))
 
     def test_patching_contacts_using_add(self):
         """Partially update a value in the newest contact entry."""
@@ -169,9 +169,9 @@ class TestContactsViews(unittest.TestCase):
             desc(Contacts.Created)
         ).first_or_404()
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals("", response.data.decode())
-        self.assertEquals("unittest-patched@email.com", newest.Email)
+        self.assertEqual(204, response.status_code)
+        self.assertEqual("", response.data.decode())
+        self.assertEqual("unittest-patched@email.com", newest.Email)
 
     def test_patching_contacts_using_copy(self):
         """Copy a value in the newest contact entry from one resource to another."""
@@ -197,10 +197,10 @@ class TestContactsViews(unittest.TestCase):
             desc(Contacts.Created)
         ).first_or_404()
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals("", response.data.decode())
-        self.assertEquals("unittest-inputlist.pdf", newest.TechRider)
-        self.assertEquals("unittest-inputlist.pdf", newest.InputList)
+        self.assertEqual(204, response.status_code)
+        self.assertEqual("", response.data.decode())
+        self.assertEqual("unittest-inputlist.pdf", newest.TechRider)
+        self.assertEqual("unittest-inputlist.pdf", newest.InputList)
 
     # TODO: Move, Remove and Test will be implemented later
 
@@ -228,9 +228,9 @@ class TestContactsViews(unittest.TestCase):
             desc(Contacts.Created)
         ).first_or_404()
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals("", response.data.decode())
-        self.assertEquals("unittest-patched-backline.pdf", newest.Backline)
+        self.assertEqual(204, response.status_code)
+        self.assertEqual("", response.data.decode())
+        self.assertEqual("unittest-patched-backline.pdf", newest.Backline)
 
     def test_patching_with_exception(self):
         """Test a patch that results in 422 Unprocessable Entity."""
@@ -250,5 +250,5 @@ class TestContactsViews(unittest.TestCase):
             }
         )
 
-        self.assertEquals(422, response.status_code)
+        self.assertEqual(422, response.status_code)
         self.assertFalse("", response.data.decode())

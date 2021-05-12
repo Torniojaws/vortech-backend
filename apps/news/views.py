@@ -20,7 +20,29 @@ make_class_dictable(NewsCategoriesMapping)
 class NewsView(FlaskView):
     @cache.cached(timeout=300)
     def index(self):
-        """Return all News items in reverse chronological order (newest first)"""
+        """Return all News items in reverse chronological order (newest first).
+        When url parameters are given (usually for pagination), filter the query."""
+        limit = request.args.get("limit", None)
+        try:
+            int(limit)
+        except TypeError:
+            limit = None
+        first = request.args.get("first", None)
+        try:
+            int(first)
+        except TypeError:
+            first = None
+
+        if limit is not None and first is not None:
+            print("USING LIMIT AND FIRST")
+            newsData = News.query.order_by(desc(News.Created)).offset(first).limit(limit).all()
+        elif limit is not None:
+            print("USING LIMIT ONLY")
+            newsData = News.query.order_by(desc(News.Created)).limit(limit).all()
+        else:
+            print("GETTING ALL")
+            newsData = News.query.order_by(desc(News.Created)).all()
+
         contents = jsonify({
             "news": [{
                 "id": news.NewsID,
@@ -30,7 +52,7 @@ class NewsView(FlaskView):
                 "created": get_iso_format(news.Created),
                 "updated": get_iso_format(news.Updated),
                 "categories": self.get_categories(news.NewsID),
-            } for news in News.query.order_by(desc(News.Created)).all()]
+            } for news in newsData]
         })
         return make_response(contents, 200)
 

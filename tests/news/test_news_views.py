@@ -2,6 +2,7 @@ import json
 import unittest
 
 from sqlalchemy import asc
+from flask_caching import Cache
 
 from app import app, db
 from apps.news.models import News, NewsCategoriesMapping, NewsCategories
@@ -11,7 +12,14 @@ from apps.utils.time import get_datetime, get_datetime_one_hour_ahead
 
 class TestNewsView(unittest.TestCase):
     def setUp(self):
+        # Clear redis cache completely
+        cache = Cache()
+        cache.init_app(app, config={"CACHE_TYPE": "RedisCache"})
+        with app.app_context():
+            cache.clear()
+
         self.app = app.test_client()
+
         # Add a dummy user - needed for NewsComments. No need to configure access levels here
         user = Users(
             Name="UnitTest",
@@ -28,17 +36,47 @@ class TestNewsView(unittest.TestCase):
             Title="UnitTest",
             Contents="UnitTest Contents",
             Author="UnitTest Author",
-            Created=get_datetime(),
+            Created="2021-01-01 10:00:00",
             Updated=get_datetime(),  # This is only to test "move" and "remove"
         )
         news2 = News(
             Title="UnitTest2",
             Contents="UnitTest2 Contents",
             Author="UnitTest2 Author",
+            Created="2021-02-02 11:00:00",
+        )
+        news3 = News(
+            Title="UnitTest3",
+            Contents="UnitTest3 Contents",
+            Author="UnitTest3 Author",
+            Created="2021-03-03 12:00:00",
+            Updated=get_datetime(),  # This is only to test "move" and "remove"
+        )
+        news4 = News(
+            Title="UnitTest4",
+            Contents="UnitTest4 Contents",
+            Author="UnitTest4 Author",
+            Created="2021-04-04 13:00:00",
+        )
+        news5 = News(
+            Title="UnitTest5",
+            Contents="UnitTest5 Contents",
+            Author="UnitTest5 Author",
+            Created="2021-05-05 14:00:00",
+            Updated=get_datetime(),  # This is only to test "move" and "remove"
+        )
+        news6 = News(
+            Title="UnitTest6",
+            Contents="UnitTest6 Contents",
+            Author="UnitTest6 Author",
             Created=get_datetime(),
         )
         db.session.add(news1)
         db.session.add(news2)
+        db.session.add(news3)
+        db.session.add(news4)
+        db.session.add(news5)
+        db.session.add(news6)
         db.session.commit()
 
         # Get the added news IDs
@@ -134,8 +172,39 @@ class TestNewsView(unittest.TestCase):
             response.get_data().decode()
         )
         self.assertEqual(200, response.status_code)
-        self.assertEqual(2, len([n for n in news["news"]]))
-        self.assertEqual("UnitTest", news["news"][0]["title"])
+        self.assertEqual(6, len([n for n in news["news"]]))
+        self.assertEqual("UnitTest6", news["news"][0]["title"])
+        self.assertEqual(2, len(news["news"][0]["categories"]))
+        self.assertTrue("TestCategory1" in news["news"][0]["categories"])
+        self.assertTrue("TestCategory3" in news["news"][1]["categories"])
+
+    def test_getting_paginated_news_using_limit_and_offset(self):
+        """Here we get news starting from <first> newest news,
+        and then take the next <limit> older news from it."""
+        response = self.app.get("/api/1.0/news/?first=2&limit=3")
+        news = json.loads(
+            response.get_data().decode()
+        )
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(3, len([n for n in news["news"]]))
+        # Ie. skip the first <first>th newest news and return the next ones until <limit>
+        self.assertEqual("UnitTest4", news["news"][0]["title"])
+        self.assertEqual("UnitTest3", news["news"][1]["title"])
+        self.assertEqual("UnitTest2", news["news"][2]["title"])
+        self.assertEqual(2, len(news["news"][0]["categories"]))
+        self.assertTrue("TestCategory1" in news["news"][0]["categories"])
+        self.assertTrue("TestCategory3" in news["news"][1]["categories"])
+        
+    def test_getting_paginated_news_using_limit(self):
+        """When using limit, we only get the first N items, starting from newest by date"""
+        response = self.app.get("/api/1.0/news/?limit=3")
+        news = json.loads(
+            response.get_data().decode()
+        )
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(3, len([n for n in news["news"]]))
+        self.assertEqual("UnitTest6", news["news"][0]["title"])
+        self.assertEqual("UnitTest4", news["news"][2]["title"])
         self.assertEqual(2, len(news["news"][0]["categories"]))
         self.assertTrue("TestCategory1" in news["news"][0]["categories"])
         self.assertTrue("TestCategory3" in news["news"][1]["categories"])

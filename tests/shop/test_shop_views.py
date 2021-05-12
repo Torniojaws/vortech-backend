@@ -19,7 +19,7 @@ class TestShopViews(unittest.TestCase):
     def setUp(self):
         # Clear redis cache completely
         cache = Cache()
-        cache.init_app(app, config={"CACHE_TYPE": "redis"})
+        cache.init_app(app, config={"CACHE_TYPE": "RedisCache"})
         with app.app_context():
             cache.clear()
 
@@ -244,76 +244,76 @@ class TestShopViews(unittest.TestCase):
         response = self.app.get("/api/1.0/shopitems/")
         data = json.loads(response.data.decode())
 
-        self.assertEquals(200, response.status_code)
-        self.assertEquals(3, len(data["shopItems"]))
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(3, len(data["shopItems"]))
 
-        self.assertEquals("UnitTest ShopItem 1", data["shopItems"][0]["title"])
-        self.assertEquals("UnitTest This is item 1", data["shopItems"][0]["description"])
-        self.assertEquals(15.99, data["shopItems"][0]["price"])
-        self.assertEquals("EUR", data["shopItems"][0]["currency"])
-        self.assertEquals("unittest-shopitem1.jpg", data["shopItems"][0]["image"])
-        self.assertNotEquals("", data["shopItems"][0]["createdAt"])
+        self.assertEqual("UnitTest ShopItem 1", data["shopItems"][0]["title"])
+        self.assertEqual("UnitTest This is item 1", data["shopItems"][0]["description"])
+        self.assertEqual(15.99, data["shopItems"][0]["price"])
+        self.assertEqual("EUR", data["shopItems"][0]["currency"])
+        self.assertEqual("unittest-shopitem1.jpg", data["shopItems"][0]["image"])
+        self.assertNotEqual("", data["shopItems"][0]["createdAt"])
         self.assertTrue("updatedAt" in data["shopItems"][0])
 
-        self.assertEquals(
+        self.assertEqual(
             [self.valid_cats[0], self.valid_cats[1]],
             data["shopItems"][0]["categories"]
         )
-        self.assertEquals(2, len(data["shopItems"][0]["urls"]))
-        self.assertEquals("Spotify", data["shopItems"][0]["urls"][0]["urlTitle"])
-        self.assertEquals(
+        self.assertEqual(2, len(data["shopItems"][0]["urls"]))
+        self.assertEqual("Spotify", data["shopItems"][0]["urls"][0]["urlTitle"])
+        self.assertEqual(
             "http://www.example.com/spotify",
             data["shopItems"][0]["urls"][0]["url"]
         )
-        self.assertEquals(self.valid_logo_ids[0], data["shopItems"][0]["urls"][0]["logoID"])
+        self.assertEqual(self.valid_logo_ids[0], data["shopItems"][0]["urls"][0]["logoID"])
 
     def test_getting_specific_shopitem(self):
         """Should return the data of the specified shopitem."""
         response = self.app.get("/api/1.0/shopitems/{}".format(self.valid_items[2]))
         data = json.loads(response.data.decode())
 
-        self.assertEquals(200, response.status_code)
-        self.assertEquals(1, len(data["shopItems"]))
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(1, len(data["shopItems"]))
 
-        self.assertEquals("UnitTest ShopItem 3", data["shopItems"][0]["title"])
-        self.assertEquals("UnitTest This is item 3", data["shopItems"][0]["description"])
-        self.assertEquals(12, data["shopItems"][0]["price"])
-        self.assertEquals("EUR", data["shopItems"][0]["currency"])
-        self.assertEquals("unittest-shopitem3.jpg", data["shopItems"][0]["image"])
-        self.assertNotEquals("", data["shopItems"][0]["createdAt"])
+        self.assertEqual("UnitTest ShopItem 3", data["shopItems"][0]["title"])
+        self.assertEqual("UnitTest This is item 3", data["shopItems"][0]["description"])
+        self.assertEqual(12, data["shopItems"][0]["price"])
+        self.assertEqual("EUR", data["shopItems"][0]["currency"])
+        self.assertEqual("unittest-shopitem3.jpg", data["shopItems"][0]["image"])
+        self.assertNotEqual("", data["shopItems"][0]["createdAt"])
         self.assertTrue("updatedAt" in data["shopItems"][0])
 
-        self.assertEquals(
+        self.assertEqual(
             [self.valid_cats[0], self.valid_cats[1]],
             data["shopItems"][0]["categories"]
         )
-        self.assertEquals(2, len(data["shopItems"][0]["urls"]))
+        self.assertEqual(2, len(data["shopItems"][0]["urls"]))
 
-        self.assertEquals("Spotify", data["shopItems"][0]["urls"][0]["urlTitle"])
-        self.assertEquals(
+        self.assertEqual("Spotify", data["shopItems"][0]["urls"][0]["urlTitle"])
+        self.assertEqual(
             "http://www.example.com/spotify",
             data["shopItems"][0]["urls"][0]["url"]
         )
-        self.assertEquals(self.valid_logo_ids[0], data["shopItems"][0]["urls"][0]["logoID"])
+        self.assertEqual(self.valid_logo_ids[0], data["shopItems"][0]["urls"][0]["logoID"])
 
-        self.assertEquals("BandCamp", data["shopItems"][0]["urls"][1]["urlTitle"])
-        self.assertEquals(
+        self.assertEqual("BandCamp", data["shopItems"][0]["urls"][1]["urlTitle"])
+        self.assertEqual(
             "http://www.example.com/bandcamp",
             data["shopItems"][0]["urls"][1]["url"]
         )
-        self.assertEquals(self.valid_logo_ids[1], data["shopItems"][0]["urls"][1]["logoID"])
+        self.assertEqual(self.valid_logo_ids[1], data["shopItems"][0]["urls"][1]["logoID"])
 
     def test_getting_shopitems_by_category(self):
         """Should return all items that match the subcategory."""
         response = self.app.get("/api/1.0/shopitems/category/{}/".format(self.valid_cats[1]))
         data = json.loads(response.data.decode())
 
-        self.assertEquals(200, response.status_code)
-        self.assertNotEquals(None, data)
-        self.assertEquals(2, len(data["shopItems"]))
+        self.assertEqual(200, response.status_code)
+        self.assertNotEqual(None, data)
+        self.assertEqual(2, len(data["shopItems"]))
 
-        self.assertEquals("UnitTest ShopItem 1", data["shopItems"][0]["title"])
-        self.assertEquals("UnitTest ShopItem 3", data["shopItems"][1]["title"])
+        self.assertEqual("UnitTest ShopItem 1", data["shopItems"][0]["title"])
+        self.assertEqual("UnitTest ShopItem 3", data["shopItems"][1]["title"])
 
     def test_adding_shopitem(self):
         """Should add the new item and its related data (categories and urls). For URLs, there is
@@ -362,29 +362,29 @@ class TestShopViews(unittest.TestCase):
         new_cat = ShopCategories.query.filter_by(
             SubCategory="UnitTest New Subcategory").first()
 
-        self.assertEquals(201, response.status_code)
+        self.assertEqual(201, response.status_code)
         self.assertTrue("Location" in data)
 
-        self.assertNotEquals(None, item)
-        self.assertNotEquals(None, cats)
-        self.assertNotEquals(None, urls)
+        self.assertNotEqual(None, item)
+        self.assertNotEqual(None, cats)
+        self.assertNotEqual(None, urls)
 
-        self.assertEquals("UnitTest Post", item.Title)
-        self.assertEquals("UnitTest Description", item.Description)
-        self.assertEquals(14.95, float(item.Price))
-        self.assertEquals("EUR", item.Currency)
-        self.assertEquals("unittest-post.jpg", item.Image)
+        self.assertEqual("UnitTest Post", item.Title)
+        self.assertEqual("UnitTest Description", item.Description)
+        self.assertEqual(14.95, float(item.Price))
+        self.assertEqual("EUR", item.Currency)
+        self.assertEqual("unittest-post.jpg", item.Image)
 
-        self.assertEquals(2, len(cats))
-        self.assertEquals("UnitTests", new_cat.Category)
-        self.assertEquals("UnitTest New Subcategory", new_cat.SubCategory)
+        self.assertEqual(2, len(cats))
+        self.assertEqual("UnitTests", new_cat.Category)
+        self.assertEqual("UnitTest New Subcategory", new_cat.SubCategory)
 
-        self.assertEquals(2, len(urls))
+        self.assertEqual(2, len(urls))
         # These appear in insert order. Sorting by title would be a lot of work for little benefit
-        self.assertEquals("Spotify", urls[0].URLTitle)
-        self.assertEquals("http://www.example.com/spotify/1", urls[0].URL)
-        self.assertEquals("Amazon", urls[1].URLTitle)
-        self.assertEquals("http://www.example.com/amazon/123", urls[1].URL)
+        self.assertEqual("Spotify", urls[0].URLTitle)
+        self.assertEqual("http://www.example.com/spotify/1", urls[0].URL)
+        self.assertEqual("Amazon", urls[1].URLTitle)
+        self.assertEqual("http://www.example.com/amazon/123", urls[1].URL)
 
     def test_updating_shop_item(self):
         """Should replace all existing values with the new updated values."""
@@ -428,8 +428,8 @@ class TestShopViews(unittest.TestCase):
             }
         )
 
-        self.assertEquals(200, response.status_code)
-        self.assertEquals("", response.data.decode())
+        self.assertEqual(200, response.status_code)
+        self.assertEqual("", response.data.decode())
 
         item = ShopItems.query.filter_by(ShopItemID=self.valid_items[1]).first_or_404()
         cats = ShopItemsCategoriesMapping.query.filter_by(ShopItemID=self.valid_items[1]).all()
@@ -438,29 +438,29 @@ class TestShopViews(unittest.TestCase):
         new_cat = ShopCategories.query.filter_by(
             SubCategory="UnitTest New Subcategory").first()
 
-        self.assertNotEquals(None, item)
-        self.assertNotEquals(None, cats)
-        self.assertNotEquals(None, urls)
+        self.assertNotEqual(None, item)
+        self.assertNotEqual(None, cats)
+        self.assertNotEqual(None, urls)
 
-        self.assertEquals("UnitTest Updated Title", item.Title)
-        self.assertEquals("UnitTest Updated Description", item.Description)
-        self.assertEquals(11.95, float(item.Price))
-        self.assertEquals("EUR", item.Currency)
-        self.assertEquals("unittest-update.jpg", item.Image)
-        self.assertNotEquals("", item.Updated)
+        self.assertEqual("UnitTest Updated Title", item.Title)
+        self.assertEqual("UnitTest Updated Description", item.Description)
+        self.assertEqual(11.95, float(item.Price))
+        self.assertEqual("EUR", item.Currency)
+        self.assertEqual("unittest-update.jpg", item.Image)
+        self.assertNotEqual("", item.Updated)
 
-        self.assertEquals(3, len(cats))
-        self.assertEquals("UnitTests", new_cat.Category)
-        self.assertEquals("UnitTest New Subcategory", new_cat.SubCategory)
+        self.assertEqual(3, len(cats))
+        self.assertEqual("UnitTests", new_cat.Category)
+        self.assertEqual("UnitTest New Subcategory", new_cat.SubCategory)
 
-        self.assertEquals(3, len(urls))
+        self.assertEqual(3, len(urls))
         # These appear in insert order. Sorting by title would be a lot of work for little benefit
-        self.assertEquals("Spotify", urls[0].URLTitle)
-        self.assertEquals("http://www.example.com/spotify/2", urls[0].URL)
-        self.assertEquals("Amazon MP3", urls[1].URLTitle)
-        self.assertEquals("http://www.example.com/amazon/124", urls[1].URL)
-        self.assertEquals("BandCamp", urls[2].URLTitle)
-        self.assertEquals("http://www.example.com/bandcamp/987", urls[2].URL)
+        self.assertEqual("Spotify", urls[0].URLTitle)
+        self.assertEqual("http://www.example.com/spotify/2", urls[0].URL)
+        self.assertEqual("Amazon MP3", urls[1].URLTitle)
+        self.assertEqual("http://www.example.com/amazon/124", urls[1].URL)
+        self.assertEqual("BandCamp", urls[2].URLTitle)
+        self.assertEqual("http://www.example.com/bandcamp/987", urls[2].URL)
 
     def test_patching_shopitem_add(self):
         """Patch a ShopItems entry with "add" operation."""
@@ -502,14 +502,14 @@ class TestShopViews(unittest.TestCase):
         cats = ShopItemsCategoriesMapping.query.filter_by(ShopItemID=self.valid_items[1]).all()
         urls = ShopItemsURLMapping.query.filter_by(ShopItemID=self.valid_items[1]).all()
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals("", response.data.decode())
+        self.assertEqual(204, response.status_code)
+        self.assertEqual("", response.data.decode())
 
-        self.assertEquals("UnitTest Patched Title", item.Title)
-        self.assertEquals(2, len(cats))
-        self.assertEquals(3, len(urls))
-        self.assertEquals("Deezer", urls[2].URLTitle)
-        self.assertEquals("deezer.com", urls[2].URL)
+        self.assertEqual("UnitTest Patched Title", item.Title)
+        self.assertEqual(2, len(cats))
+        self.assertEqual(3, len(urls))
+        self.assertEqual("Deezer", urls[2].URLTitle)
+        self.assertEqual("deezer.com", urls[2].URL)
 
     def test_patching_shopitem_copy(self):
         """Patch a ShopItems entry with "copy" operation. There is no possible copy operation for
@@ -535,9 +535,9 @@ class TestShopViews(unittest.TestCase):
 
         item = ShopItems.query.filter_by(ShopItemID=self.valid_items[1]).first_or_404()
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals("", response.data.decode())
-        self.assertEquals("UnitTest ShopItem 2", item.Description)
+        self.assertEqual(204, response.status_code)
+        self.assertEqual("", response.data.decode())
+        self.assertEqual("UnitTest ShopItem 2", item.Description)
 
     def test_patching_shopitem_move(self):
         """Patch a ShopItems entry with "move" operation. Move will by definition empty the source
@@ -564,9 +564,9 @@ class TestShopViews(unittest.TestCase):
 
         item = ShopItems.query.filter_by(ShopItemID=self.valid_items[1]).first_or_404()
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals("", response.data.decode())
-        self.assertEquals("UnitTest This is item 2", item.Image)
+        self.assertEqual(204, response.status_code)
+        self.assertEqual("", response.data.decode())
+        self.assertEqual("UnitTest This is item 2", item.Image)
 
     def test_patching_shopitem_remove(self):
         """Patch a ShopItems entry with "remove" operation. This does not work for the base object
@@ -600,10 +600,10 @@ class TestShopViews(unittest.TestCase):
         cats = ShopItemsCategoriesMapping.query.filter_by(ShopItemID=self.valid_items[1]).all()
         urls = ShopItemsURLMapping.query.filter_by(ShopItemID=self.valid_items[1]).all()
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals("", response.data.decode())
-        self.assertEquals([], cats)
-        self.assertEquals([], urls)
+        self.assertEqual(204, response.status_code)
+        self.assertEqual("", response.data.decode())
+        self.assertEqual([], cats)
+        self.assertEqual([], urls)
 
     def test_patching_shopitem_replace(self):
         """Patch a ShopItems entry with "replace" operation."""
@@ -645,14 +645,14 @@ class TestShopViews(unittest.TestCase):
         cats = ShopItemsCategoriesMapping.query.filter_by(ShopItemID=self.valid_items[1]).all()
         urls = ShopItemsURLMapping.query.filter_by(ShopItemID=self.valid_items[1]).all()
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals("", response.data.decode())
+        self.assertEqual(204, response.status_code)
+        self.assertEqual("", response.data.decode())
 
-        self.assertEquals("UnitTest Patched Title", item.Title)
-        self.assertEquals(1, len(cats))
-        self.assertEquals(1, len(urls))
-        self.assertEquals("Deezer", urls[0].URLTitle)
-        self.assertEquals("deezer.com", urls[0].URL)
+        self.assertEqual("UnitTest Patched Title", item.Title)
+        self.assertEqual(1, len(cats))
+        self.assertEqual(1, len(urls))
+        self.assertEqual("Deezer", urls[0].URLTitle)
+        self.assertEqual("deezer.com", urls[0].URL)
 
     def test_deleting_shop_item(self):
         """Should delete the specified shop item and it's mappings."""
@@ -667,10 +667,10 @@ class TestShopViews(unittest.TestCase):
         cats = ShopItemsCategoriesMapping.query.filter_by(ShopItemID=self.valid_items[2]).all()
         urls = ShopItemsURLMapping.query.filter_by(ShopItemID=self.valid_items[2]).all()
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals("", response.data.decode())
-        self.assertEquals([], cats)
-        self.assertEquals([], urls)
+        self.assertEqual(204, response.status_code)
+        self.assertEqual("", response.data.decode())
+        self.assertEqual([], cats)
+        self.assertEqual([], urls)
 
     def test_invalid_category_id(self):
         """When an invalid category ID is given, it should be skipped."""
@@ -704,9 +704,9 @@ class TestShopViews(unittest.TestCase):
         item = ShopItems.query.filter_by(Title="UnitTest Post").first_or_404()
         cats = ShopItemsCategoriesMapping.query.filter_by(ShopItemID=item.ShopItemID).all()
 
-        self.assertEquals(201, response.status_code)
+        self.assertEqual(201, response.status_code)
         self.assertTrue("Location" in data)
-        self.assertEquals([], cats)
+        self.assertEqual([], cats)
 
     def test_existing_string_category(self):
         """Should use the existing category and not create a new entry to ShopCategories."""
@@ -746,11 +746,11 @@ class TestShopViews(unittest.TestCase):
         cats = ShopItemsCategoriesMapping.query.filter_by(ShopItemID=item.ShopItemID).all()
         category_entries = ShopCategories.query.filter_by(Category="UnitTests").all()
 
-        self.assertEquals(201, response.status_code)
+        self.assertEqual(201, response.status_code)
         self.assertTrue("Location" in data)
-        self.assertEquals(1, len(cats))
+        self.assertEqual(1, len(cats))
         # Should only have one entry for the given values.
-        self.assertEquals(1, len(category_entries))
+        self.assertEqual(1, len(category_entries))
 
     def test_patching_categories(self):
         """Patch ShopItems categories with "copy" and "move" operations. There is no possible
@@ -779,8 +779,8 @@ class TestShopViews(unittest.TestCase):
             }
         )
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals("", response.data.decode())
+        self.assertEqual(204, response.status_code)
+        self.assertEqual("", response.data.decode())
 
     def test_patching_urls(self):
         """Patch ShopItems urls with "copy" and "move" operations. There is no possible
@@ -809,5 +809,5 @@ class TestShopViews(unittest.TestCase):
             }
         )
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals("", response.data.decode())
+        self.assertEqual(204, response.status_code)
+        self.assertEqual("", response.data.decode())

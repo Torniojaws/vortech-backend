@@ -17,7 +17,7 @@ class TestVoteReleasesView(unittest.TestCase):
 
         # Clear redis cache completely
         cache = Cache()
-        cache.init_app(app, config={"CACHE_TYPE": "redis"})
+        cache.init_app(app, config={"CACHE_TYPE": "RedisCache"})
         with app.app_context():
             cache.clear()
 
@@ -163,28 +163,28 @@ class TestVoteReleasesView(unittest.TestCase):
         response = self.app.get("/api/1.0/votes/releases/")
         data = json.loads(response.data.decode())
 
-        self.assertEquals(200, response.status_code)
-        self.assertNotEquals(None, data)
-        self.assertEquals(4, len(data["votes"]))
-        self.assertEquals(self.release_ids[0], data["votes"][0]["releaseID"])
-        self.assertEquals(3, data["votes"][0]["voteCount"])
-        self.assertEquals(3.33, data["votes"][0]["rating"])
+        self.assertEqual(200, response.status_code)
+        self.assertNotEqual(None, data)
+        self.assertEqual(4, len(data["votes"]))
+        self.assertEqual(self.release_ids[0], data["votes"][0]["releaseID"])
+        self.assertEqual(3, data["votes"][0]["voteCount"])
+        self.assertEqual(3.33, data["votes"][0]["rating"])
 
-        self.assertEquals(self.release_ids[2], data["votes"][2]["releaseID"])
-        self.assertEquals(3, data["votes"][2]["voteCount"])
-        self.assertEquals(3, data["votes"][2]["rating"])
+        self.assertEqual(self.release_ids[2], data["votes"][2]["releaseID"])
+        self.assertEqual(3, data["votes"][2]["voteCount"])
+        self.assertEqual(3, data["votes"][2]["rating"])
 
     def test_getting_votes_for_one_release(self):
         """Should return the votes for the specified release."""
         response = self.app.get("/api/1.0/votes/releases/{}".format(self.release_ids[1]))
         data = json.loads(response.data.decode())
 
-        self.assertEquals(200, response.status_code)
-        self.assertNotEquals(None, data)
-        self.assertEquals(1, len(data["votes"]))
-        self.assertEquals(self.release_ids[1], data["votes"][0]["releaseID"])
-        self.assertEquals(1, data["votes"][0]["voteCount"])
-        self.assertEquals(5, data["votes"][0]["rating"])
+        self.assertEqual(200, response.status_code)
+        self.assertNotEqual(None, data)
+        self.assertEqual(1, len(data["votes"]))
+        self.assertEqual(self.release_ids[1], data["votes"][0]["releaseID"])
+        self.assertEqual(1, data["votes"][0]["voteCount"])
+        self.assertEqual(5, data["votes"][0]["rating"])
 
     def test_getting_vote_info_as_registered_user(self):
         """A registered, logged in user can retrieve the vote he has given for a release."""
@@ -197,13 +197,13 @@ class TestVoteReleasesView(unittest.TestCase):
         )
         data = json.loads(response.data.decode())
 
-        self.assertEquals(200, response.status_code)
-        self.assertNotEquals(None, data)
+        self.assertEqual(200, response.status_code)
+        self.assertNotEqual(None, data)
         self.assertTrue("voteID" in data)
         self.assertTrue("vote" in data)
         self.assertTrue("releaseID" in data)
-        self.assertEquals(4.0, data["vote"])
-        self.assertNotEquals(None, data["created_at"])
+        self.assertEqual(4.0, data["vote"])
+        self.assertNotEqual(None, data["created_at"])
 
     def test_getting_vote_info_nonexisting_user(self):
         """Should be 404."""
@@ -215,7 +215,7 @@ class TestVoteReleasesView(unittest.TestCase):
             }
         )
 
-        self.assertEquals(404, response.status_code)
+        self.assertEqual(404, response.status_code)
 
     def test_getting_vote_info_nonexisting_release(self):
         """Should be 404."""
@@ -227,19 +227,19 @@ class TestVoteReleasesView(unittest.TestCase):
             }
         )
 
-        self.assertEquals(404, response.status_code)
+        self.assertEqual(404, response.status_code)
 
     def test_getting_votes_for_release_without_votes(self):
         """Should return an empty object."""
         response = self.app.get("/api/1.0/votes/releases/{}".format(self.release_without_votes))
         data = json.loads(response.data.decode())
 
-        self.assertEquals(200, response.status_code)
-        self.assertNotEquals(None, data)
-        self.assertEquals(1, len(data["votes"]))
-        self.assertEquals(self.release_without_votes, data["votes"][0]["releaseID"])
-        self.assertEquals(0, data["votes"][0]["voteCount"])
-        self.assertEquals(0, data["votes"][0]["rating"])
+        self.assertEqual(200, response.status_code)
+        self.assertNotEqual(None, data)
+        self.assertEqual(1, len(data["votes"]))
+        self.assertEqual(self.release_without_votes, data["votes"][0]["releaseID"])
+        self.assertEqual(0, data["votes"][0]["voteCount"])
+        self.assertEqual(0, data["votes"][0]["rating"])
 
     def test_adding_a_vote_as_guest(self):
         """Should add a new vote for the specified release, which is given in the JSON."""
@@ -258,11 +258,11 @@ class TestVoteReleasesView(unittest.TestCase):
             asc(VotesReleases.VoteID)
         ).all()
 
-        self.assertEquals(201, response.status_code)
+        self.assertEqual(201, response.status_code)
         self.assertTrue("Location" in response.data.decode())
-        self.assertEquals(2, len(votes))
-        self.assertEquals(5.00, float(votes[0].Vote))
-        self.assertEquals(4.00, float(votes[1].Vote))
+        self.assertEqual(2, len(votes))
+        self.assertEqual(5.00, float(votes[0].Vote))
+        self.assertEqual(4.00, float(votes[1].Vote))
 
     def test_adding_a_vote_as_registered_user(self):
         """Should add a new vote with the userID."""
@@ -285,10 +285,10 @@ class TestVoteReleasesView(unittest.TestCase):
             asc(VotesReleases.VoteID)
         ).all()
 
-        self.assertEquals(201, response.status_code)
-        self.assertEquals(2, len(votes))
-        self.assertEquals(5.00, float(votes[0].Vote))
-        self.assertEquals(3.50, float(votes[1].Vote))
+        self.assertEqual(201, response.status_code)
+        self.assertEqual(2, len(votes))
+        self.assertEqual(5.00, float(votes[0].Vote))
+        self.assertEqual(3.50, float(votes[1].Vote))
 
     def test_adding_a_vote_as_registered_user_with_invalid_token(self):
         """Should throw a 401, since it is an invalid case."""
@@ -311,9 +311,9 @@ class TestVoteReleasesView(unittest.TestCase):
             asc(VotesReleases.VoteID)
         ).all()
 
-        self.assertEquals(401, response.status_code)
-        self.assertEquals(1, len(votes))
-        self.assertEquals(5.00, float(votes[0].Vote))
+        self.assertEqual(401, response.status_code)
+        self.assertEqual(1, len(votes))
+        self.assertEqual(5.00, float(votes[0].Vote))
 
     def test_adding_another_vote_as_registered_user_for_same_release(self):
         """Should replace the existing vote with the new one."""
@@ -343,10 +343,10 @@ class TestVoteReleasesView(unittest.TestCase):
             asc(VotesReleases.VoteID)
         ).all()
 
-        self.assertEquals(201, response.status_code)
-        self.assertEquals(3, len(votes))
-        self.assertEquals(4.00, float(votes[0].Vote))
-        self.assertEquals(1.00, float(votes[1].Vote))
+        self.assertEqual(201, response.status_code)
+        self.assertEqual(3, len(votes))
+        self.assertEqual(4.00, float(votes[0].Vote))
+        self.assertEqual(1.00, float(votes[1].Vote))
         # This was originally 4.00 in setUp, and after the POST, should be 3.00
-        self.assertEquals(3.00, float(votes[2].Vote))
-        self.assertEquals(1, len(votes_by_reg))
+        self.assertEqual(3.00, float(votes[2].Vote))
+        self.assertEqual(1, len(votes_by_reg))

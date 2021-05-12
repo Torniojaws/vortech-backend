@@ -12,7 +12,7 @@ class TestSubscribersViews(unittest.TestCase):
     def setUp(self):
         # Clear redis cache completely
         cache = Cache()
-        cache.init_app(app, config={"CACHE_TYPE": "redis"})
+        cache.init_app(app, config={"CACHE_TYPE": "RedisCache"})
         with app.app_context():
             cache.clear()
 
@@ -176,10 +176,10 @@ class TestSubscribersViews(unittest.TestCase):
         )
         data = json.loads(response.data.decode())
 
-        self.assertEquals(200, response.status_code)
+        self.assertEqual(200, response.status_code)
         self.assertTrue("subscribers" in data)
-        self.assertEquals(1, len(data["subscribers"]))
-        self.assertEquals(self.subscriber_with_email_id, data["subscribers"][0]["id"])
+        self.assertEqual(1, len(data["subscribers"]))
+        self.assertEqual(self.subscriber_with_email_id, data["subscribers"][0]["id"])
 
     def test_getting_one_subscriber(self):
         """Should get the specific subscriber, when requested by a registered user that is a
@@ -193,11 +193,11 @@ class TestSubscribersViews(unittest.TestCase):
         )
         data = json.loads(response.data.decode())
 
-        self.assertEquals(200, response.status_code)
+        self.assertEqual(200, response.status_code)
         self.assertTrue("subscribers" in data)
-        self.assertEquals(1, len(data["subscribers"]))
-        self.assertEquals(self.subscriber_with_email_id, data["subscribers"][0]["id"])
-        self.assertEquals("unittest4@email", data["subscribers"][0]["email"])
+        self.assertEqual(1, len(data["subscribers"]))
+        self.assertEqual(self.subscriber_with_email_id, data["subscribers"][0]["id"])
+        self.assertEqual("unittest4@email", data["subscribers"][0]["email"])
         self.assertTrue(data["subscribers"][0]["subscriber"])
 
     def test_getting_one_subscriber_who_has_no_email(self):
@@ -211,10 +211,10 @@ class TestSubscribersViews(unittest.TestCase):
         )
         data = json.loads(response.data.decode())
 
-        self.assertEquals(400, response.status_code)
+        self.assertEqual(400, response.status_code)
         self.assertTrue("success" in data)
         self.assertFalse(data["success"])
-        self.assertEquals("A valid email is required to subscribe", data["message"])
+        self.assertEqual("A valid email is required to subscribe", data["message"])
 
     def test_adding_subscription(self):
         """Should subscribe the specified user to news."""
@@ -235,12 +235,12 @@ class TestSubscribersViews(unittest.TestCase):
 
         user = Users.query.filter_by(UserID=self.non_sub_with_email_id).first()
 
-        self.assertEquals(201, response.status_code)
+        self.assertEqual(201, response.status_code)
         self.assertTrue("Location" in data)
-        self.assertEquals(True, user.Subscriber)
+        self.assertEqual(True, user.Subscriber)
         # Just a sanity test
-        self.assertEquals("UnitTest1", user.Name)
-        self.assertEquals("unittest1@email", user.Email)
+        self.assertEqual("UnitTest1", user.Name)
+        self.assertEqual("unittest1@email", user.Email)
 
     def test_adding_subscription_when_user_has_no_email(self):
         """Should return a 400 Bad Request and a message."""
@@ -259,10 +259,10 @@ class TestSubscribersViews(unittest.TestCase):
         )
         data = json.loads(response.data.decode())
 
-        self.assertEquals(400, response.status_code)
+        self.assertEqual(400, response.status_code)
         self.assertTrue("success" in data)
         self.assertFalse(data["success"])
-        self.assertEquals("A valid email is required to subscribe.", data["message"])
+        self.assertEqual("A valid email is required to subscribe.", data["message"])
 
     def test_adding_subscription_to_already_subscribed(self):
         """Should keep the subscription the specified user has."""
@@ -285,7 +285,7 @@ class TestSubscribersViews(unittest.TestCase):
 
         user_after = Users.query.filter_by(UserID=self.subscriber_with_email_id).first()
 
-        self.assertEquals(201, response.status_code)
+        self.assertEqual(201, response.status_code)
         self.assertTrue("Location" in data)
         self.assertTrue(user_before.Subscriber)
         self.assertTrue(user_after.Subscriber)
@@ -306,7 +306,7 @@ class TestSubscribersViews(unittest.TestCase):
             }
         )
 
-        self.assertEquals(401, response.status_code)
+        self.assertEqual(401, response.status_code)
 
     def test_adding_subscription_with_no_token(self):
         """Should return 401."""
@@ -323,7 +323,7 @@ class TestSubscribersViews(unittest.TestCase):
             }
         )
 
-        self.assertEquals(401, response.status_code)
+        self.assertEqual(401, response.status_code)
 
     def test_adding_subscription_with_invalid_payload(self):
         """Should return 400 Bad Request."""
@@ -341,7 +341,7 @@ class TestSubscribersViews(unittest.TestCase):
             }
         )
 
-        self.assertEquals(400, response.status_code)
+        self.assertEqual(400, response.status_code)
 
     def test_unsubscribing(self):
         """Should unsubscribe the specified user."""
@@ -353,8 +353,8 @@ class TestSubscribersViews(unittest.TestCase):
             }
         )
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals("", response.data.decode())
+        self.assertEqual(204, response.status_code)
+        self.assertEqual("", response.data.decode())
 
     def test_unsubscribing_with_wrong_token(self):
         """Should return 401."""
@@ -368,6 +368,6 @@ class TestSubscribersViews(unittest.TestCase):
 
         user = Users.query.filter_by(UserID=self.subscriber_with_email_id).first()
 
-        self.assertEquals(401, response.status_code)
+        self.assertEqual(401, response.status_code)
         # The attempted user should remain a subscriber
         self.assertTrue(user.Subscriber)

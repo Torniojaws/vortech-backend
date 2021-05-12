@@ -15,7 +15,7 @@ class TestCommentsVideosView(unittest.TestCase):
     def setUp(self):
         # Clear redis cache completely
         cache = Cache()
-        cache.init_app(app, config={"CACHE_TYPE": "redis"})
+        cache.init_app(app, config={"CACHE_TYPE": "RedisCache"})
         with app.app_context():
             cache.clear()
 
@@ -164,9 +164,9 @@ class TestCommentsVideosView(unittest.TestCase):
         response = self.app.get("/api/1.0/comments/videos/")
         data = json.loads(response.data.decode())
 
-        self.assertEquals(200, response.status_code)
-        self.assertNotEquals(None, data)
-        self.assertEquals(4, len(data["comments"]))
+        self.assertEqual(200, response.status_code)
+        self.assertNotEqual(None, data)
+        self.assertEqual(4, len(data["comments"]))
         self.assertTrue(data["comments"][0]["videoID"] in self.video_ids)
         self.assertTrue(data["comments"][1]["videoID"] in self.video_ids)
         self.assertTrue(data["comments"][2]["videoID"] in self.video_ids)
@@ -177,14 +177,14 @@ class TestCommentsVideosView(unittest.TestCase):
         response = self.app.get("/api/1.0/comments/videos/{}".format(self.video_ids[0]))
         data = json.loads(response.data.decode())
 
-        self.assertEquals(200, response.status_code)
-        self.assertNotEquals(None, data)
-        self.assertEquals(2, len(data["comments"]))
-        self.assertEquals(self.video_ids[0], data["comments"][0]["videoID"])
-        self.assertEquals("UnitTest1", data["comments"][0]["name"])
-        self.assertEquals("V1C1 Comment", data["comments"][0]["comment"])
-        self.assertEquals("UnitTest2", data["comments"][1]["name"])
-        self.assertEquals("V1C2 Comment", data["comments"][1]["comment"])
+        self.assertEqual(200, response.status_code)
+        self.assertNotEqual(None, data)
+        self.assertEqual(2, len(data["comments"]))
+        self.assertEqual(self.video_ids[0], data["comments"][0]["videoID"])
+        self.assertEqual("UnitTest1", data["comments"][0]["name"])
+        self.assertEqual("V1C1 Comment", data["comments"][0]["comment"])
+        self.assertEqual("UnitTest2", data["comments"][1]["name"])
+        self.assertEqual("V1C2 Comment", data["comments"][1]["comment"])
 
     def test_adding_a_comment_as_registered_user(self):
         """Should add a new comment with the userID."""
@@ -207,11 +207,11 @@ class TestCommentsVideosView(unittest.TestCase):
             asc(CommentsVideos.CommentID)
         ).all()
 
-        self.assertEquals(201, response.status_code)
-        self.assertEquals(2, len(comments))
-        self.assertEquals("V3C1 Comment", comments[0].Comment)
-        self.assertEquals("V3 UnitTest Brand New", comments[1].Comment)
-        self.assertEquals(self.valid_users[1], comments[1].UserID)
+        self.assertEqual(201, response.status_code)
+        self.assertEqual(2, len(comments))
+        self.assertEqual("V3C1 Comment", comments[0].Comment)
+        self.assertEqual("V3 UnitTest Brand New", comments[1].Comment)
+        self.assertEqual(self.valid_users[1], comments[1].UserID)
 
     def test_adding_a_comment_as_registered_user_with_invalid_token(self):
         """Should throw a 401, since it is an invalid case."""
@@ -234,9 +234,9 @@ class TestCommentsVideosView(unittest.TestCase):
             asc(CommentsVideos.CommentID)
         ).all()
 
-        self.assertEquals(401, response.status_code)
-        self.assertEquals(1, len(comments))
-        self.assertEquals("V2C1 Comment", comments[0].Comment)
+        self.assertEqual(401, response.status_code)
+        self.assertEqual(1, len(comments))
+        self.assertEqual("V2C1 Comment", comments[0].Comment)
 
     def test_adding_another_comment_as_registered_user_for_same_video(self):
         """Should add a second comment normally."""
@@ -259,10 +259,10 @@ class TestCommentsVideosView(unittest.TestCase):
             asc(CommentsVideos.CommentID)
         ).all()
 
-        self.assertEquals(201, response.status_code)
-        self.assertEquals(2, len(comments))
-        self.assertEquals("V3C1 Comment", comments[0].Comment)
-        self.assertEquals("V3 UnitTest Comment Same", comments[1].Comment)
+        self.assertEqual(201, response.status_code)
+        self.assertEqual(2, len(comments))
+        self.assertEqual("V3C1 Comment", comments[0].Comment)
+        self.assertEqual("V3 UnitTest Comment Same", comments[1].Comment)
 
     def test_editing_a_comment(self):
         """Should modify an existing comment."""
@@ -285,10 +285,10 @@ class TestCommentsVideosView(unittest.TestCase):
             asc(CommentsVideos.CommentID)
         ).all()
 
-        self.assertEquals(200, response.status_code)
-        self.assertEquals(2, len(comments))
-        self.assertEquals("UnitTest Edited", comments[0].Comment)
-        self.assertEquals("V1C2 Comment", comments[1].Comment)
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(2, len(comments))
+        self.assertEqual("UnitTest Edited", comments[0].Comment)
+        self.assertEqual("V1C2 Comment", comments[1].Comment)
 
     def test_editing_a_comment_without_comment_id(self):
         """Should return 400 Bad Request."""
@@ -305,7 +305,7 @@ class TestCommentsVideosView(unittest.TestCase):
                 "Authorization": self.valid_tokens[0]
             }
         )
-        self.assertEquals(400, response.status_code)
+        self.assertEqual(400, response.status_code)
 
     def test_editing_a_comment_without_comment(self):
         """Should return 400 Bad Request."""
@@ -322,7 +322,7 @@ class TestCommentsVideosView(unittest.TestCase):
                 "Authorization": self.valid_tokens[0]
             }
         )
-        self.assertEquals(400, response.status_code)
+        self.assertEqual(400, response.status_code)
 
     def test_editing_a_comment_with_wrong_userid(self):
         """Should return 401 Unauthorized. You can only edit your own comments."""
@@ -340,7 +340,7 @@ class TestCommentsVideosView(unittest.TestCase):
                 "Authorization": self.valid_tokens[0]
             }
         )
-        self.assertEquals(401, response.status_code)
+        self.assertEqual(401, response.status_code)
 
     def test_deleting_a_comment(self):
         """Should delete the comment."""
@@ -360,9 +360,9 @@ class TestCommentsVideosView(unittest.TestCase):
 
         comments = CommentsVideos.query.filter_by(VideoID=self.video_ids[0]).all()
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals(1, len(comments))
-        self.assertEquals("V1C2 Comment", comments[0].Comment)
+        self.assertEqual(204, response.status_code)
+        self.assertEqual(1, len(comments))
+        self.assertEqual("V1C2 Comment", comments[0].Comment)
 
     def test_deleting_a_comment_with_invalid_comment_id(self):
         """Should return 400 Bad Request."""
@@ -379,7 +379,7 @@ class TestCommentsVideosView(unittest.TestCase):
                 "Authorization": self.valid_tokens[0]
             }
         )
-        self.assertEquals(400, response.status_code)
+        self.assertEqual(400, response.status_code)
 
     def test_deleting_a_comment_with_invalid_user_id(self):
         """Should return 401 Unauthorized."""
@@ -396,4 +396,4 @@ class TestCommentsVideosView(unittest.TestCase):
                 "Authorization": self.valid_tokens[1]
             }
         )
-        self.assertEquals(401, response.status_code)
+        self.assertEqual(401, response.status_code)

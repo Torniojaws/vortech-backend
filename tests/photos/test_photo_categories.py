@@ -11,7 +11,7 @@ class TestPhotoCategories(unittest.TestCase):
     def setUp(self):
         # Clear redis cache completely
         cache = Cache()
-        cache.init_app(app, config={"CACHE_TYPE": "redis"})
+        cache.init_app(app, config={"CACHE_TYPE": "RedisCache"})
         with app.app_context():
             cache.clear()
 
@@ -46,9 +46,9 @@ class TestPhotoCategories(unittest.TestCase):
         categories = json.loads(
             response.get_data().decode()
         )
-        self.assertEquals(200, response.status_code)
-        self.assertEquals(3, len(categories["photoCategories"]))
-        self.assertEquals(self.valid_cats[0], categories["photoCategories"][0]["id"])
-        self.assertEquals("testCategory1", categories["photoCategories"][0]["category"])
-        self.assertEquals(self.valid_cats[2], categories["photoCategories"][2]["id"])
-        self.assertEquals("testCategory3", categories["photoCategories"][2]["category"])
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(3, len(categories["photoCategories"]))
+        self.assertEqual(self.valid_cats[0], categories["photoCategories"][0]["id"])
+        self.assertEqual("testCategory1", categories["photoCategories"][0]["category"])
+        self.assertEqual(self.valid_cats[2], categories["photoCategories"][2]["id"])
+        self.assertEqual("testCategory3", categories["photoCategories"][2]["category"])

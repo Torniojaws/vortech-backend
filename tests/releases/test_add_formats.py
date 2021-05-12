@@ -55,9 +55,9 @@ class TestAddFormats(unittest.TestCase):
         f = ReleaseFormats.query.all()
         mapping = ReleasesFormatsMapping.query.filter_by(ReleaseID=self.release_id).all()
 
-        self.assertEquals(1, len(f))
-        self.assertEquals(1, len(mapping))
-        self.assertEquals(self.existing_format_id, mapping[0].ReleaseFormatID)
+        self.assertEqual(1, len(f))
+        self.assertEqual(1, len(mapping))
+        self.assertEqual(self.existing_format_id, mapping[0].ReleaseFormatID)
 
     def test_adding_formats_with_new_string_values(self):
         """Should create a new entry and then do the mapping for current release."""
@@ -73,11 +73,11 @@ class TestAddFormats(unittest.TestCase):
         f1 = ReleaseFormats.query.filter_by(Title="UnitTest Format C").first()
         f2 = ReleaseFormats.query.filter_by(Title="UnitTest Formulas Fatal").first()
 
-        self.assertEquals(3, len(f))
+        self.assertEqual(3, len(f))
         self.assertFalse(f1 is None)
         self.assertFalse(f2 is None)
-        self.assertEquals(mapping[0].ReleaseFormatID, f1.ReleaseFormatID)
-        self.assertEquals(mapping[1].ReleaseFormatID, f2.ReleaseFormatID)
+        self.assertEqual(mapping[0].ReleaseFormatID, f1.ReleaseFormatID)
+        self.assertEqual(mapping[1].ReleaseFormatID, f2.ReleaseFormatID)
 
     def test_adding_formats_with_existing_string_values(self):
         """Should not add a new entry and the mapping should be correct for current release."""
@@ -87,8 +87,8 @@ class TestAddFormats(unittest.TestCase):
         f = ReleaseFormats.query.all()
         mapping = ReleasesFormatsMapping.query.filter_by(ReleaseID=self.release_id).all()
 
-        self.assertEquals(1, len(f))
-        self.assertEquals(f[0].ReleaseFormatID, mapping[0].ReleaseFormatID)
+        self.assertEqual(1, len(f))
+        self.assertEqual(f[0].ReleaseFormatID, mapping[0].ReleaseFormatID)
 
     def test_adding_formats_with_nonexisting_ids(self):
         """When you add format IDs that do not exist, no mapping should happen and no new entries
@@ -98,5 +98,5 @@ class TestAddFormats(unittest.TestCase):
         f = ReleaseFormats.query.all()
         mapping = ReleasesFormatsMapping.query.filter_by(ReleaseID=self.release_id).first()
 
-        self.assertEquals(1, len(f))
+        self.assertEqual(1, len(f))
         self.assertTrue(mapping is None)

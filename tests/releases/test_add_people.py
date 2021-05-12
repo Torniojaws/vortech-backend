@@ -58,10 +58,10 @@ class TestAddPeople(unittest.TestCase):
         people = People.query.all()
         mapping = ReleasesPeopleMapping.query.filter_by(ReleaseID=self.release_id).all()
 
-        self.assertEquals(1, len(people))
-        self.assertEquals(1, len(mapping))
-        self.assertEquals(self.existing_person_id, mapping[0].PersonID)
-        self.assertEquals("UnitTest Drums", mapping[0].Instruments)
+        self.assertEqual(1, len(people))
+        self.assertEqual(1, len(mapping))
+        self.assertEqual(self.existing_person_id, mapping[0].PersonID)
+        self.assertEqual("UnitTest Drums", mapping[0].Instruments)
 
     def test_adding_people_with_new_string_values(self):
         """Should create new entries and then do the mapping for the current release."""
@@ -79,13 +79,13 @@ class TestAddPeople(unittest.TestCase):
         p1 = People.query.filter_by(Name="UnitTest Mike").first()
         p2 = People.query.filter_by(Name="UnitTest John").first()
 
-        self.assertEquals(3, len(people))
+        self.assertEqual(3, len(people))
         self.assertFalse(p1 is None)
         self.assertFalse(p2 is None)
-        self.assertEquals(mapping[0].PersonID, p1.PersonID)
-        self.assertEquals(mapping[0].Instruments, "Drums")
-        self.assertEquals(mapping[1].PersonID, p2.PersonID)
-        self.assertEquals(mapping[1].Instruments, "Guitar")
+        self.assertEqual(mapping[0].PersonID, p1.PersonID)
+        self.assertEqual(mapping[0].Instruments, "Drums")
+        self.assertEqual(mapping[1].PersonID, p2.PersonID)
+        self.assertEqual(mapping[1].Instruments, "Guitar")
 
     def test_adding_people_with_existing_string_values(self):
         """Should not add a new entry to People, and the mapping should be correct for current
@@ -100,9 +100,9 @@ class TestAddPeople(unittest.TestCase):
         people = People.query.all()
         mapping = ReleasesPeopleMapping.query.filter_by(ReleaseID=self.release_id).all()
 
-        self.assertEquals(1, len(people))
-        self.assertEquals(people[0].PersonID, mapping[0].PersonID)
-        self.assertEquals("Guitar", mapping[0].Instruments)
+        self.assertEqual(1, len(people))
+        self.assertEqual(people[0].PersonID, mapping[0].PersonID)
+        self.assertEqual("Guitar", mapping[0].Instruments)
 
     def test_adding_people_with_nonexisting_ids(self):
         """When you add PersonIDs that do not exist, no mapping should happen and no new entries
@@ -112,5 +112,5 @@ class TestAddPeople(unittest.TestCase):
         people = People.query.all()
         mapping = ReleasesPeopleMapping.query.filter_by(ReleaseID=self.release_id).first()
 
-        self.assertEquals(1, len(people))
+        self.assertEqual(1, len(people))
         self.assertTrue(mapping is None)

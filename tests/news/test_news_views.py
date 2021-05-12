@@ -133,10 +133,10 @@ class TestNewsView(unittest.TestCase):
         news = json.loads(
             response.get_data().decode()
         )
-        self.assertEquals(200, response.status_code)
-        self.assertEquals(2, len([n for n in news["news"]]))
-        self.assertEquals("UnitTest", news["news"][0]["title"])
-        self.assertEquals(2, len(news["news"][0]["categories"]))
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(2, len([n for n in news["news"]]))
+        self.assertEqual("UnitTest", news["news"][0]["title"])
+        self.assertEqual(2, len(news["news"][0]["categories"]))
         self.assertTrue("TestCategory1" in news["news"][0]["categories"])
         self.assertTrue("TestCategory3" in news["news"][1]["categories"])
 
@@ -145,9 +145,9 @@ class TestNewsView(unittest.TestCase):
         news = json.loads(
             response.get_data().decode()
         )
-        self.assertEquals(200, response.status_code)
-        self.assertEquals("UnitTest2", news["news"][0]["title"])
-        self.assertEquals(2, len(news["news"][0]["categories"]))
+        self.assertEqual(200, response.status_code)
+        self.assertEqual("UnitTest2", news["news"][0]["title"])
+        self.assertEqual(2, len(news["news"][0]["categories"]))
         self.assertTrue("TestCategory1" in news["news"][0]["categories"])
         self.assertTrue("TestCategory3" in news["news"][0]["categories"])
 
@@ -177,14 +177,14 @@ class TestNewsView(unittest.TestCase):
         news = News.query.filter_by(Title="UnitTest Post").first_or_404()
         cats = NewsCategoriesMapping.query.filter_by(NewsID=news.NewsID).order_by(
             asc(NewsCategoriesMapping.NewsCategoryID)).all()
-        self.assertEquals(201, response.status_code)
+        self.assertEqual(201, response.status_code)
         self.assertTrue("Location" in response.get_data().decode())
-        self.assertEquals("UnitTest", news.Contents)
-        self.assertEquals(3, len(cats))
+        self.assertEqual("UnitTest", news.Contents)
+        self.assertEqual(3, len(cats))
         # When a new non-existing string category is given,
         # it should be added to general NewsCategories
         new_cat = NewsCategories.query.filter_by(Category="TestCategoryNew").first_or_404()
-        self.assertEquals("TestCategoryNew", new_cat.Category)
+        self.assertEqual("TestCategoryNew", new_cat.Category)
 
     def test_adding_news_with_string_categories(self):
         """If a string of categories is given, it should be split into a list by commas."""
@@ -213,15 +213,15 @@ class TestNewsView(unittest.TestCase):
         news = News.query.filter_by(Title="UnitTest Post").first_or_404()
         cats = NewsCategoriesMapping.query.filter_by(NewsID=news.NewsID).order_by(
             asc(NewsCategoriesMapping.NewsCategoryID)).all()
-        self.assertEquals(201, response.status_code)
+        self.assertEqual(201, response.status_code)
         self.assertTrue("Location" in response.get_data().decode())
-        self.assertEquals("UnitTest", news.Contents)
+        self.assertEqual("UnitTest", news.Contents)
         # Should be 3 out of 5, because one item is an empty string, and one is pre-existing
-        self.assertEquals(3, len(cats))
+        self.assertEqual(3, len(cats))
         # When a new non-existing string category is given,
         # it should be added to general NewsCategories
         new_cat = NewsCategories.query.filter_by(Category="TestCategoryNew").first_or_404()
-        self.assertEquals("TestCategoryNew", new_cat.Category)
+        self.assertEqual("TestCategoryNew", new_cat.Category)
 
     def test_deleting_news(self):
         response = self.app.delete(
@@ -236,10 +236,10 @@ class TestNewsView(unittest.TestCase):
         cats = NewsCategoriesMapping.query.filter_by(NewsID=self.news_ids[0]).order_by(
             asc(NewsCategoriesMapping.NewsCategoryID)).all()
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals("", response.data.decode())
-        self.assertEquals(None, query_result)
-        self.assertEquals([], cats)
+        self.assertEqual(204, response.status_code)
+        self.assertEqual("", response.data.decode())
+        self.assertEqual(None, query_result)
+        self.assertEqual([], cats)
 
     def test_putting_things(self):
         response = self.app.put(
@@ -262,12 +262,12 @@ class TestNewsView(unittest.TestCase):
         news = News.query.get_or_404(self.news_ids[0])
         cats = NewsCategoriesMapping.query.filter_by(NewsID=self.news_ids[0]).all()
 
-        self.assertEquals(200, response.status_code)
-        self.assertEquals("UnitTest Put Title", news.Title)
-        self.assertEquals("UnitTest Put Contents", news.Contents)
-        self.assertEquals("UnitTest Put Author", news.Author)
-        self.assertEquals(2, len(cats))
-        self.assertEquals(4, cats[0].NewsCategoryID)
+        self.assertEqual(200, response.status_code)
+        self.assertEqual("UnitTest Put Title", news.Title)
+        self.assertEqual("UnitTest Put Contents", news.Contents)
+        self.assertEqual("UnitTest Put Author", news.Author)
+        self.assertEqual(2, len(cats))
+        self.assertEqual(4, cats[0].NewsCategoryID)
 
     def test_patching_things(self):
         """All the features are tested in the two news patches test files. This is just testing
@@ -286,10 +286,10 @@ class TestNewsView(unittest.TestCase):
             }
         )
         data = json.loads(response.data.decode())
-        self.assertEquals(200, response.status_code)
-        self.assertEquals("Multi title", data["title"])
-        self.assertEquals("UnitTest Contents", data["author"])
-        self.assertEquals(None, data["updated"])
+        self.assertEqual(200, response.status_code)
+        self.assertEqual("Multi title", data["title"])
+        self.assertEqual("UnitTest Contents", data["author"])
+        self.assertEqual(None, data["updated"])
 
     def test_patching_with_invalid_payload(self):
         """Should return 422 Unprocessable Entity."""
@@ -303,6 +303,6 @@ class TestNewsView(unittest.TestCase):
             }
         )
         data = json.loads(response.data.decode())
-        self.assertEquals(422, response.status_code)
-        self.assertEquals(False, data["success"])
-        self.assertEquals("Could not apply patch", data["message"])
+        self.assertEqual(422, response.status_code)
+        self.assertEqual(False, data["success"])
+        self.assertEqual("Could not apply patch", data["message"])

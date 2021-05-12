@@ -61,7 +61,7 @@ else:
 
 # TODO: Can this be included into the Flask config above?
 CACHE_CONFIG = {
-    'CACHE_TYPE': 'redis',
+    'CACHE_TYPE': 'RedisCache',
     'CACHE_DEFAULT_TIMEOUT': 60,  # seconds
     'CACHE_REDIS_HOST': '127.0.0.1',
     'CACHE_REDIS_PORT': '6379',

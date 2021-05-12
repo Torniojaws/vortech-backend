@@ -117,34 +117,34 @@ class TestGuestbookViews(unittest.TestCase):
         response = self.app.get("/api/1.0/guestbook/")
         data = json.loads(response.data.decode())
 
-        self.assertEquals(200, response.status_code)
-        self.assertEquals(3, len(data["guestbook"]))
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(3, len(data["guestbook"]))
 
-        self.assertEquals("UnitTest Name 1", data["guestbook"][2]["name"])
-        self.assertEquals("UnitTest Message 1", data["guestbook"][2]["message"])
+        self.assertEqual("UnitTest Name 1", data["guestbook"][2]["name"])
+        self.assertEqual("UnitTest Message 1", data["guestbook"][2]["message"])
         self.assertTrue(data["guestbook"][2]["isGuest"])
-        self.assertNotEquals("", data["guestbook"][2]["createdAt"])
-        self.assertEquals("UnitTest Admin Comment 1", data["guestbook"][2]["adminComment"])
+        self.assertNotEqual("", data["guestbook"][2]["createdAt"])
+        self.assertEqual("UnitTest Admin Comment 1", data["guestbook"][2]["adminComment"])
 
-        self.assertEquals("UnitTest Name 3", data["guestbook"][0]["name"])
-        self.assertEquals("UnitTest Message 3", data["guestbook"][0]["message"])
+        self.assertEqual("UnitTest Name 3", data["guestbook"][0]["name"])
+        self.assertEqual("UnitTest Message 3", data["guestbook"][0]["message"])
         self.assertFalse(data["guestbook"][0]["isGuest"])
-        self.assertNotEquals("", data["guestbook"][0]["createdAt"])
-        self.assertEquals("UnitTest Admin Comment 3", data["guestbook"][0]["adminComment"])
+        self.assertNotEqual("", data["guestbook"][0]["createdAt"])
+        self.assertEqual("UnitTest Admin Comment 3", data["guestbook"][0]["adminComment"])
 
     def test_getting_one_guestbook_post(self):
         """Should return a given guestbook post."""
         response = self.app.get("/api/1.0/guestbook/{}".format(self.valid_post))
         data = json.loads(response.data.decode())
 
-        self.assertEquals(200, response.status_code)
-        self.assertEquals(1, len(data["guestbook"]))
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(1, len(data["guestbook"]))
 
-        self.assertEquals("UnitTest Name 1", data["guestbook"][0]["name"])
-        self.assertEquals("UnitTest Message 1", data["guestbook"][0]["message"])
+        self.assertEqual("UnitTest Name 1", data["guestbook"][0]["name"])
+        self.assertEqual("UnitTest Message 1", data["guestbook"][0]["message"])
         self.assertTrue(data["guestbook"][0]["isGuest"])
-        self.assertNotEquals("", data["guestbook"][0]["createdAt"])
-        self.assertEquals("UnitTest Admin Comment 1", data["guestbook"][0]["adminComment"])
+        self.assertNotEqual("", data["guestbook"][0]["createdAt"])
+        self.assertEqual("UnitTest Admin Comment 1", data["guestbook"][0]["adminComment"])
 
     def test_adding_guestbook_post_as_logged_user(self):
         """Should add it normally."""
@@ -163,12 +163,12 @@ class TestGuestbookViews(unittest.TestCase):
 
         book = Guestbook.query.filter_by(Author="UnitTest Post").first_or_404()
 
-        self.assertEquals(201, response.status_code)
+        self.assertEqual(201, response.status_code)
         self.assertTrue("Location" in data)
 
-        self.assertEquals(3, book.UserID)
-        self.assertEquals("UnitTest Post", book.Author)
-        self.assertEquals("UnitTest message", book.Message)
+        self.assertEqual(3, book.UserID)
+        self.assertEqual("UnitTest Post", book.Author)
+        self.assertEqual("UnitTest message", book.Message)
 
     def test_adding_guestbook_post_as_guest_user(self):
         """Should add it normally."""
@@ -187,12 +187,12 @@ class TestGuestbookViews(unittest.TestCase):
 
         book = Guestbook.query.filter_by(Author="UnitTest Guest Post").first_or_404()
 
-        self.assertEquals(201, response.status_code)
+        self.assertEqual(201, response.status_code)
         self.assertTrue("Location" in data)
 
-        self.assertEquals(1, book.UserID)
-        self.assertEquals("UnitTest Guest Post", book.Author)
-        self.assertEquals("UnitTest Guest message", book.Message)
+        self.assertEqual(1, book.UserID)
+        self.assertEqual("UnitTest Guest Post", book.Author)
+        self.assertEqual("UnitTest Guest message", book.Message)
 
     def test_adding_guestbook_post_as_guest_user_with_name_that_is_already_registered(self):
         """Should not add the post, and should return a 400 Bad Request with error JSON."""
@@ -213,10 +213,10 @@ class TestGuestbookViews(unittest.TestCase):
             Message="UnitTest Guest message should not exist"
         ).first()
 
-        self.assertEquals(400, response.status_code)
-        self.assertEquals(None, book)
+        self.assertEqual(400, response.status_code)
+        self.assertEqual(None, book)
         self.assertFalse(data["success"])
-        self.assertEquals("Username already in use by a registered user", data["error"])
+        self.assertEqual("Username already in use by a registered user", data["error"])
 
     def test_patching_guestbook_using_add(self):
         """Should modify a resource in the specified guestbook post."""
@@ -240,10 +240,10 @@ class TestGuestbookViews(unittest.TestCase):
 
         book = Guestbook.query.filter_by(GuestbookID=self.admin_valid_post).first()
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals("", response.data.decode())
+        self.assertEqual(204, response.status_code)
+        self.assertEqual("", response.data.decode())
 
-        self.assertEquals("UnitTest patched admin comment", book.AdminComment)
+        self.assertEqual("UnitTest patched admin comment", book.AdminComment)
 
     def test_patching_guestbook_using_copy(self):
         """Should copy a resource in the specified guestbook post to another resource."""
@@ -267,10 +267,10 @@ class TestGuestbookViews(unittest.TestCase):
 
         book = Guestbook.query.filter_by(GuestbookID=self.valid_post).first()
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals("", response.data.decode())
+        self.assertEqual(204, response.status_code)
+        self.assertEqual("", response.data.decode())
 
-        self.assertEquals("UnitTest Name 1", book.AdminComment)
+        self.assertEqual("UnitTest Name 1", book.AdminComment)
 
     # TODO: Move, Remove and Test will be implemented later
 
@@ -296,10 +296,10 @@ class TestGuestbookViews(unittest.TestCase):
 
         book = Guestbook.query.filter_by(GuestbookID=self.valid_post).first()
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals("", response.data.decode())
+        self.assertEqual(204, response.status_code)
+        self.assertEqual("", response.data.decode())
 
-        self.assertEquals("UnitTest replaced message", book.Message)
+        self.assertEqual("UnitTest replaced message", book.Message)
 
     def test_patching_with_exception(self):
         """Test a patch that results in 422 Unprocessable Entity."""
@@ -321,7 +321,7 @@ class TestGuestbookViews(unittest.TestCase):
             }
         )
 
-        self.assertEquals(422, response.status_code)
+        self.assertEqual(422, response.status_code)
         self.assertFalse("", response.data.decode())
 
     def test_deleting_guestbook_post(self):
@@ -336,5 +336,5 @@ class TestGuestbookViews(unittest.TestCase):
 
         book = Guestbook.query.filter_by(GuestbookID=self.valid_post).first()
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals(None, book)
+        self.assertEqual(204, response.status_code)
+        self.assertEqual(None, book)

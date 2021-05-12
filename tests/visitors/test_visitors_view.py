@@ -91,8 +91,8 @@ class TestVisitorsViews(unittest.TestCase):
         response = self.app.get("/api/1.0/visits/")
         data = json.loads(response.data.decode())
 
-        self.assertEquals(200, response.status_code)
-        self.assertNotEquals(None, data)
+        self.assertEqual(200, response.status_code)
+        self.assertNotEqual(None, data)
         self.assertTrue("month" in data["visits"])
         self.assertTrue("week" in data["visits"])
         self.assertTrue("today" in data["visits"])
@@ -123,16 +123,16 @@ class TestVisitorsViews(unittest.TestCase):
         visit = Visitors.query.order_by(desc(Visitors.VisitID)).first()
         count = Visitors.query.filter(Visitors.VisitDate >= get_date()).all()
 
-        self.assertEquals(201, response.status_code)
+        self.assertEqual(201, response.status_code)
         self.assertTrue("Location" in data)
 
-        self.assertEquals("Unknown", visit.Country)  # You cannot get valid data in localhost
+        self.assertEqual("Unknown", visit.Country)  # You cannot get valid data in localhost
 
         if datetime.now().weekday() == 0 or datetime.now().day == 1:
             # When run on a Monday or the 1st day of the month
-            self.assertEquals(6, len(count))
+            self.assertEqual(6, len(count))
         else:
-            self.assertEquals(4, len(count))
+            self.assertEqual(4, len(count))
 
     def test_incrementing_visits_with_mocked_IP(self):
         """When we POST a valid JSON, we should also get our geodata and add it to the table."""
@@ -151,17 +151,17 @@ class TestVisitorsViews(unittest.TestCase):
         visit = Visitors.query.order_by(desc(Visitors.VisitID)).first()
         count = Visitors.query.filter(Visitors.VisitDate >= get_date()).all()
 
-        self.assertEquals(201, response.status_code)
+        self.assertEqual(201, response.status_code)
         self.assertTrue("Location" in data)
 
-        self.assertEquals("Europe", visit.Continent)
-        self.assertEquals("Republic of Lithuania", visit.Country)
+        self.assertEqual("Europe", visit.Continent)
+        self.assertEqual("Republic of Lithuania", visit.Country)
 
         if datetime.now().weekday() == 0 or datetime.now().day == 1:
             # When run on a Monday or the 1st day of the month
-            self.assertEquals(6, len(count))
+            self.assertEqual(6, len(count))
         else:
-            self.assertEquals(4, len(count))
+            self.assertEqual(4, len(count))
 
     def test_incrementing_visits_with_invalid_json(self):
         """When we POST an invalid JSON, the request should be ignored and we get an error JSON."""
@@ -179,15 +179,15 @@ class TestVisitorsViews(unittest.TestCase):
         visit = Visitors.query.order_by(desc(Visitors.VisitID)).first()
         count = Visitors.query.filter(Visitors.VisitDate >= get_date()).all()
 
-        self.assertEquals(400, response.status_code)
-        self.assertNotEquals(None, data)
-        self.assertEquals("Invalid data in visitor counter update", data["error"])
+        self.assertEqual(400, response.status_code)
+        self.assertNotEqual(None, data)
+        self.assertEqual("Invalid data in visitor counter update", data["error"])
         self.assertFalse(data["success"])
 
-        self.assertEquals("Europe", visit.Continent)
+        self.assertEqual("Europe", visit.Continent)
 
         if datetime.now().weekday() == 0 or datetime.now().day == 1:
             # When run on a Monday or 1st day of the month
-            self.assertEquals(5, len(count))
+            self.assertEqual(5, len(count))
         else:
-            self.assertEquals(3, len(count))
+            self.assertEqual(3, len(count))

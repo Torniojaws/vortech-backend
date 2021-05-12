@@ -55,9 +55,9 @@ class TestAddCategories(unittest.TestCase):
         cats = ReleaseCategories.query.all()
         mapping = ReleasesCategoriesMapping.query.filter_by(ReleaseID=self.release_id).all()
 
-        self.assertEquals(1, len(cats))
-        self.assertEquals(1, len(mapping))
-        self.assertEquals(self.existing_category_id, mapping[0].ReleaseCategoryID)
+        self.assertEqual(1, len(cats))
+        self.assertEqual(1, len(mapping))
+        self.assertEqual(self.existing_category_id, mapping[0].ReleaseCategoryID)
 
     def test_adding_categories_with_string_values(self):
         """When the values are strings, the will be inserted to ReleaseCategories as new entries.
@@ -74,9 +74,9 @@ class TestAddCategories(unittest.TestCase):
         cat1 = ReleaseCategories.query.filter_by(ReleaseCategory="UnitTest Catastrophy").first()
         cat2 = ReleaseCategories.query.filter_by(ReleaseCategory="UnitTest Category 5").first()
 
-        self.assertEquals(3, len(cats))
-        self.assertEquals(mapping[0].ReleaseCategoryID, cat1.ReleaseCategoryID)
-        self.assertEquals(mapping[1].ReleaseCategoryID, cat2.ReleaseCategoryID)
+        self.assertEqual(3, len(cats))
+        self.assertEqual(mapping[0].ReleaseCategoryID, cat1.ReleaseCategoryID)
+        self.assertEqual(mapping[1].ReleaseCategoryID, cat2.ReleaseCategoryID)
 
     def test_adding_categories_with_existing_string(self):
         """When the category value is a string that exists in ReleaseCategories, then it should not
@@ -88,8 +88,8 @@ class TestAddCategories(unittest.TestCase):
         cats = ReleaseCategories.query.all()
         mapping = ReleasesCategoriesMapping.query.filter_by(ReleaseID=self.release_id).all()
 
-        self.assertEquals(1, len(cats))
-        self.assertEquals(cats[0].ReleaseCategoryID, mapping[0].ReleaseCategoryID)
+        self.assertEqual(1, len(cats))
+        self.assertEqual(cats[0].ReleaseCategoryID, mapping[0].ReleaseCategoryID)
 
     def test_adding_category_using_id_that_does_not_exist(self):
         """When using a numeric ID that does not exist in ReleaseCategories, we should skip it
@@ -99,5 +99,5 @@ class TestAddCategories(unittest.TestCase):
         cats = ReleaseCategories.query.all()
         mapping = ReleasesCategoriesMapping.query.filter_by(ReleaseID=self.release_id).first()
 
-        self.assertEquals(1, len(cats))
+        self.assertEqual(1, len(cats))
         self.assertTrue(mapping is None)

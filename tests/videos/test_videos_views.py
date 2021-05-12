@@ -13,7 +13,7 @@ class TestVideosViews(unittest.TestCase):
     def setUp(self):
         # Clear redis cache completely
         cache = Cache()
-        cache.init_app(app, config={"CACHE_TYPE": "redis"})
+        cache.init_app(app, config={"CACHE_TYPE": "RedisCache"})
         with app.app_context():
             cache.clear()
 
@@ -136,30 +136,30 @@ class TestVideosViews(unittest.TestCase):
         response = self.app.get("/api/1.0/videos/")
         data = json.loads(response.data.decode())
 
-        self.assertEquals(200, response.status_code)
-        self.assertEquals(3, len(data["videos"]))
-        self.assertEquals("UnitTest Video 1", data["videos"][2]["title"])
-        self.assertEquals("http://www.example.com/video1", data["videos"][2]["url"])
-        self.assertEquals(
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(3, len(data["videos"]))
+        self.assertEqual("UnitTest Video 1", data["videos"][2]["title"])
+        self.assertEqual("http://www.example.com/video1", data["videos"][2]["url"])
+        self.assertEqual(
             [self.valid_categories[0], self.valid_categories[1]],
             data["videos"][2]["categories"]
         )
-        self.assertNotEquals("", data["videos"][2]["createdAt"])
+        self.assertNotEqual("", data["videos"][2]["createdAt"])
 
     def test_getting_one_video(self):
         """Should return the data of the specified video."""
         response = self.app.get("/api/1.0/videos/{}".format(self.valid_video_ids[1]))
         data = json.loads(response.data.decode())
 
-        self.assertEquals(200, response.status_code)
-        self.assertEquals(1, len(data["videos"]))
-        self.assertEquals("UnitTest Video 2", data["videos"][0]["title"])
-        self.assertEquals("http://www.example.com/video2", data["videos"][0]["url"])
-        self.assertEquals(
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(1, len(data["videos"]))
+        self.assertEqual("UnitTest Video 2", data["videos"][0]["title"])
+        self.assertEqual("http://www.example.com/video2", data["videos"][0]["url"])
+        self.assertEqual(
             [self.valid_video_categories_video2[0]],
             data["videos"][0]["categories"]
         )
-        self.assertNotEquals("", data["videos"][0]["createdAt"])
+        self.assertNotEqual("", data["videos"][0]["createdAt"])
 
     def test_adding_videos(self):
         """Should create a new entry to Videos and add the mapping."""
@@ -184,16 +184,16 @@ class TestVideosViews(unittest.TestCase):
         cats = VideoCategories.query.filter_by(Category="UnitTest New Category").first_or_404()
         catmap = VideosCategoriesMapping.query.filter_by(VideoID=video.VideoID).all()
 
-        self.assertEquals(201, response.status_code)
+        self.assertEqual(201, response.status_code)
         self.assertTrue("Location" in data)
-        self.assertNotEquals(None, video)
-        self.assertEquals("UnitTest Post Video", video.Title)
-        self.assertEquals("http://www.example.com/postvideo", video.URL)
+        self.assertNotEqual(None, video)
+        self.assertEqual("UnitTest Post Video", video.Title)
+        self.assertEqual("http://www.example.com/postvideo", video.URL)
 
-        self.assertNotEquals(None, cats)
-        self.assertEquals("UnitTest New Category", cats.Category)
+        self.assertNotEqual(None, cats)
+        self.assertEqual("UnitTest New Category", cats.Category)
 
-        self.assertEquals(2, len(catmap))
+        self.assertEqual(2, len(catmap))
         self.assertTrue(self.valid_categories[0] in [c.VideoCategoryID for c in catmap])
         self.assertTrue(cats.VideoCategoryID in [c.VideoCategoryID for c in catmap])
 
@@ -226,18 +226,18 @@ class TestVideosViews(unittest.TestCase):
         ).first_or_404()
         catmap = VideosCategoriesMapping.query.filter_by(VideoID=video.VideoID).all()
 
-        self.assertEquals(200, response.status_code)
-        self.assertEquals("", data)
+        self.assertEqual(200, response.status_code)
+        self.assertEqual("", data)
 
-        self.assertNotEquals(None, video)
-        self.assertEquals("UnitTest Updated Video", video.Title)
-        self.assertEquals("http://www.example.com/unittest-update", video.URL)
-        self.assertNotEquals(None, video.Updated)
+        self.assertNotEqual(None, video)
+        self.assertEqual("UnitTest Updated Video", video.Title)
+        self.assertEqual("http://www.example.com/unittest-update", video.URL)
+        self.assertNotEqual(None, video.Updated)
 
-        self.assertNotEquals(None, cats)
-        self.assertEquals("UnitTest New Cat from Update", cats.Category)
+        self.assertNotEqual(None, cats)
+        self.assertEqual("UnitTest New Cat from Update", cats.Category)
 
-        self.assertEquals(3, len(catmap))
+        self.assertEqual(3, len(catmap))
         self.assertTrue(self.valid_categories[0] in [c.VideoCategoryID for c in catmap])
         self.assertTrue(cats.VideoCategoryID in [c.VideoCategoryID for c in catmap])
 
@@ -270,9 +270,9 @@ class TestVideosViews(unittest.TestCase):
 
         invalid = VideoCategories.query.filter_by(VideoCategoryID=0).first()
 
-        self.assertEquals(200, response.status_code)
-        self.assertEquals(3, len(catmap))
-        self.assertEquals(None, invalid)
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(3, len(catmap))
+        self.assertEqual(None, invalid)
 
     def test_updating_videos_using_existing_category_string(self):
         """Should replace the existing data of the videos entry with the new data, and should use
@@ -302,10 +302,10 @@ class TestVideosViews(unittest.TestCase):
 
         invalid = VideoCategories.query.filter_by(VideoCategoryID=0).first()
 
-        self.assertEquals(200, response.status_code)
-        self.assertEquals(1, len(cats))
-        self.assertEquals(2, len(catmap))
-        self.assertEquals(None, invalid)
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(1, len(cats))
+        self.assertEqual(2, len(catmap))
+        self.assertEqual(None, invalid)
 
     def test_patching_videos_using_add(self):
         """Should replace the target value, if it is not empty. If empty, it will add the given
@@ -346,14 +346,14 @@ class TestVideosViews(unittest.TestCase):
         ).first_or_404()
         catmap = VideosCategoriesMapping.query.filter_by(VideoID=self.valid_video_ids[1]).all()
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals("", data)
-        self.assertEquals("UnitTest Patched Title", video.Title)
-        self.assertNotEquals(None, cats)
-        self.assertEquals("UnitTest Patch Add Category", cats.Category)
+        self.assertEqual(204, response.status_code)
+        self.assertEqual("", data)
+        self.assertEqual("UnitTest Patched Title", video.Title)
+        self.assertNotEqual(None, cats)
+        self.assertEqual("UnitTest Patch Add Category", cats.Category)
         # We have three categories for the video:
         # 1) the original, 2) the reference, and 3) the new added one
-        self.assertEquals(3, len(catmap))
+        self.assertEqual(3, len(catmap))
         self.assertTrue(cats.VideoCategoryID in [c.VideoCategoryID for c in catmap])
 
     def test_patching_videos_using_copy(self):
@@ -387,12 +387,12 @@ class TestVideosViews(unittest.TestCase):
         cats_after_copy = VideosCategoriesMapping.query.filter_by(
             VideoID=self.valid_video_ids[2]).all()
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals("", data)
+        self.assertEqual(204, response.status_code)
+        self.assertEqual("", data)
 
-        self.assertEquals("UnitTest Video 3", video.URL)
-        self.assertEquals("UnitTest Video 3", video.Title)
-        self.assertEquals(len(cats_before_copy), len(cats_after_copy))
+        self.assertEqual("UnitTest Video 3", video.URL)
+        self.assertEqual("UnitTest Video 3", video.Title)
+        self.assertEqual(len(cats_before_copy), len(cats_after_copy))
 
     def test_patch_moving_categories(self):
         """Categories cannot be moved anywhere, so this should not do anything in the DB and it
@@ -419,11 +419,11 @@ class TestVideosViews(unittest.TestCase):
         video = Videos.query.filter_by(VideoID=self.valid_video_ids[1]).first()
         catmap = VideosCategoriesMapping.query.filter_by(VideoID=self.valid_video_ids[1]).all()
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals(1, len(catmap))
-        self.assertEquals("", data)
+        self.assertEqual(204, response.status_code)
+        self.assertEqual(1, len(catmap))
+        self.assertEqual("", data)
         # Should not change
-        self.assertEquals("UnitTest Video 2", video.Title)
+        self.assertEqual("UnitTest Video 2", video.Title)
 
     def test_patching_videos_using_replace(self):
         response = self.app.patch(
@@ -453,10 +453,10 @@ class TestVideosViews(unittest.TestCase):
         video = Videos.query.filter_by(VideoID=self.valid_video_ids[1]).first_or_404()
         cats = VideosCategoriesMapping.query.filter_by(VideoID=self.valid_video_ids[1]).all()
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals("", data)
-        self.assertEquals("UnitTest Test Replacement", video.URL)
-        self.assertEquals(2, len(cats))
+        self.assertEqual(204, response.status_code)
+        self.assertEqual("", data)
+        self.assertEqual("UnitTest Test Replacement", video.URL)
+        self.assertEqual(2, len(cats))
 
     def test_patching_videos_using_remove(self):
         """This should remove all video category mappings."""
@@ -480,9 +480,9 @@ class TestVideosViews(unittest.TestCase):
 
         catmap = VideosCategoriesMapping.query.filter_by(VideoID=self.valid_video_ids[0]).all()
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals("", data)
-        self.assertEquals([], catmap)
+        self.assertEqual(204, response.status_code)
+        self.assertEqual("", data)
+        self.assertEqual([], catmap)
 
     def test_patching_with_invalid_data(self):
         """Should return a 422 Unprocessable Entity."""
@@ -505,7 +505,7 @@ class TestVideosViews(unittest.TestCase):
         )
         data = json.loads(response.data.decode())
 
-        self.assertEquals(422, response.status_code)
+        self.assertEqual(422, response.status_code)
         self.assertFalse(data["success"])
 
     def test_deleting_a_video(self):
@@ -522,7 +522,7 @@ class TestVideosViews(unittest.TestCase):
         video = Videos.query.filter_by(VideoID=self.valid_video_ids[0]).first()
         catmap = VideosCategoriesMapping.query.filter_by(VideoID=self.valid_video_ids[0]).all()
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals(None, video)
-        self.assertEquals(0, len(catmap))
-        self.assertEquals("", data)
+        self.assertEqual(204, response.status_code)
+        self.assertEqual(None, video)
+        self.assertEqual(0, len(catmap))
+        self.assertEqual("", data)

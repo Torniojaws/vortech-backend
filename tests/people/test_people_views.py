@@ -17,7 +17,7 @@ class TestPeopleViews(unittest.TestCase):
     def setUp(self):
         # Clear redis cache completely
         cache = Cache()
-        cache.init_app(app, config={"CACHE_TYPE": "redis"})
+        cache.init_app(app, config={"CACHE_TYPE": "RedisCache"})
         with app.app_context():
             cache.clear()
 
@@ -158,34 +158,34 @@ class TestPeopleViews(unittest.TestCase):
         response = self.app.get("/api/1.0/people/")
         data = json.loads(response.get_data().decode())
 
-        self.assertEquals(200, response.status_code)
-        self.assertEquals(2, len(data["people"]))
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(2, len(data["people"]))
 
-        self.assertEquals("UnitTest Person 1", data["people"][0]["name"])
-        self.assertEquals(self.release_id, data["people"][0]["releases"][0]["releaseID"])
-        self.assertEquals("UnitTest Drums", data["people"][0]["releases"][0]["instruments"])
-        self.assertEquals(self.show_id, data["people"][0]["shows"][0]["showID"])
-        self.assertEquals("UnitTest Synths", data["people"][0]["shows"][0]["instruments"])
+        self.assertEqual("UnitTest Person 1", data["people"][0]["name"])
+        self.assertEqual(self.release_id, data["people"][0]["releases"][0]["releaseID"])
+        self.assertEqual("UnitTest Drums", data["people"][0]["releases"][0]["instruments"])
+        self.assertEqual(self.show_id, data["people"][0]["shows"][0]["showID"])
+        self.assertEqual("UnitTest Synths", data["people"][0]["shows"][0]["instruments"])
 
-        self.assertEquals("UnitTest Person 2", data["people"][1]["name"])
-        self.assertEquals(self.release_id, data["people"][1]["releases"][0]["releaseID"])
-        self.assertEquals("UnitTest Bass", data["people"][1]["releases"][0]["instruments"])
-        self.assertEquals(self.show_id, data["people"][1]["shows"][0]["showID"])
-        self.assertEquals("UnitTest Cello", data["people"][1]["shows"][0]["instruments"])
+        self.assertEqual("UnitTest Person 2", data["people"][1]["name"])
+        self.assertEqual(self.release_id, data["people"][1]["releases"][0]["releaseID"])
+        self.assertEqual("UnitTest Bass", data["people"][1]["releases"][0]["instruments"])
+        self.assertEqual(self.show_id, data["people"][1]["shows"][0]["showID"])
+        self.assertEqual("UnitTest Cello", data["people"][1]["shows"][0]["instruments"])
 
     def test_getting_one_person(self):
         """Same as all people, but returns the data of only one person."""
         response = self.app.get("/api/1.0/people/{}".format(self.person1_id))
         data = json.loads(response.get_data().decode())
 
-        self.assertEquals(200, response.status_code)
-        self.assertEquals(1, len(data["people"]))
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(1, len(data["people"]))
 
-        self.assertEquals("UnitTest Person 1", data["people"][0]["name"])
-        self.assertEquals(self.release_id, data["people"][0]["releases"][0]["releaseID"])
-        self.assertEquals("UnitTest Drums", data["people"][0]["releases"][0]["instruments"])
-        self.assertEquals(self.show_id, data["people"][0]["shows"][0]["showID"])
-        self.assertEquals("UnitTest Synths", data["people"][0]["shows"][0]["instruments"])
+        self.assertEqual("UnitTest Person 1", data["people"][0]["name"])
+        self.assertEqual(self.release_id, data["people"][0]["releases"][0]["releaseID"])
+        self.assertEqual("UnitTest Drums", data["people"][0]["releases"][0]["instruments"])
+        self.assertEqual(self.show_id, data["people"][0]["shows"][0]["showID"])
+        self.assertEqual("UnitTest Synths", data["people"][0]["shows"][0]["instruments"])
 
     def test_adding_a_person(self):
         """Adding a new person is very straightforward - just a name :)"""
@@ -205,10 +205,10 @@ class TestPeopleViews(unittest.TestCase):
 
         person = People.query.filter_by(Name="UnitTest Added").first_or_404()
 
-        self.assertEquals(201, response.status_code)
+        self.assertEqual(201, response.status_code)
         self.assertTrue("Location" in response.data.decode())
-        self.assertNotEquals(None, person)
-        self.assertEquals("UnitTest Added", person.Name)
+        self.assertNotEqual(None, person)
+        self.assertEqual("UnitTest Added", person.Name)
 
     def test_updating_a_person(self):
         """Equally easy as adding one. Since a Person only has one column, we use just PUT and do
@@ -229,10 +229,10 @@ class TestPeopleViews(unittest.TestCase):
 
         person = People.query.filter_by(PersonID=self.person2_id).first_or_404()
 
-        self.assertEquals(200, response.status_code)
-        self.assertEquals("", response.data.decode())
-        self.assertNotEquals(None, person)
-        self.assertEquals("UnitTest Updated", person.Name)
+        self.assertEqual(200, response.status_code)
+        self.assertEqual("", response.data.decode())
+        self.assertNotEqual(None, person)
+        self.assertEqual("UnitTest Updated", person.Name)
 
     def test_deleting_a_person(self):
         """Not much to it."""
@@ -246,5 +246,5 @@ class TestPeopleViews(unittest.TestCase):
 
         person = People.query.filter_by(PersonID=self.person1_id).first()
 
-        self.assertEquals(204, response.status_code)
-        self.assertEquals(None, person)
+        self.assertEqual(204, response.status_code)
+        self.assertEqual(None, person)

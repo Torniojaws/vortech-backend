@@ -3,3 +3,4 @@
 - import_tasks: stop-apache.yml
 - import_tasks: update-apt.yml
 - import_tasks: install-programs.yml
+- import_tasks: uwsgi-python36.yml

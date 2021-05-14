@@ -1,0 +1,33 @@
+- name: Create temp dir for uWSGI update
+  file:
+    path: /tmp/uwsgi/
+    state: directory
+
+- name: Get the latest uWSGI
+  ansible.builtin.shell: |
+    cd /tmp/uwsgi/
+    wget https://projects.unbit.it/downloads/uwsgi-latest.tar.gz
+    
+- name: Extract the uWSGI tarball
+  ansible.builtin.shell: |
+    cd /tmp/uwsgi/
+    tar -xvzf uwsgi-latest.tar.gz --strip-components=1
+
+- name: Compile uWSGI with nolang
+  command: chdir=/tmp/uwsgi make PROFILE=nolang
+
+- name: Compile uWSGI Python 3.6 plugin
+  environment:
+    PYTHON: python3.6
+  command: chdir=/tmp/uwsgi ./uwsgi --build-plugin "plugins/python python36"
+    
+- name: Move the compiled Python 3.6 plugin to plugins
+  command: chdir=/tmp/uwsgi mv python36_plugin.so plugins/python
+  
+- name: Move the uWSGI latest to usr dir
+  become: yes
+  command: chdir=/tmp/uwsgi mv uwsgi /usr/local
+
+- name: Create symbolic link for the uWSGI latest
+  become: yes
+  command: ln -s /usr/local/uwsgi/uwsgi /usr/local/bin/uwsgi

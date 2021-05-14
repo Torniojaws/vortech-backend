@@ -11,15 +11,12 @@
   pip:
     requirements: /srv/vortech-backend/html/requirements/prod.txt
     virtualenv: /srv/vortech-backend/venv
-    virtualenv_python: python3
 
 - name: Install DEVELOPMENT project pip requirements
   when: env == "dev"
-  become: yes
   pip:
     requirements: /srv/vortech-backend/html/requirements/dev.txt
     virtualenv: /srv/vortech-backend/venv
-    virtualenv_python: python3
 
 - name: Create the nginx logs directory
   become: yes

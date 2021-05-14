@@ -18,7 +18,6 @@ make_class_dictable(NewsCategoriesMapping)
 
 
 class NewsView(FlaskView):
-    @cache.cached(timeout=300)
     def index(self):
         """Return all News items in reverse chronological order (newest first).
         When url parameters are given (usually for pagination), filter the query."""

@@ -194,7 +194,7 @@ class TestNewsView(unittest.TestCase):
         self.assertEqual(2, len(news["news"][0]["categories"]))
         self.assertTrue("TestCategory1" in news["news"][0]["categories"])
         self.assertTrue("TestCategory3" in news["news"][1]["categories"])
-        
+
     def test_getting_paginated_news_using_limit(self):
         """When using limit, we only get the first N items, starting from newest by date"""
         response = self.app.get("/api/1.0/news/?limit=3")

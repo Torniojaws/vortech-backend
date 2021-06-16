@@ -1,3 +1,4 @@
+from datetime import datetime
 import json
 import socket
 
@@ -23,11 +24,16 @@ class NewsView(FlaskView):
         When url parameters are given (usually for pagination), filter the query."""
         limit = int_or_none(request.args.get("limit", None))
         first = int_or_none(request.args.get("first", None))
+        year = int_or_none(request.args.get("year", None))
 
         if limit is not None and first is not None:
             newsData = News.query.order_by(desc(News.Created)).offset(first).limit(limit).all()
         elif limit is not None:
             newsData = News.query.order_by(desc(News.Created)).limit(limit).all()
+        elif year is not None:
+            newsData = News.query.filter(
+                News.Created.between(datetime(year, 1, 1), datetime(year, 12, 31))
+            ).order_by(desc(News.Created)).limit(limit).all()
         else:
             newsData = News.query.order_by(desc(News.Created)).all()
 

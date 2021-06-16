@@ -1,5 +1,5 @@
 [![GitHub version](https://badge.fury.io/gh/Torniojaws%2Fvortech-backend.svg)](https://badge.fury.io/gh/Torniojaws%2Fvortech-backend)
-[![Build Status](https://travis-ci.org/Torniojaws/vortech-backend.svg?branch=master)](https://travis-ci.org/Torniojaws/vortech-backend)
+[![Build Status](https://travis-ci.com/Torniojaws/vortech-backend.svg?branch=master)](https://travis-ci.com/Torniojaws/vortech-backend)
 [![Coverage Status](https://coveralls.io/repos/github/Torniojaws/vortech-backend/badge.svg?branch=master)](https://coveralls.io/github/Torniojaws/vortech-backend?branch=master)
 
 # Vortech API

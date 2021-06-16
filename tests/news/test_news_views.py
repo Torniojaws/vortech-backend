@@ -36,14 +36,14 @@ class TestNewsView(unittest.TestCase):
             Title="UnitTest",
             Contents="UnitTest Contents",
             Author="UnitTest Author",
-            Created="2021-01-01 10:00:00",
+            Created="2019-01-01 10:00:00",
             Updated=get_datetime(),  # This is only to test "move" and "remove"
         )
         news2 = News(
             Title="UnitTest2",
             Contents="UnitTest2 Contents",
             Author="UnitTest2 Author",
-            Created="2021-02-02 11:00:00",
+            Created="2020-02-02 11:00:00",
         )
         news3 = News(
             Title="UnitTest3",
@@ -208,6 +208,16 @@ class TestNewsView(unittest.TestCase):
         self.assertEqual(2, len(news["news"][0]["categories"]))
         self.assertTrue("TestCategory1" in news["news"][0]["categories"])
         self.assertTrue("TestCategory3" in news["news"][1]["categories"])
+
+    def test_getting_news_from_specific_year(self):
+        """When using year parameter, we get all news from the given year, starting from newest"""
+        response = self.app.get("/api/1.0/news/?year=2020")
+        news = json.loads(
+            response.get_data().decode()
+        )
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(1, len([n for n in news["news"]]))
+        self.assertEqual("UnitTest2", news["news"][0]["title"])
 
     def test_getting_one_news(self):
         response = self.app.get("/api/1.0/news/{}".format(int(self.news_ids[1])))

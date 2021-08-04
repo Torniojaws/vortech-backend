@@ -46,7 +46,7 @@ class ReleasesView(FlaskView):
                 "updated": get_iso_format(release.Updated),
             } for release in Releases.query.filter(
                 Releases.Date <= get_datetime()
-            ).order_by(desc(Releases.ReleaseID)).all()]
+            ).order_by(desc(Releases.Date)).all()]
         })
         return make_response(contents, 200)
 

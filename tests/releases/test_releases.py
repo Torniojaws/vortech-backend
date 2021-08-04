@@ -17,7 +17,7 @@ from apps.releases.patches import patch_mapping
 from apps.people.models import People, ReleasesPeopleMapping
 from apps.songs.models import Songs, ReleasesSongsMapping
 from apps.users.models import Users, UsersAccessTokens, UsersAccessMapping, UsersAccessLevels
-from apps.utils.time import get_datetime, get_datetime_one_hour_ahead
+from apps.utils.time import get_datetime, get_datetime_one_hour_ahead, get_datetime_one_month_ago
 
 
 class TestReleases(unittest.TestCase):
@@ -41,10 +41,10 @@ class TestReleases(unittest.TestCase):
         # Add two test releases
         release = Releases(
             Title="UnitTest",
-            Date=get_datetime(),
+            Date=get_datetime_one_month_ago(),
             Artist="UnitTest Arts",
             Credits="UnitTest is a good and fun activity",
-            Created=get_datetime(),
+            Created=get_datetime_one_month_ago(),
             ReleaseCode="TEST001"
         )
         release2 = Releases(

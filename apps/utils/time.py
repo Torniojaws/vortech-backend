@@ -34,3 +34,9 @@ def get_datetime_one_hour_ahead():
     """Returns the datetime exactly 1 hour in the future. Used for AccessTokens."""
     now = datetime.now()
     return (now + timedelta(hours=1)).strftime('%Y-%m-%d %H:%M:%S')
+
+
+def get_datetime_one_month_ago():
+    """Returns the datetime 30 days ago. Used in Release date tests."""
+    now = datetime.now()
+    return (now - timedelta(days=30)).strftime('%Y-%m-%d %H:%M:%S')

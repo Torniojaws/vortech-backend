@@ -133,3 +133,20 @@ class SongsView(FlaskView):
             } for tab in tabs]
         })
         return make_response(contents, 200)
+
+    @route("/tabs", methods=["GET"])
+    @cache.cached(timeout=300)
+    def get_all_tabs(self):
+        """Returns all tabs we have. Note that no song has two tabs, eg. text and Guitar Pro,
+        although that is supported by the implementation. In that case, this would return two
+        objects for one song in the 'tabs' array."""
+        tabs = SongsTabs.query.order_by(asc(SongsTabs.SongID)).all()
+
+        contents = jsonify({
+            "tabs": [{
+                "filename": tab.Filename,
+                "songId": tab.SongID,
+                "title": tab.Title
+            } for tab in tabs]
+        })
+        return make_response(contents, 200)

@@ -51,17 +51,17 @@ class TestSongsViews(unittest.TestCase):
         # Add tabs for the songs. Song 3 has no tabs on purpose.
         tab1 = SongsTabs(
             Title="Guitar Pro 5",
-            Filename="unittest1.gp5",
+            Filename="utest1.gp5",
             SongID=entry1.SongID
         )
         tab2 = SongsTabs(
             Title="Guitar Pro 5",
-            Filename="unittest - song 2.gp5",
+            Filename="utest2.gp5",
             SongID=entry2.SongID
         )
         tab3 = SongsTabs(
             Title="Text",
-            Filename="unittest2.txt",
+            Filename="utest2.txt",
             SongID=entry2.SongID
         )
         db.session.add(tab1)
@@ -174,7 +174,7 @@ class TestSongsViews(unittest.TestCase):
         self.assertEqual("UnitTest Song One", tabs["songTitle"])
         self.assertTrue("tabs" in tabs)
         self.assertEqual(1, len(tabs["tabs"]))
-        expected = {"title": "Guitar Pro 5", "filename": "unittest1.gp5"}
+        expected = {"title": "Guitar Pro 5", "filename": "utest1.gp5"}
         self.assertEqual(expected, tabs["tabs"][0])
 
     def test_getting_tabs_with_many(self):
@@ -189,10 +189,28 @@ class TestSongsViews(unittest.TestCase):
         self.assertTrue("tabs" in tabs)
         self.assertEqual(2, len(tabs["tabs"]))
         expected = [
-            {"title": "Text", "filename": "unittest2.txt"},
-            {"title": "Guitar Pro 5", "filename": "unittest - song 2.gp5"}
+            {"title": "Text", "filename": "utest2.txt"},
+            {"title": "Guitar Pro 5", "filename": "utest2.gp5"}
         ]
         self.assertCountEqual(expected, tabs["tabs"])
+
+    def test_getting_all_tabs(self):
+        """Should return every tab in the data."""
+        response = self.app.get("/api/1.0/songs/tabs")
+
+        tabs = json.loads(response.get_data().decode())
+
+        self.assertEqual(200, response.status_code),
+        self.assertTrue("tabs" in tabs)
+        self.assertEqual(3, len(tabs["tabs"]))
+        # Note that this has two songs. One song has one tab, and the other has 2 tabs
+        expected = [
+            {"songId": self.valid_song_ids[0], "title": "Guitar Pro 5", "filename": "utest1.gp5"},
+            {"songId": self.valid_song_ids[1], "title": "Guitar Pro 5", "filename": "utest2.gp5"},
+            {"songId": self.valid_song_ids[1], "title": "Text", "filename": "utest2.txt"}
+        ]
+        self.assertCountEqual(expected, tabs["tabs"])
+        self.assertEqual(expected[1], tabs["tabs"][1])
 
     def test_getting_tabs_to_nonexisting_song(self):
         response = self.app.get("/api/1.0/songs/abc/tabs")

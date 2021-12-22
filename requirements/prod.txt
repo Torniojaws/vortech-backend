@@ -1,18 +1,18 @@
 # Flask
-Flask==2.0.0
+Flask==2.0.2
 Flask-Caching==1.10.1
 Flask-Classful==0.14.2
 flask-cors==3.0.10
-Flask-Migrate==2.7.0
+Flask-Migrate==3.1.0
 Flask-Script==2.0.6
 Flask-SQLAlchemy==2.5.1
-werkzeug==2.0.0
+werkzeug==2.0.2
 
 # Cache
 redis==3.5.3
 
 # Gateway
-uWSGI==2.0.19.1
+uWSGI==2.0.20
 
 # Database things
 PyMySQL==1.0.2
@@ -26,4 +26,4 @@ dictalchemy==0.1.2.7
 maxminddb-geolite2==2018.703
 
 # For automatic DB backups to Github
-gitpython==2.1.11
+gitpython==2.1.15

@@ -39,13 +39,20 @@ class TestSongsViews(unittest.TestCase):
         db.session.add(entry3)
         db.session.commit()
 
-        # Add lyrics for the first song. The mix of linebreaks is on purpose
-        lyrics = SongsLyrics(
+        # Add lyrics for the songs. The mix of linebreaks is on purpose
+        # and song 2 does not have lyrics on purpose.
+        lyrics1 = SongsLyrics(
             Lyrics="My example lyrics\nAre here<br />\r\nNew paragraph\r",
             Author="UnitTester",
             SongID=entry1.SongID,
         )
-        db.session.add(lyrics)
+        lyrics3 = SongsLyrics(
+            Lyrics="Song 3 lyrics",
+            Author="UnitTester",
+            SongID=entry3.SongID,
+        )
+        db.session.add(lyrics1)
+        db.session.add(lyrics3)
         db.session.commit()
 
         # Add tabs for the songs. Song 3 has no tabs on purpose.
@@ -154,6 +161,30 @@ class TestSongsViews(unittest.TestCase):
         self.assertEqual(lyrics["author"], "UnitTester")
         self.assertTrue("lyrics" in lyrics)
         self.assertEqual("My example lyrics\nAre here\n\nNew paragraph\n", lyrics["lyrics"])
+
+    def test_getting_all_lyrics(self):
+        """Should return every lyric in the data."""
+        response = self.app.get("/api/1.0/songs/lyrics")
+
+        lyrics = json.loads(response.get_data().decode())
+        print("received lyrics: {}".format(lyrics))
+
+        self.assertEqual(200, response.status_code),
+        self.assertTrue("lyrics" in lyrics)
+        self.assertEqual(2, len(lyrics["lyrics"]))
+        expected = [
+            {
+                "songTitle": "UnitTest Song One",
+                "author": "UnitTester",
+                "lyrics": "My example lyrics\nAre here\n\nNew paragraph\n"
+            }, {
+                "songTitle": "UnitTest Song Three",
+                "author": "UnitTester",
+                "lyrics": "Song 3 lyrics"
+            },
+        ]
+        self.assertEqual(expected[0], lyrics["lyrics"][0])
+        self.assertEqual(expected[1], lyrics["lyrics"][1])
 
     def test_getting_lyrics_to_nonexisting_song(self):
         response = self.app.get("/api/1.0/songs/abc/lyrics")

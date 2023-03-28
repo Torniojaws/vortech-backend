@@ -150,3 +150,26 @@ class SongsView(FlaskView):
             } for tab in tabs]
         })
         return make_response(contents, 200)
+
+    @route("/lyrics", methods=["GET"])
+    @cache.cached(timeout=300)
+    def get_all_lyrics(self):
+        """Returns all lyrics we have. Sponsored by ChatGPT :P."""
+        query = db.session.query(
+            Songs.Title,
+            Songs.SongID,
+            SongsLyrics.Lyrics,
+            SongsLyrics.Author
+        ).join(
+            SongsLyrics,
+            Songs.SongID == SongsLyrics.SongID
+        ).order_by(Songs.SongID).all()
+
+        song_dict = {song.SongID: song.Title for song in query}
+        contents = jsonify({
+            "lyrics": [{
+                "songTitle": song_dict[lyric.SongID],
+                "lyrics": linux_linebreaks(lyric.Lyrics),
+                "author": lyric.Author
+            } for lyric in query]})
+        return make_response(contents, 200)

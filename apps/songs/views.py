@@ -7,7 +7,8 @@ from sqlalchemy import asc
 from dictalchemy import make_class_dictable
 
 from app import db, cache
-from apps.songs.models import Songs, SongsLyrics, SongsTabs
+from apps.songs.models import ReleasesSongsMapping, Songs, SongsLyrics, SongsTabs
+from apps.releases.models import Releases
 from apps.songs.patches import patch_item
 from apps.utils.auth import admin_only
 from apps.utils.strings import linux_linebreaks
@@ -159,17 +160,35 @@ class SongsView(FlaskView):
             Songs.Title,
             Songs.SongID,
             SongsLyrics.Lyrics,
-            SongsLyrics.Author
+            SongsLyrics.Author,
+            ReleasesSongsMapping.ReleaseID,
+            Releases.ReleaseCode
         ).join(
             SongsLyrics,
-            Songs.SongID == SongsLyrics.SongID
+            SongsLyrics.SongID == Songs.SongID,
+        ).join(
+            ReleasesSongsMapping,
+            ReleasesSongsMapping.SongID == Songs.SongID
+        ).join(
+            Releases,
+            Releases.ReleaseID == ReleasesSongsMapping.ReleaseID
         ).order_by(Songs.SongID).all()
 
-        song_dict = {song.SongID: song.Title for song in query}
+        grouped_result = {}
+        for row in query:
+            if row.ReleaseID not in grouped_result:
+                grouped_result[row.ReleaseID] = {
+                    "releaseId": row.ReleaseID,
+                    "releaseCode": row.ReleaseCode,
+                    "lyrics": []
+                }
+            grouped_result[row.ReleaseID]["lyrics"].append({
+                "author": row.Author,
+                "songTitle": row.Title,
+                "lyrics": linux_linebreaks(row.Lyrics)
+            })
+
         contents = jsonify({
-            "lyrics": [{
-                "songTitle": song_dict[lyric.SongID],
-                "lyrics": linux_linebreaks(lyric.Lyrics),
-                "author": lyric.Author
-            } for lyric in query]})
+            "allLyrics": list(grouped_result.values())
+        })
         return make_response(contents, 200)

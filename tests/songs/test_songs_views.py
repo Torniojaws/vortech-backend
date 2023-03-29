@@ -5,7 +5,8 @@ from flask_caching import Cache
 from sqlalchemy import asc
 
 from app import app, db
-from apps.songs.models import Songs, SongsLyrics, SongsTabs
+from apps.songs.models import ReleasesSongsMapping, Songs, SongsLyrics, SongsTabs
+from apps.releases.models import Releases
 from apps.users.models import Users, UsersAccessTokens, UsersAccessLevels, UsersAccessMapping
 from apps.utils.time import get_datetime_one_hour_ahead
 
@@ -21,6 +22,10 @@ class TestSongsViews(unittest.TestCase):
             cache.clear()
 
         self.app = app.test_client()
+
+        for song in Songs.query.all():
+            db.session.delete(song)
+        db.session.commit()
 
         entry1 = Songs(
             Title="UnitTest Song One",
@@ -38,6 +43,54 @@ class TestSongsViews(unittest.TestCase):
         db.session.add(entry2)
         db.session.add(entry3)
         db.session.commit()
+
+        # Create two releases for the songs
+        release1 = Releases(
+            ReleaseCode="VOR001",
+            Title="Release One",
+            Date="2022-07-07",
+            Artist="Vortech",
+            Credits="Created for testing",
+            Created="2022-07-07 09:00:00",
+            Updated=None
+        )
+        release2 = Releases(
+            ReleaseCode="VOR002",
+            Title="Release Two",
+            Date="2023-01-01",
+            Artist="Vortech",
+            Credits="Created for testing",
+            Created="2023-01-01 07:00:00",
+            Updated=None
+        )
+        db.session.add(release1)
+        db.session.add(release2)
+        db.session.commit()
+
+        # Map songs to two different releases
+        mapping1 = ReleasesSongsMapping(
+            ReleaseID=release1.ReleaseID,
+            SongID=entry1.SongID,
+            ReleaseSongDuration=123
+        )
+        mapping2 = ReleasesSongsMapping(
+            ReleaseID=release1.ReleaseID,
+            SongID=entry2.SongID,
+            ReleaseSongDuration=222
+        )
+        mapping3 = ReleasesSongsMapping(
+            ReleaseID=release2.ReleaseID,
+            SongID=entry3.SongID,
+            ReleaseSongDuration=321
+        )
+        db.session.add(mapping1)
+        db.session.add(mapping2)
+        db.session.add(mapping3)
+        db.session.commit()
+
+        self.valid_release_ids = []
+        self.valid_release_ids.append(release1.ReleaseID)
+        self.valid_release_ids.append(release2.ReleaseID)
 
         # Add lyrics for the songs. The mix of linebreaks is on purpose
         # and song 2 does not have lyrics on purpose.
@@ -123,6 +176,14 @@ class TestSongsViews(unittest.TestCase):
             db.session.delete(song)
         db.session.commit()
 
+        for mapping in ReleasesSongsMapping.query.all():
+            db.session.delete(mapping)
+        db.session.commit()
+
+        for release in Releases.query.all():
+            db.session.delete(release)
+        db.session.commit()
+
         user = Users.query.filter_by(UserID=self.user_id).first()
         db.session.delete(user)
         db.session.commit()
@@ -163,28 +224,33 @@ class TestSongsViews(unittest.TestCase):
         self.assertEqual("My example lyrics\nAre here\n\nNew paragraph\n", lyrics["lyrics"])
 
     def test_getting_all_lyrics(self):
-        """Should return every lyric in the data."""
+        """Should return every lyric in the data, organized by release."""
         response = self.app.get("/api/1.0/songs/lyrics")
 
         lyrics = json.loads(response.get_data().decode())
-        print("received lyrics: {}".format(lyrics))
+
+        first_album_data = lyrics["allLyrics"][0]
+        first_album_first_song = first_album_data["lyrics"][0]
+
+        second_album_data = lyrics["allLyrics"][1]
+        second_album_first_song = second_album_data["lyrics"][0]
 
         self.assertEqual(200, response.status_code),
-        self.assertTrue("lyrics" in lyrics)
-        self.assertEqual(2, len(lyrics["lyrics"]))
-        expected = [
-            {
-                "songTitle": "UnitTest Song One",
-                "author": "UnitTester",
-                "lyrics": "My example lyrics\nAre here\n\nNew paragraph\n"
-            }, {
-                "songTitle": "UnitTest Song Three",
-                "author": "UnitTester",
-                "lyrics": "Song 3 lyrics"
-            },
-        ]
-        self.assertEqual(expected[0], lyrics["lyrics"][0])
-        self.assertEqual(expected[1], lyrics["lyrics"][1])
+        self.assertTrue("allLyrics" in lyrics)
+        self.assertEqual(2, len(lyrics["allLyrics"]))
+
+        self.assertEqual(self.valid_release_ids[0], first_album_data["releaseId"])
+        self.assertEqual("VOR001", first_album_data["releaseCode"])
+        self.assertEqual("UnitTest Song One", first_album_first_song["songTitle"])
+        self.assertEqual(
+            "My example lyrics\nAre here\n\nNew paragraph\n",
+            first_album_first_song["lyrics"]
+        )
+
+        self.assertEqual(self.valid_release_ids[1], second_album_data["releaseId"])
+        self.assertEqual("VOR002", second_album_data["releaseCode"])
+        self.assertEqual("UnitTest Song Three", second_album_first_song["songTitle"])
+        self.assertEqual("Song 3 lyrics", second_album_first_song["lyrics"])
 
     def test_getting_lyrics_to_nonexisting_song(self):
         response = self.app.get("/api/1.0/songs/abc/lyrics")

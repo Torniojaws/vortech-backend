@@ -243,7 +243,7 @@ class TestSongsViews(unittest.TestCase):
         self.assertEqual("VOR001", first_album_data["releaseCode"])
         self.assertEqual("UnitTest Song One", first_album_first_song["songTitle"])
         self.assertEqual(
-            "My example lyrics\nAre here\n\nNew paragraph\n", 
+            "My example lyrics\nAre here\n\nNew paragraph\n",
             first_album_first_song["lyrics"]
         )
 
@@ -251,7 +251,6 @@ class TestSongsViews(unittest.TestCase):
         self.assertEqual("VOR002", second_album_data["releaseCode"])
         self.assertEqual("UnitTest Song Three", second_album_first_song["songTitle"])
         self.assertEqual("Song 3 lyrics", second_album_first_song["lyrics"])
-        
 
     def test_getting_lyrics_to_nonexisting_song(self):
         response = self.app.get("/api/1.0/songs/abc/lyrics")

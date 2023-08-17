@@ -47,7 +47,7 @@ class TestGuestbookViews(unittest.TestCase):
         )
         post2 = Guestbook(
             UserID=1,
-            Author="UnitTest Me too",
+            Author="UnitTest it is me",
             Message="UnitTest another guestbook post",
             Created="2017-02-02 00:05:00",
         )
@@ -58,9 +58,16 @@ class TestGuestbookViews(unittest.TestCase):
             Created="2017-02-05 00:05:00",
             AdminComment="UnitTest Admin Comment 3"
         )
+        post4 = Guestbook(
+            UserID=1,
+            Author="UnitTest Name 4",
+            Message="UnitTest Message 4",
+            Created="2023-08-17 14:47:00"
+        )
         db.session.add(post1)
         db.session.add(post2)
         db.session.add(post3)
+        db.session.add(post4)
         db.session.commit()
         self.valid_post = post1.GuestbookID
         # This is used in patch add test to add an admin comment
@@ -118,19 +125,40 @@ class TestGuestbookViews(unittest.TestCase):
         data = json.loads(response.data.decode())
 
         self.assertEqual(200, response.status_code)
-        self.assertEqual(3, len(data["guestbook"]))
+        self.assertEqual(4, len(data["guestbook"]))
 
-        self.assertEqual("UnitTest Name 1", data["guestbook"][2]["name"])
-        self.assertEqual("UnitTest Message 1", data["guestbook"][2]["message"])
-        self.assertTrue(data["guestbook"][2]["isGuest"])
-        self.assertNotEqual("", data["guestbook"][2]["createdAt"])
-        self.assertEqual("UnitTest Admin Comment 1", data["guestbook"][2]["adminComment"])
+        self.assertEqual("UnitTest Name 1", data["guestbook"][3]["name"])
+        self.assertEqual("UnitTest Message 1", data["guestbook"][3]["message"])
+        self.assertTrue(data["guestbook"][3]["isGuest"])
+        self.assertNotEqual("", data["guestbook"][3]["createdAt"])
+        self.assertEqual("UnitTest Admin Comment 1", data["guestbook"][3]["adminComment"])
 
+        self.assertEqual("UnitTest Name 3", data["guestbook"][1]["name"])
+        self.assertEqual("UnitTest Message 3", data["guestbook"][1]["message"])
+        self.assertFalse(data["guestbook"][1]["isGuest"])
+        self.assertNotEqual("", data["guestbook"][1]["createdAt"])
+
+    def test_getting_paginated_guestbook_using_limit_and_offset(self):
+        """Get guestbook posts starting from <first> until <limit>"""
+        response = self.app.get("/api/1.0/guestbook/?first=1&limit=2")
+        data = json.loads(response.data.decode())
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(2, len(data["guestbook"]))
+        # The <first>th newest post should be skipped, and the next 2 returned
         self.assertEqual("UnitTest Name 3", data["guestbook"][0]["name"])
-        self.assertEqual("UnitTest Message 3", data["guestbook"][0]["message"])
-        self.assertFalse(data["guestbook"][0]["isGuest"])
-        self.assertNotEqual("", data["guestbook"][0]["createdAt"])
-        self.assertEqual("UnitTest Admin Comment 3", data["guestbook"][0]["adminComment"])
+        self.assertEqual("UnitTest it is me", data["guestbook"][1]["name"])
+
+    def test_getting_paginated_guestbook_using_limit(self):
+        """Get newest guestbook posts until <limit>"""
+        response = self.app.get("/api/1.0/guestbook/?limit=2")
+        data = json.loads(response.data.decode())
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(2, len(data["guestbook"]))
+        # The newest 2 posts should be returned
+        self.assertEqual("UnitTest Name 4", data["guestbook"][0]["name"])
+        self.assertEqual("UnitTest Name 3", data["guestbook"][1]["name"])
 
     def test_getting_one_guestbook_post(self):
         """Should return a given guestbook post."""

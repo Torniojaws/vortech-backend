@@ -11,6 +11,7 @@ from apps.guestbook.models import Guestbook
 from apps.guestbook.patches import patch_item
 from apps.users.models import Users
 from apps.utils.auth import admin_only
+from apps.utils.strings import int_or_none
 from apps.utils.time import get_datetime
 
 make_class_dictable(Guestbook)
@@ -19,7 +20,22 @@ make_class_dictable(Guestbook)
 class GuestbookView(FlaskView):
     # @cache.cached(timeout=60) Disabled for now, for better UX until Redis can handle updates
     def index(self):
-        """Return all guestbook posts ordered by GuestbookID in reverse chronological order."""
+        """Return all guestbook posts ordered by GuestbookID in reverse chronological order.
+        When url parameters are given (usually for pagination), filter the query."""
+        limit = int_or_none(request.args.get("limit", None))
+        first = int_or_none(request.args.get("first", None))
+
+        if limit is not None and first is not None:
+            guestbookData = Guestbook.query.order_by(
+                desc(Guestbook.GuestbookID)
+            ).offset(first).limit(limit).all()
+        elif limit is not None:
+            guestbookData = Guestbook.query.order_by(
+                desc(Guestbook.GuestbookID)
+            ).limit(limit).all()
+        else:
+            guestbookData = Guestbook.query.order_by(desc(Guestbook.GuestbookID)).all()
+
         content = jsonify({
             "guestbook": [{
                 "id": book.GuestbookID,
@@ -29,7 +45,7 @@ class GuestbookView(FlaskView):
                 "adminComment": book.AdminComment,
                 "createdAt": book.Created,
                 "updatedAt": book.Updated,
-            } for book in Guestbook.query.order_by(desc(Guestbook.GuestbookID)).all()]
+            } for book in guestbookData]
         })
 
         return make_response(content, 200)
